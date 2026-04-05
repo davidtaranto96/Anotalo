@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
+import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/add_task_bottom_sheet.dart';
 
 
 class AppShell extends ConsumerWidget {
@@ -49,7 +50,13 @@ class AppShell extends ConsumerWidget {
       floatingActionButton: fabIcon == null ? null : AppFab(
         icon: fabIcon,
         onTap: () {
-          // TODO: open appropriate bottom sheet per tab
+          switch (currentIndex) {
+            case 0: // Hoy
+              AddTaskBottomSheet.show(context);
+              break;
+            default:
+              break;
+          }
         },
         onLongPress: () {
           // TODO: open QuickCapture bottom sheet
