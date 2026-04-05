@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/add_task_bottom_sheet.dart';
+import 'package:arquitectura_enfoque/features/proyectos/presentation/widgets/add_project_bottom_sheet.dart';
 
 
 class AppShell extends ConsumerWidget {
@@ -53,6 +54,9 @@ class AppShell extends ConsumerWidget {
           switch (currentIndex) {
             case 0: // Hoy
               AddTaskBottomSheet.show(context);
+              break;
+            case 2: // Proyectos
+              AddProjectBottomSheet.show(context);
               break;
             default:
               break;
