@@ -106,4 +106,12 @@ class HabitService {
     await (_db.update(_db.habitsTable)..where((t) => t.id.equals(id)))
         .write(const HabitsTableCompanion(isArchived: Value(true)));
   }
+
+  Stream<List<HabitCompletion>> watchAllCompletionsForHabit(String habitId) {
+    return (_db.select(_db.habitCompletionsTable)
+      ..where((t) => t.habitId.equals(habitId))
+      ..orderBy([(t) => OrderingTerm.desc(t.dayId)]))
+      .watch()
+      .map((rows) => rows.map(_completionFromRow).toList());
+  }
 }

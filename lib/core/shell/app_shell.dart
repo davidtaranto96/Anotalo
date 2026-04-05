@@ -7,6 +7,10 @@ import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/add_task_bottom_sheet.dart';
 import 'package:arquitectura_enfoque/features/proyectos/presentation/widgets/add_project_bottom_sheet.dart';
+import 'package:arquitectura_enfoque/features/habitos/presentation/widgets/add_habit_bottom_sheet.dart';
+import 'package:arquitectura_enfoque/features/inbox/presentation/widgets/quick_capture_bottom_sheet.dart';
+import 'package:arquitectura_enfoque/features/enfoque/presentation/providers/timer_provider.dart';
+import 'package:arquitectura_enfoque/features/enfoque/domain/models/timer_state.dart';
 
 
 class AppShell extends ConsumerWidget {
@@ -22,14 +26,6 @@ class AppShell extends ConsumerWidget {
     _TabConfig('enfoque',    Icons.timer_rounded,                'Enfoque'),
   ];
 
-  static const _fabIcons = [
-    Icons.add_rounded,           // hoy
-    null,                        // semana — sin FAB
-    Icons.create_new_folder_rounded, // proyectos
-    Icons.add_rounded,           // habitos
-    Icons.play_arrow_rounded,    // enfoque
-  ];
-
   void _onTabTap(BuildContext context, int index) {
     HapticFeedback.selectionClick();
     navigationShell.goBranch(
@@ -41,8 +37,24 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = navigationShell.currentIndex;
-    final fabIcon = _fabIcons[currentIndex];
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    // Determine FAB icon dynamically
+    IconData? fabIcon;
+    if (currentIndex == 0) {
+      fabIcon = Icons.add_rounded;
+    } else if (currentIndex == 1) {
+      fabIcon = null; // semana — no FAB
+    } else if (currentIndex == 2) {
+      fabIcon = Icons.create_new_folder_rounded;
+    } else if (currentIndex == 3) {
+      fabIcon = Icons.add_rounded;
+    } else if (currentIndex == 4) {
+      final timerState = ref.watch(timerNotifierProvider);
+      fabIcon = timerState.status == TimerStatus.running
+          ? Icons.pause_rounded
+          : Icons.play_arrow_rounded;
+    }
 
     return Scaffold(
       extendBody: true,
@@ -58,13 +70,17 @@ class AppShell extends ConsumerWidget {
             case 2: // Proyectos
               AddProjectBottomSheet.show(context);
               break;
+            case 3: // Habitos
+              AddHabitBottomSheet.show(context);
+              break;
+            case 4: // Enfoque
+              ref.read(timerNotifierProvider.notifier).toggle();
+              break;
             default:
               break;
           }
         },
-        onLongPress: () {
-          // TODO: open QuickCapture bottom sheet
-        },
+        onLongPress: () => QuickCaptureBottomSheet.show(context),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: ClipRect(

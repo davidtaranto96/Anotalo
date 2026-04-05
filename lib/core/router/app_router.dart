@@ -5,6 +5,8 @@ import 'package:arquitectura_enfoque/features/semana/presentation/pages/semana_p
 import 'package:arquitectura_enfoque/features/proyectos/presentation/pages/proyectos_page.dart';
 import 'package:arquitectura_enfoque/features/habitos/presentation/pages/habitos_page.dart';
 import 'package:arquitectura_enfoque/features/enfoque/presentation/pages/enfoque_page.dart';
+import 'package:arquitectura_enfoque/features/inbox/presentation/pages/inbox_page.dart';
+import 'package:arquitectura_enfoque/features/revision/presentation/pages/revision_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/hoy',
@@ -29,5 +31,7 @@ final appRouter = GoRouter(
         ]),
       ],
     ),
+    GoRoute(path: '/inbox', builder: (_, __) => const InboxPage()),
+    GoRoute(path: '/revision', builder: (_, __) => const RevisionPage()),
   ],
 );
