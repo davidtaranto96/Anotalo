@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../domain/models/task.dart';
 import 'task_card.dart';
 
@@ -8,6 +9,7 @@ class PrioritySection extends StatelessWidget {
   final TaskPriority priority;
   final List<Task> tasks;
   final Function(String) onComplete;
+  final Function(String)? onUncomplete;
   final Function(String) onDefer;
   final Function(String) onDelete;
 
@@ -16,6 +18,7 @@ class PrioritySection extends StatelessWidget {
     required this.priority,
     required this.tasks,
     required this.onComplete,
+    this.onUncomplete,
     required this.onDefer,
     required this.onDelete,
   });
@@ -28,7 +31,7 @@ class PrioritySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
           child: Row(
             children: [
               Container(
@@ -43,7 +46,7 @@ class PrioritySection extends StatelessWidget {
               Text(
                 _priorityLabel(priority),
                 style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: _priorityColor(priority),
                   letterSpacing: 0.5,
@@ -54,18 +57,50 @@ class PrioritySection extends StatelessWidget {
                 '${tasks.length}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: AppTheme.colorNeutral,
+                  color: context.textTertiary,
                 ),
               ),
             ],
           ),
         ),
-        ...tasks.map((task) => TaskCard(
-          task: task,
-          onComplete: () => onComplete(task.id),
-          onDefer: () => onDefer(task.id),
-          onDelete: () => onDelete(task.id),
-        )),
+        ...tasks.asMap().entries.map((entry) {
+          final index = entry.key;
+          final task = entry.value;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (priority == TaskPriority.primordial) ...[
+                const SizedBox(width: 16),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFD97757), // AppTheme.colorAccent (orange)
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+              Expanded(
+                child: TaskCard(
+                  task: task,
+                  onComplete: () => onComplete(task.id),
+                  onUncomplete: onUncomplete != null ? () => onUncomplete!(task.id) : null,
+                  onDefer: () => onDefer(task.id),
+                  onDelete: () => onDelete(task.id),
+                ),
+              ),
+            ],
+          );
+        }),
       ],
     );
   }
@@ -81,6 +116,6 @@ class PrioritySection extends StatelessWidget {
     TaskPriority.primordial   => AppTheme.colorDanger,
     TaskPriority.importante   => AppTheme.colorWarning,
     TaskPriority.puedeEsperar => AppTheme.colorPrimary,
-    TaskPriority.secundaria   => AppTheme.colorNeutral,
+    TaskPriority.secundaria   => AppTheme.neutral400,
   };
 }

@@ -107,6 +107,41 @@ class HabitService {
         .write(const HabitsTableCompanion(isArchived: Value(true)));
   }
 
+  Future<void> updateHabit(String id, {
+    String? title,
+    HabitFrequency? frequency,
+    String? color,
+    String? icon,
+  }) async {
+    await (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
+      HabitsTableCompanion(
+        title: title != null ? Value(title) : const Value.absent(),
+        frequency: frequency != null
+            ? Value(frequency == HabitFrequency.daily ? 'daily' : 'weekly')
+            : const Value.absent(),
+        color: color != null ? Value(color) : const Value.absent(),
+        icon: icon != null ? Value(icon) : const Value.absent(),
+      ),
+    );
+  }
+
+  /// Returns a map of dayId -> Set<habitId> for the given days of the week.
+  Stream<Map<String, Set<String>>> watchWeekCompletions(List<String> dayIds) {
+    return (_db.select(_db.habitCompletionsTable)
+      ..where((t) => t.dayId.isIn(dayIds)))
+      .watch()
+      .map((rows) {
+        final map = <String, Set<String>>{};
+        for (final day in dayIds) {
+          map[day] = {};
+        }
+        for (final row in rows) {
+          map.putIfAbsent(row.dayId, () => {}).add(row.habitId);
+        }
+        return map;
+      });
+  }
+
   Stream<List<HabitCompletion>> watchAllCompletionsForHabit(String habitId) {
     return (_db.select(_db.habitCompletionsTable)
       ..where((t) => t.habitId.equals(habitId))

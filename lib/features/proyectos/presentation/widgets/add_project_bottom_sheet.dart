@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../domain/models/project.dart';
@@ -25,12 +26,15 @@ class AddProjectBottomSheet extends ConsumerStatefulWidget {
 class _State extends ConsumerState<AddProjectBottomSheet> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
-  // ignore: prefer_final_fields
   ProjectCategory _category = ProjectCategory.personal;
-  String _color = '#7C6EF7';
+  String _color = '#C15F3C';
+  DateTime? _targetDate;
   static const _uuid = Uuid();
 
-  static const _colors = ['#7C6EF7', '#5ECFB1', '#FF5C6E', '#FFB347', '#60A5FA', '#F472B6'];
+  static const _colors = [
+    '#C15F3C', '#D97757', '#5B8A5E', '#C4963A', '#5B7E9E', '#C44B4B',
+    '#7B5EA7', '#4A4540',
+  ];
 
   @override
   void dispose() {
@@ -49,10 +53,34 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
       category: _category,
       status: ProjectStatus.active,
       color: _color,
+      targetDate: _targetDate != null
+          ? DateFormat('yyyy-MM-dd').format(_targetDate!)
+          : null,
       createdAt: DateTime.now(),
     ));
     Navigator.of(context).pop();
   }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _targetDate ?? DateTime.now().add(const Duration(days: 7)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+      locale: const Locale('es'),
+    );
+    if (picked != null) {
+      setState(() => _targetDate = picked);
+    }
+  }
+
+  (String, String) _categoryInfo(ProjectCategory c) => switch (c) {
+    ProjectCategory.professional => ('Profesional', '💼'),
+    ProjectCategory.personal     => ('Personal', '🏠'),
+    ProjectCategory.health       => ('Salud', '🏥'),
+    ProjectCategory.learning     => ('Estudio', '📚'),
+    ProjectCategory.travel       => ('Viaje', '✈️'),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +88,11 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
       child: Container(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottom),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + bottom),
+        decoration: BoxDecoration(
           color: AppTheme.surfaceSheet,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: AppTheme.shadowLg,
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -75,30 +104,106 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                   width: 40, height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(25),
-                    borderRadius: BorderRadius.circular(2),
+                    color: AppTheme.divider,
+                    borderRadius: AppTheme.rFull,
                   ),
                 ),
               ),
               Text('Nuevo proyecto',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFFF0F0FF))),
+                  style: GoogleFonts.lora(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               const SizedBox(height: 20),
               TextField(
                 controller: _titleController,
                 autofocus: true,
-                style: GoogleFonts.inter(color: const Color(0xFFF0F0FF)),
+                style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
                 decoration: const InputDecoration(hintText: 'Nombre del proyecto'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descController,
-                style: GoogleFonts.inter(color: const Color(0xFFF0F0FF)),
+                style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
                 decoration: const InputDecoration(hintText: 'Descripción (opcional)'),
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
-              // Color picker
-              Text('Color', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.colorNeutral)),
+
+              // Category selector
+              Text('Categoría', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ProjectCategory.values.map((cat) {
+                  final (label, emoji) = _categoryInfo(cat);
+                  final selected = _category == cat;
+                  return GestureDetector(
+                    onTap: () => setState(() => _category = cat),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected ? AppTheme.colorPrimaryLight : AppTheme.surfaceInput,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: selected ? AppTheme.colorPrimary : AppTheme.divider,
+                          width: selected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Text(
+                        '$emoji $label',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                          color: selected ? AppTheme.colorPrimary : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+
+              // Target date picker
+              Text('Fecha límite (opcional)', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceInput,
+                    borderRadius: AppTheme.r12,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: _targetDate != null ? AppTheme.colorPrimary : AppTheme.textTertiary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _targetDate != null
+                            ? DateFormat('d MMM yyyy', 'es').format(_targetDate!)
+                            : 'Seleccionar fecha',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          color: _targetDate != null ? AppTheme.textPrimary : AppTheme.textTertiary,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_targetDate != null)
+                        GestureDetector(
+                          onTap: () => setState(() => _targetDate = null),
+                          child: const Icon(Icons.close, size: 18, color: AppTheme.textTertiary),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Text('Color', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
               const SizedBox(height: 8),
               Row(
                 children: _colors.map((c) {
@@ -113,7 +218,7 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                         shape: BoxShape.circle,
                         color: color,
                         border: Border.all(
-                          color: _color == c ? Colors.white : Colors.transparent,
+                          color: _color == c ? AppTheme.textPrimary : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -126,8 +231,6 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                 onPressed: _save,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: AppTheme.colorPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text('Crear proyecto', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ),

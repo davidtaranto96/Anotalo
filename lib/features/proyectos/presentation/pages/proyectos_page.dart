@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/project.dart';
 import '../providers/project_provider.dart';
 import '../widgets/project_card.dart';
+import '../widgets/project_detail_sheet.dart';
+import '../widgets/add_project_bottom_sheet.dart';
 
 class ProyectosPage extends ConsumerStatefulWidget {
   const ProyectosPage({super.key});
@@ -14,69 +17,86 @@ class ProyectosPage extends ConsumerStatefulWidget {
 }
 
 class _ProyectosPageState extends ConsumerState<ProyectosPage> {
-  ProjectStatus? _filterStatus; // null = all
+  final _expanded = <ProjectStatus, bool>{
+    ProjectStatus.active: true,
+    ProjectStatus.paused: false,
+    ProjectStatus.completed: false,
+    ProjectStatus.archived: false,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final projectsAsync = ref.watch(allProjectsProvider);
+    final projectsAsync = ref.watch(allProjectsIncludingArchivedProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceBase,
+      backgroundColor: context.surfaceBase,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           SliverAppBar(
             floating: true,
-            backgroundColor: AppTheme.surfaceBase,
+            backgroundColor: Colors.transparent,
             surfaceTintColor: Colors.transparent,
-            title: Text('Proyectos',
-                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700)),
-          ),
-          // Filter chips
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 44,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _FilterChip(label: 'Todos', selected: _filterStatus == null,
-                      onTap: () => setState(() => _filterStatus = null)),
-                  _FilterChip(label: 'Activos', selected: _filterStatus == ProjectStatus.active,
-                      onTap: () => setState(() => _filterStatus = ProjectStatus.active)),
-                  _FilterChip(label: 'Pausados', selected: _filterStatus == ProjectStatus.paused,
-                      onTap: () => setState(() => _filterStatus = ProjectStatus.paused)),
-                  _FilterChip(label: 'Completados', selected: _filterStatus == ProjectStatus.completed,
-                      onTap: () => setState(() => _filterStatus = ProjectStatus.completed)),
-                ],
+            title: Text('📁 Proyectos',
+                style: GoogleFonts.lora(
+                  fontSize: 24, fontWeight: FontWeight.w600,
+                  color: context.textPrimary, letterSpacing: -0.3,
+                )),
+            actions: [
+              TextButton.icon(
+                onPressed: () => AddProjectBottomSheet.show(context),
+                icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.colorPrimary),
+                label: Text('Nuevo',
+                    style: GoogleFonts.inter(
+                        color: AppTheme.colorPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
               ),
-            ),
+            ],
           ),
-          // Projects list
           projectsAsync.when(
             data: (projects) {
-              final filtered = _filterStatus == null
-                  ? projects
-                  : projects.where((p) => p.status == _filterStatus).toList();
-
-              if (filtered.isEmpty) {
+              if (projects.isEmpty) {
                 return SliverFillRemaining(
                   child: Center(
-                    child: Text('No hay proyectos',
-                        style: GoogleFonts.inter(color: AppTheme.colorNeutral)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.folder_open_rounded, size: 48, color: context.neutral400),
+                        const SizedBox(height: 12),
+                        Text('No hay proyectos',
+                            style: GoogleFonts.inter(color: context.textTertiary, fontSize: 15)),
+                        const SizedBox(height: 8),
+                        Text('Tocá Nuevo para crear uno',
+                            style: GoogleFonts.inter(color: context.textTertiary, fontSize: 13)),
+                      ],
+                    ),
                   ),
                 );
               }
 
+              final sections = [
+                (ProjectStatus.active, 'ACTIVOS'),
+                (ProjectStatus.paused, 'PAUSADOS'),
+                (ProjectStatus.completed, 'COMPLETADOS'),
+                (ProjectStatus.archived, 'ARCHIVADOS'),
+              ];
+
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (_, i) => ProjectCard(
-                    project: filtered[i],
-                    taskCount: filtered[i].taskIds.length,
-                    completedCount: 0, // TODO: query from DB
-                    onTap: () {}, // TODO: navigate to detail
-                  ),
-                  childCount: filtered.length,
+                  (_, i) {
+                    final (status, label) = sections[i];
+                    final filtered = projects.where((p) => p.status == status).toList();
+                    if (filtered.isEmpty) return const SizedBox.shrink();
+
+                    return _ProjectSection(
+                      label: label,
+                      projects: filtered,
+                      expanded: _expanded[status] ?? true,
+                      onToggle: () => setState(() =>
+                          _expanded[status] = !(_expanded[status] ?? true)),
+                      onTap: (p) => ProjectDetailSheet.show(context, p),
+                    );
+                  },
+                  childCount: sections.length,
                 ),
               );
             },
@@ -94,41 +114,57 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
+class _ProjectSection extends StatelessWidget {
   final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final List<Project> projects;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final Function(Project) onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _ProjectSection({
+    required this.label,
+    required this.projects,
+    required this.expanded,
+    required this.onToggle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppTheme.colorPrimary.withAlpha((0.2 * 255).round())
-              : AppTheme.surfaceCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected
-                ? AppTheme.colorPrimary.withAlpha((0.5 * 255).round())
-                : Colors.white.withAlpha((0.07 * 255).round()),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Row(
+              children: [
+                Text(
+                  '$label · ${projects.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: context.textTertiary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  color: context.textTertiary,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? AppTheme.colorPrimary : AppTheme.colorNeutral,
-          ),
-        ),
-      ),
+        if (expanded)
+          ...projects.map((p) => ProjectCard(
+            project: p,
+            onTap: () => onTap(p),
+          )),
+      ],
     );
   }
 }

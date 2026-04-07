@@ -25,12 +25,10 @@ class HabitRowWidget extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
-          borderRadius: BorderRadius.circular(12),
+          color: isCompleted ? AppTheme.colorSuccessLight : AppTheme.surfaceCard,
+          borderRadius: AppTheme.r12,
           border: Border.all(
-            color: isCompleted
-                ? AppTheme.colorAccent.withAlpha((0.3 * 255).round())
-                : Colors.white.withAlpha((0.07 * 255).round()),
+            color: isCompleted ? AppTheme.colorSuccess.withAlpha(80) : AppTheme.divider,
           ),
         ),
         child: ListTile(
@@ -46,9 +44,9 @@ class HabitRowWidget extends ConsumerWidget {
               height: 26,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isCompleted ? AppTheme.colorAccent : Colors.transparent,
+                color: isCompleted ? AppTheme.colorSuccess : Colors.transparent,
                 border: Border.all(
-                  color: isCompleted ? AppTheme.colorAccent : AppTheme.colorNeutral,
+                  color: isCompleted ? AppTheme.colorSuccess : AppTheme.neutral400,
                   width: 2,
                 ),
               ),
@@ -62,7 +60,7 @@ class HabitRowWidget extends ConsumerWidget {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: isCompleted ? AppTheme.colorNeutral : const Color(0xFFF0F0FF),
+              color: isCompleted ? AppTheme.textTertiary : AppTheme.textPrimary,
               decoration: isCompleted ? TextDecoration.lineThrough : null,
             ),
           ),

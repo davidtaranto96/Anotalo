@@ -9,6 +9,9 @@ final projectServiceProvider = Provider((ref) =>
 final allProjectsProvider = StreamProvider<List<Project>>((ref) =>
     ref.watch(projectServiceProvider).watchAllProjects());
 
+final allProjectsIncludingArchivedProvider = StreamProvider<List<Project>>((ref) =>
+    ref.watch(projectServiceProvider).watchAllProjectsIncludingArchived());
+
 final activeProjectsProvider = Provider<List<Project>>((ref) =>
     ref.watch(allProjectsProvider).valueOrNull
         ?.where((p) => p.status == ProjectStatus.active).toList() ?? []);

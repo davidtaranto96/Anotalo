@@ -26,10 +26,10 @@ class DayProgressBar extends StatelessWidget {
             children: [
               Text('Progreso del día',
                   style: GoogleFonts.inter(
-                      color: AppTheme.colorNeutral, fontSize: 12)),
+                      color: AppTheme.textSecondary, fontSize: 12)),
               Text('$completed / $total',
                   style: GoogleFonts.inter(
-                      color: AppTheme.colorNeutral, fontSize: 12)),
+                      color: AppTheme.textSecondary, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 6),
@@ -38,11 +38,11 @@ class DayProgressBar extends StatelessWidget {
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
               duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOutCubic,
+              curve: Curves.easeOutCubic,
               builder: (_, value, __) => LinearProgressIndicator(
                 value: value,
                 minHeight: 6,
-                backgroundColor: AppTheme.surfaceCard,
+                backgroundColor: AppTheme.surfaceElevated,
                 valueColor: const AlwaysStoppedAnimation(AppTheme.colorPrimary),
               ),
             ),

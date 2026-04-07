@@ -41,14 +41,10 @@ class TimerModeSelector extends StatelessWidget {
               margin: const EdgeInsets.only(right: 8),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.colorPrimary.withAlpha(51)
-                    : AppTheme.surfaceCard,
-                borderRadius: BorderRadius.circular(20),
+                color: isSelected ? AppTheme.colorPrimaryLight : AppTheme.surfaceCard,
+                borderRadius: AppTheme.rFull,
                 border: Border.all(
-                  color: isSelected
-                      ? AppTheme.colorPrimary.withAlpha(128)
-                      : Colors.white.withAlpha(18),
+                  color: isSelected ? AppTheme.colorPrimary : AppTheme.divider,
                 ),
               ),
               child: Text(
@@ -56,7 +52,7 @@ class TimerModeSelector extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? AppTheme.colorPrimary : AppTheme.colorNeutral,
+                  color: isSelected ? AppTheme.colorPrimary : AppTheme.textSecondary,
                 ),
               ),
             ),

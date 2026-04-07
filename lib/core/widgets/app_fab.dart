@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
@@ -22,6 +21,7 @@ class AppFab extends StatefulWidget {
 }
 
 class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
+  bool _pressed = false;
   bool _longPressed = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -48,9 +48,14 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final bgColor = _longPressed
         ? AppTheme.colorDanger
-        : (widget.color ?? AppTheme.colorPrimary);
+        : _pressed
+            ? AppTheme.colorPrimaryDark
+            : (widget.color ?? AppTheme.colorPrimary);
 
     return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
       onTap: () {
         HapticFeedback.lightImpact();
         widget.onTap();
@@ -70,37 +75,31 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
       },
       child: ScaleTransition(
         scale: _pulseAnimation,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOutCubic,
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: bgColor.withAlpha((0.9 * 255).round()),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: Colors.white.withAlpha((0.12 * 255).round()),
-                ),
+        child: AnimatedScale(
+          scale: _pressed ? 0.95 : 1.0,
+          duration: const Duration(milliseconds: 100),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: AppTheme.r16,
+              boxShadow: AppTheme.shadowMd,
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: animation,
+                child: child,
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, animation) => ScaleTransition(
-                  scale: animation,
-                  child: RotationTransition(
-                    turns: animation,
-                    child: child,
-                  ),
-                ),
-                child: Icon(
-                  widget.icon,
-                  key: ValueKey(widget.icon),
-                  color: Colors.white,
-                  size: 26,
-                ),
+              child: Icon(
+                widget.icon,
+                key: ValueKey(widget.icon),
+                color: Colors.white,
+                size: 24,
               ),
             ),
           ),

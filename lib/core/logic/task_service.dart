@@ -20,6 +20,7 @@ class TaskService {
     delegatedTo: row.delegatedTo,
     deferredTo: row.deferredTo,
     scheduledDate: row.scheduledDate,
+    reminder: row.reminder,
     parentProjectId: row.parentProjectId,
     subtaskIds: decodeStringList(row.subtaskIds),
     dayId: row.dayId,
@@ -54,6 +55,7 @@ class TaskService {
       delegatedTo: Value(task.delegatedTo),
       deferredTo: Value(task.deferredTo),
       scheduledDate: Value(task.scheduledDate),
+      reminder: Value(task.reminder),
       parentProjectId: Value(task.parentProjectId),
       subtaskIds: Value(encodeStringList(task.subtaskIds)),
       dayId: task.dayId,
@@ -68,6 +70,14 @@ class TaskService {
         .write(TasksTableCompanion(
       status: const Value('done'),
       completedAt: Value(DateTime.now()),
+    ));
+  }
+
+  Future<void> uncompleteTask(String id) async {
+    await (_db.update(_db.tasksTable)..where((t) => t.id.equals(id)))
+        .write(const TasksTableCompanion(
+      status: Value('pending'),
+      completedAt: Value(null),
     ));
   }
 

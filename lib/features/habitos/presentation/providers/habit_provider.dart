@@ -15,3 +15,13 @@ final todayCompletionsProvider = StreamProvider<List<HabitCompletion>>((ref) =>
 
 final habitStreakProvider = FutureProvider.family<int, String>((ref, habitId) =>
     ref.watch(habitServiceProvider).getStreak(habitId));
+
+/// Provides completion data for the current week (Mon-Sun).
+/// Returns Map<dayId, Set<habitId>> for 7 days.
+final weekCompletionsProvider = StreamProvider<Map<String, Set<String>>>((ref) {
+  final service = ref.watch(habitServiceProvider);
+  final now = DateTime.now();
+  final monday = now.subtract(Duration(days: now.weekday - 1));
+  final days = List.generate(7, (i) => dateToId(monday.add(Duration(days: i))));
+  return service.watchWeekCompletions(days);
+});

@@ -40,6 +40,27 @@ class QuickNoteService {
     ));
   }
 
+  Stream<List<QuickNote>> watchProcessed() {
+    return (_db.select(_db.quickNotesTable)
+      ..where((t) => t.isProcessed.equals(true))
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch()
+      .map((rows) => rows.map(_fromRow).toList());
+  }
+
+  Future<void> addNoteWithType(String content, QuickNoteType type) async {
+    await _db.into(_db.quickNotesTable).insert(QuickNotesTableCompanion.insert(
+      id: _uuid.v4(),
+      content: content,
+      type: Value(type.name),
+      createdAt: DateTime.now(),
+    ));
+  }
+
+  Future<void> deleteNote(String id) async {
+    await (_db.delete(_db.quickNotesTable)..where((t) => t.id.equals(id))).go();
+  }
+
   Future<void> processNote(String id, {
     required String processedToType,
     String? processedToTargetId,

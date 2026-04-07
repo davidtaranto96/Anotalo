@@ -21,6 +21,18 @@ class JournalService {
     updatedAt: row.updatedAt,
   );
 
+  Stream<List<JournalEntry>> watchAllEntries() {
+    return (_db.select(_db.journalEntriesTable)
+      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      .watch()
+      .map((rows) => rows.map(_fromRow).toList());
+  }
+
+  Future<void> deleteEntry(String dayId) async {
+    await (_db.delete(_db.journalEntriesTable)
+      ..where((t) => t.dayId.equals(dayId))).go();
+  }
+
   Stream<JournalEntry?> watchEntryForDay(String dayId) {
     return (_db.select(_db.journalEntriesTable)
       ..where((t) => t.dayId.equals(dayId)))

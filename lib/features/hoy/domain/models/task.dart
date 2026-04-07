@@ -49,6 +49,7 @@ class Task extends Equatable {
   final String? delegatedTo;
   final String? deferredTo;
   final String? scheduledDate;
+  final String? reminder;
   final String? parentProjectId;
   final List<String> subtaskIds;
   final String dayId;
@@ -67,6 +68,7 @@ class Task extends Equatable {
     this.delegatedTo,
     this.deferredTo,
     this.scheduledDate,
+    this.reminder,
     this.parentProjectId,
     this.subtaskIds = const [],
     required this.dayId,
@@ -85,6 +87,7 @@ class Task extends Equatable {
     String? delegatedTo,
     String? deferredTo,
     String? scheduledDate,
+    String? reminder,
     String? parentProjectId,
     List<String>? subtaskIds,
     String? dayId,
@@ -101,6 +104,7 @@ class Task extends Equatable {
     delegatedTo: delegatedTo ?? this.delegatedTo,
     deferredTo: deferredTo ?? this.deferredTo,
     scheduledDate: scheduledDate ?? this.scheduledDate,
+    reminder: reminder ?? this.reminder,
     parentProjectId: parentProjectId ?? this.parentProjectId,
     subtaskIds: subtaskIds ?? this.subtaskIds,
     dayId: dayId ?? this.dayId,

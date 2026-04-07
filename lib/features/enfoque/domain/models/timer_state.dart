@@ -20,13 +20,13 @@ extension TimerModeX on TimerMode {
   };
 
   String get label => switch (this) {
-    TimerMode.pomodoro25  => 'Pomodoro 25',
-    TimerMode.pomodoro50  => 'Pomodoro 50',
-    TimerMode.deepWork90  => 'Deep Work 90',
-    TimerMode.quick5      => 'Rápido 5',
-    TimerMode.break5      => 'Descanso 5',
-    TimerMode.break10     => 'Descanso 10',
-    TimerMode.break15     => 'Descanso 15',
+    TimerMode.pomodoro25  => '\u{1F345} Pomodoro 25',
+    TimerMode.pomodoro50  => '\u{1F525} Pomodoro 50',
+    TimerMode.deepWork90  => '\u{1F9E0} Deep Work 90',
+    TimerMode.quick5      => '\u26A1 R\u00e1pido 5',
+    TimerMode.break5      => '\u2615 Descanso 5',
+    TimerMode.break10     => '\u2615 Descanso 10',
+    TimerMode.break15     => '\u2615 Descanso 15',
   };
 
   String get dbValue => switch (this) {

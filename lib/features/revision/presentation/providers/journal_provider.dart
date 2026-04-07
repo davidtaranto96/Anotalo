@@ -9,3 +9,6 @@ final journalServiceProvider = Provider((ref) =>
 
 final todayJournalProvider = StreamProvider<JournalEntry?>((ref) =>
     ref.watch(journalServiceProvider).watchEntryForDay(todayId()));
+
+final allJournalEntriesProvider = StreamProvider<List<JournalEntry>>((ref) =>
+    ref.watch(journalServiceProvider).watchAllEntries());

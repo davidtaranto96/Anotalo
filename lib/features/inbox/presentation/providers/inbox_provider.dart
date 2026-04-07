@@ -8,3 +8,6 @@ final quickNoteServiceProvider = Provider((ref) =>
 
 final unprocessedNotesProvider = StreamProvider<List<QuickNote>>((ref) =>
     ref.watch(quickNoteServiceProvider).watchUnprocessed());
+
+final processedNotesProvider = StreamProvider<List<QuickNote>>((ref) =>
+    ref.watch(quickNoteServiceProvider).watchProcessed());

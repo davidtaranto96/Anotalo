@@ -40,10 +40,11 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottom),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + bottom),
+      decoration: BoxDecoration(
         color: AppTheme.surfaceSheet,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: AppTheme.shadowLg,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -52,9 +53,9 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
             child: Container(
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(25),
-                borderRadius: BorderRadius.circular(2),
+              decoration: const BoxDecoration(
+                color: AppTheme.divider,
+                borderRadius: BorderRadius.all(Radius.circular(999)),
               ),
             ),
           ),
@@ -64,9 +65,9 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
               const SizedBox(width: 8),
               Text('Captura rápida',
                   style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFF0F0FF))),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary)),
             ],
           ),
           const SizedBox(height: 16),
@@ -74,10 +75,10 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
             controller: _controller,
             autofocus: true,
             maxLines: 3,
-            style: GoogleFonts.inter(color: const Color(0xFFF0F0FF)),
+            style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
             decoration: InputDecoration(
               hintText: 'Capturo el pensamiento...',
-              hintStyle: GoogleFonts.inter(color: AppTheme.colorNeutral),
+              hintStyle: GoogleFonts.inter(color: AppTheme.textTertiary),
             ),
           ),
           const SizedBox(height: 16),
@@ -86,24 +87,14 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: BorderSide(color: Colors.white.withAlpha(30)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('Cancelar', style: GoogleFonts.inter(color: AppTheme.colorNeutral)),
+                  child: Text('Cancelar', style: GoogleFonts.inter(color: AppTheme.textSecondary)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: _save,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppTheme.colorAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('Guardar', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
+                  child: Text('Guardar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

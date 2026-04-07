@@ -1,125 +1,258 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../../hoy/domain/models/task.dart';
+import '../../../hoy/presentation/providers/task_provider.dart';
 import '../../domain/models/project.dart';
 
-class ProjectCard extends StatelessWidget {
+class ProjectCard extends ConsumerWidget {
   final Project project;
-  final int taskCount;
-  final int completedCount;
   final VoidCallback onTap;
 
   const ProjectCard({
     super.key,
     required this.project,
-    required this.taskCount,
-    required this.completedCount,
     required this.onTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final taskService = ref.read(taskServiceProvider);
     final color = _parseColor(project.color);
-    final progress = taskCount == 0 ? 0.0 : completedCount / taskCount;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withAlpha((0.2 * 255).round()),
-          ),
+          color: context.surfaceCard,
+          borderRadius: AppTheme.r16,
+          border: Border.all(color: context.dividerColor),
+          boxShadow: AppTheme.shadowSm,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                  ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Left color border
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    project.title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFFF0F0FF),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _statusColor(project.status).withAlpha((0.15 * 255).round()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _statusColor(project.status).withAlpha((0.3 * 255).round()),
-                    ),
-                  ),
-                  child: Text(
-                    _statusLabel(project.status),
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _statusColor(project.status),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (project.description != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                project.description!,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppTheme.colorNeutral,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
-            if (taskCount > 0) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 4,
-                        backgroundColor: AppTheme.surfaceElevated,
-                        valueColor: AlwaysStoppedAnimation(color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // Letter icon
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: color.withAlpha(30),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                project.title.isNotEmpty
+                                    ? project.title[0].toUpperCase()
+                                    : 'P',
+                                style: GoogleFonts.lora(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  project.title,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    _CategoryTag(category: project.category),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+
+                      if (project.description != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          project.description!,
+                          style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
+                      const SizedBox(height: 10),
+
+                      // Task count + fecha
+                      FutureBuilder<_ProjectStats>(
+                        future: _getStats(taskService, project.id),
+                        builder: (context, snapshot) {
+                          final stats = snapshot.data ?? _ProjectStats(0, 0);
+                          final progress = stats.total == 0
+                              ? 0.0
+                              : stats.completed / stats.total;
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    '${stats.completed}/${stats.total} tareas',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: context.textTertiary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${(progress * 100).round()}%',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: color,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  ..._buildDeadlineIndicator(),
+                                  if (project.targetDate == null)
+                                    Text(
+                                      '📅 ${DateFormat('d MMM yyyy', 'es').format(project.createdAt)}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: context.textTertiary,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(3),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  minHeight: 4,
+                                  backgroundColor: context.surfaceElevated,
+                                  valueColor: AlwaysStoppedAnimation(color),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '$completedCount/$taskCount',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppTheme.colorNeutral,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildDeadlineIndicator() {
+    if (project.targetDate == null) return [];
+    try {
+      final target = DateTime.parse(project.targetDate!);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final diff = target.difference(today).inDays;
+      final dateText = DateFormat('d MMM', 'es').format(target);
+
+      if (diff < 0) {
+        return [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppTheme.colorDangerLight,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'Vencido',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.colorDanger,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            dateText,
+            style: GoogleFonts.inter(fontSize: 11, color: AppTheme.colorDanger),
+          ),
+        ];
+      } else if (diff <= 7) {
+        return [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppTheme.colorWarningLight,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              'Pronto',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.colorWarning,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            dateText,
+            style: GoogleFonts.inter(fontSize: 11, color: AppTheme.colorWarning),
+          ),
+        ];
+      } else {
+        return [
+          Text(
+            '📅 $dateText',
+            style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textTertiary),
+          ),
+        ];
+      }
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<_ProjectStats> _getStats(dynamic taskService, String projectId) async {
+    final tasks = await taskService.watchTasksByProject(projectId).first;
+    final list = tasks as List;
+    final total = list.length;
+    final completed = list.where((t) => (t as Task).status == TaskStatus.done).length;
+    return _ProjectStats(completed, total);
   }
 
   Color _parseColor(String hex) {
@@ -129,18 +262,40 @@ class ProjectCard extends StatelessWidget {
       return AppTheme.colorPrimary;
     }
   }
+}
 
-  Color _statusColor(ProjectStatus s) => switch (s) {
-    ProjectStatus.active    => AppTheme.colorAccent,
-    ProjectStatus.completed => AppTheme.colorPrimary,
-    ProjectStatus.paused    => AppTheme.colorWarning,
-    ProjectStatus.archived  => AppTheme.colorNeutral,
-  };
+class _ProjectStats {
+  final int completed;
+  final int total;
+  _ProjectStats(this.completed, this.total);
+}
 
-  String _statusLabel(ProjectStatus s) => switch (s) {
-    ProjectStatus.active    => 'Activo',
-    ProjectStatus.completed => 'Completado',
-    ProjectStatus.paused    => 'Pausado',
-    ProjectStatus.archived  => 'Archivado',
+class _CategoryTag extends StatelessWidget {
+  final ProjectCategory category;
+  const _CategoryTag({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, emoji) = _categoryInfo(category);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: context.neutral100,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.dividerColor),
+      ),
+      child: Text(
+        '$emoji $label',
+        style: GoogleFonts.inter(fontSize: 11, color: context.textSecondary),
+      ),
+    );
+  }
+
+  (String, String) _categoryInfo(ProjectCategory c) => switch (c) {
+    ProjectCategory.professional => ('Profesional', '💼'),
+    ProjectCategory.personal     => ('Personal', '🏠'),
+    ProjectCategory.health       => ('Salud', '🏥'),
+    ProjectCategory.learning     => ('Estudio', '📚'),
+    ProjectCategory.travel       => ('Viaje', '✈️'),
   };
 }
