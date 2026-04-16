@@ -25,3 +25,7 @@ final weekCompletionsProvider = StreamProvider<Map<String, Set<String>>>((ref) {
   final days = List.generate(7, (i) => dateToId(monday.add(Duration(days: i))));
   return service.watchWeekCompletions(days);
 });
+
+/// All-time completions (across habits) — powers the aggregate stats section.
+final allCompletionsProvider = StreamProvider<List<HabitCompletion>>((ref) =>
+    ref.watch(habitServiceProvider).watchAllCompletions());

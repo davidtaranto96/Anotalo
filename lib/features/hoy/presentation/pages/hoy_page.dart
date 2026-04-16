@@ -14,42 +14,14 @@ import '../../../habitos/presentation/providers/habit_provider.dart';
 import '../widgets/priority_section.dart';
 import '../widgets/task_card.dart';
 import '../../../../core/models/task_area.dart';
+import '../../../../core/providers/task_area_provider.dart';
 import '../../../../core/widgets/voice_input_button.dart';
+import '../../../../core/widgets/defer_picker.dart';
+import '../../../../core/logic/task_parser.dart';
+import '../../../../core/logic/user_prefs.dart';
+import '../../../../core/providers/shell_providers.dart';
+import '../../data/curated_quotes.dart';
 import 'dart:math' as math;
-
-
-const _quotes = [
-  {'q': 'La vida es lo que pasa mientras haces otros planes.', 'a': 'John Lennon'},
-  {'q': 'Soy el amo de mi destino, el capitán de mi alma.', 'a': 'Nelson Mandela'},
-  {'q': 'La imaginación es más importante que el conocimiento.', 'a': 'Albert Einstein'},
-  {'q': 'Haz o no hagas. No hay intentar.', 'a': 'Yoda'},
-  {'q': 'El único modo de hacer un gran trabajo es amar lo que haces.', 'a': 'Steve Jobs'},
-  {'q': 'Que la fuerza te acompañe.', 'a': 'Star Wars'},
-  {'q': 'Todo lo que puedes imaginar es real.', 'a': 'Pablo Picasso'},
-  {'q': 'El futuro pertenece a quienes creen en sus sueños.', 'a': 'Eleanor Roosevelt'},
-  {'q': 'Cada día es una nueva oportunidad para cambiar tu vida.', 'a': 'Paulo Coelho'},
-  {'q': 'Lo esencial es invisible a los ojos.', 'a': 'El Principito'},
-  {'q': 'A veces ganar es simplemente no rendirse.', 'a': 'Rocky Balboa'},
-  {'q': 'No cuentes los días. Haz que los días cuenten.', 'a': 'Muhammad Ali'},
-  {'q': 'La creatividad es contagiosa. Pásala.', 'a': 'Albert Einstein'},
-  {'q': 'El éxito no es definitivo, el fracaso no es fatal.', 'a': 'Winston Churchill'},
-  {'q': 'Sé el cambio que quieres ver en el mundo.', 'a': 'Gandhi'},
-  {'q': 'Después de todo, mañana será otro día.', 'a': 'Lo que el viento se llevó'},
-  {'q': 'No hay caminos para la paz; la paz es el camino.', 'a': 'Gandhi'},
-  {'q': 'Nunca es tarde para ser lo que podrías haber sido.', 'a': 'George Eliot'},
-  {'q': 'El secreto de salir adelante es empezar.', 'a': 'Mark Twain'},
-  {'q': 'La vida es muy simple, pero insistimos en hacerla complicada.', 'a': 'Confucio'},
-  {'q': 'Yo soy inevitable.', 'a': 'Thanos'},
-  {'q': 'Vive como si fueras a morir mañana. Aprende como si fueras a vivir siempre.', 'a': 'Gandhi'},
-  {'q': 'Houston, tenemos un problema.', 'a': 'Apollo 13'},
-  {'q': 'La mejor forma de predecir el futuro es crearlo.', 'a': 'Peter Drucker'},
-  {'q': 'Locura es hacer lo mismo y esperar resultados diferentes.', 'a': 'Albert Einstein'},
-  {'q': 'El coraje no es la ausencia de miedo, sino el triunfo sobre él.', 'a': 'Nelson Mandela'},
-  {'q': 'Hoy no, viejo amigo. Hoy no.', 'a': 'Gladiator'},
-  {'q': 'Primero lo primordial. Todo lo demás puede esperar.', 'a': 'Stephen Covey'},
-  {'q': 'Solo sé que no sé nada.', 'a': 'Sócrates'},
-  {'q': 'La disciplina es el puente entre metas y logros.', 'a': 'Jim Rohn'},
-];
 
 class HoyPage extends ConsumerStatefulWidget {
   const HoyPage({super.key});
@@ -65,16 +37,41 @@ class _HoyPageState extends ConsumerState<HoyPage> {
   late String _quote;
   late String _quoteAuthor;
 
+  /// Built from the current (possibly DB-edited) list of areas, not the
+  /// hardcoded defaults. Resolved lazily in [build] via [_resolveAreaColor].
+  Color? _resolveAreaColor(List<TaskArea> areas) => _selectedArea == null
+      ? null
+      : getTaskAreaFrom(areas, _selectedArea)?.color;
+
+  int? _lastQuoteIdx;
+
+  void _rotateQuote() {
+    int idx = math.Random().nextInt(curatedQuotes.length);
+    // Avoid repeating the same quote back-to-back.
+    if (curatedQuotes.length > 1 && idx == _lastQuoteIdx) {
+      idx = (idx + 1) % curatedQuotes.length;
+    }
+    _lastQuoteIdx = idx;
+    _quote = curatedQuotes[idx]['q']!;
+    _quoteAuthor = curatedQuotes[idx]['a']!;
+  }
+
   @override
   void initState() {
     super.initState();
-    final idx = math.Random().nextInt(_quotes.length);
-    _quote = _quotes[idx]['q']!;
-    _quoteAuthor = _quotes[idx]['a']!;
+    _rotateQuote();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Rotate the motivational quote every time the user navigates back to
+    // Hoy from another tab. Tab index 0 = Hoy.
+    ref.listen<int>(currentTabIndexProvider, (prev, curr) {
+      if (curr == 0 && prev != 0) {
+        setState(_rotateQuote);
+      }
+    });
+
     final todayTasksAsync = ref.watch(todayTasksProvider);
     final primordial = ref.watch(primordialTasksProvider);
     final importante = ref.watch(importanteTasksProvider);
@@ -87,6 +84,10 @@ class _HoyPageState extends ConsumerState<HoyPage> {
 
     final streakAsync = ref.watch(streakProvider);
     final taskService = ref.read(taskServiceProvider);
+
+    // Live-edited list of areas (colors, order, labels all reflect user edits).
+    final areas = ref.watch(taskAreasSyncProvider);
+    final areaColor = _resolveAreaColor(areas);
 
     final now = DateTime.now();
     final dateStr = DateFormat("EEEE d 'de' MMMM", 'es').format(now);
@@ -112,8 +113,21 @@ class _HoyPageState extends ConsumerState<HoyPage> {
     final primordialDone = (todayTasksAsync.valueOrNull ?? [])
         .where((t) => t.priority == TaskPriority.primordial && t.status == TaskStatus.done).length;
 
-    return Scaffold(
-      backgroundColor: context.surfaceBase,
+    // Stronger tint so the whole page clearly takes on the area color when
+    // a category is selected (user-requested "titulo para abajo se tiñe").
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tintedBg = areaColor != null
+        ? Color.lerp(context.surfaceBase, areaColor, isDark ? 0.12 : 0.14)!
+        : context.surfaceBase;
+
+    final userPrefs = ref.watch(userPrefsProvider);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      color: tintedBg,
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -127,29 +141,49 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '¿Qué vas a lograr hoy?',
-                          style: GoogleFonts.lora(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            color: context.textPrimary,
-                            letterSpacing: -0.3,
+                        Expanded(
+                          child: Text(
+                            '¿Qué vas a lograr hoy?',
+                            style: GoogleFonts.lora(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: context.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.settings_rounded, color: context.textSecondary),
-                              onPressed: () => context.push('/settings'),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.inbox_rounded, color: context.textSecondary),
-                              onPressed: () => context.go('/inbox'),
-                            ),
-                          ],
+                        // Daily review: tap opens today's review wizard.
+                        // Long-press jumps straight to history of past reviews.
+                        GestureDetector(
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            context.push('/review-history');
+                          },
+                          child: IconButton(
+                            icon: Icon(Icons.rate_review_rounded, color: context.textSecondary, size: 22),
+                            tooltip: 'Revisión del día',
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                            onPressed: () => context.push('/review'),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.settings_rounded, color: context.textSecondary, size: 22),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          onPressed: () => context.push('/settings'),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.inbox_rounded, color: context.textSecondary, size: 22),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                          onPressed: () => context.go('/inbox'),
                         ),
                       ],
                     ),
@@ -157,35 +191,37 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                       dateStr,
                       style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.format_quote_rounded, size: 14, color: AppTheme.colorAccent),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text.rich(
-                            TextSpan(children: [
-                              TextSpan(
-                                text: '"$_quote"',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: context.textTertiary,
-                                  fontStyle: FontStyle.italic,
+                    if (userPrefs.showQuotes) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.format_quote_rounded, size: 14, color: AppTheme.colorAccent),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(children: [
+                                TextSpan(
+                                  text: '"$_quote"',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: context.textTertiary,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: ' \u2014 $_quoteAuthor',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.textTertiary,
+                                TextSpan(
+                                  text: ' \u2014 $_quoteAuthor',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: context.textTertiary,
+                                  ),
                                 ),
-                              ),
-                            ]),
+                              ]),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     // Stats
                     Row(
@@ -221,30 +257,34 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: context.dividerColor, width: 1)),
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      _AreaTab(
-                        label: 'Todo',
-                        emoji: '\u{1F4CB}',
-                        selected: _selectedArea == null,
-                        onTap: () => setState(() => _selectedArea = null),
-                      ),
-                      ...kTaskAreas.map((area) => _AreaTab(
-                        label: area.label,
-                        emoji: area.emoji,
-                        color: area.color,
-                        selected: _selectedArea == area.id,
-                        onTap: () => setState(() => _selectedArea = area.id),
-                      )),
-                    ],
-                  ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _AreaTab(
+                      label: 'Todo',
+                      emoji: '\u{1F4CB}',
+                      selected: _selectedArea == null,
+                      onTap: () => setState(() => _selectedArea = null),
+                    ),
+                    ...areas.map((area) => _AreaTab(
+                          label: area.label,
+                          emoji: area.emoji,
+                          color: area.color,
+                          selected: _selectedArea == area.id,
+                          onTap: () => setState(() => _selectedArea = area.id),
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            context.push('/manage-areas');
+                          },
+                        )),
+                    // "+" → abrir ManageAreasPage para agregar/editar/reordenar.
+                    _AddAreaTab(
+                      onTap: () => context.push('/manage-areas'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -258,32 +298,55 @@ class _HoyPageState extends ConsumerState<HoyPage> {
               completed: completedCount,
               total: totalTasks,
               brightness: Theme.of(context).brightness,
+              areaColor: areaColor,
+              bgColor: tintedBg,
             ),
           ),
 
-          // ── Priority sections ──────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: PrioritySection(
-              priority: TaskPriority.primordial,
-              tasks: filteredPrimordial,
-              onComplete: taskService.completeTask,
-              onUncomplete: taskService.uncompleteTask,
-              onDefer: (id) => taskService.deferTask(id, _tomorrow()),
-              onDelete: taskService.deleteTask,
+          // ── Priority sections (flat OR tree) ───────────────────────────
+          // When "Todo" is selected we group by area → priority so the user
+          // sees a side-tree layout. When a specific area is selected we
+          // keep the simple priority-stacked layout.
+          if (_selectedArea == null) ...[
+            SliverToBoxAdapter(
+              child: _TreeByAreaView(
+                areas: areas,
+                primordial: primordial,
+                importante: importante,
+                puedeEsperar: puedeEsperar,
+                onComplete: taskService.completeTask,
+                onUncomplete: taskService.uncompleteTask,
+                onDefer: (id) => _onDeferTask(taskService, id),
+                onDelete: taskService.deleteTask,
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: PrioritySection(
-              priority: TaskPriority.importante,
-              tasks: filteredImportante,
-              onComplete: taskService.completeTask,
-              onUncomplete: taskService.uncompleteTask,
-              onDefer: (id) => taskService.deferTask(id, _tomorrow()),
-              onDelete: taskService.deleteTask,
+          ] else ...[
+            SliverToBoxAdapter(
+              child: PrioritySection(
+                priority: TaskPriority.primordial,
+                tasks: filteredPrimordial,
+                onComplete: taskService.completeTask,
+                onUncomplete: taskService.uncompleteTask,
+                onDefer: (id) => _onDeferTask(taskService, id),
+                onDelete: taskService.deleteTask,
+              ),
             ),
-          ),
+            SliverToBoxAdapter(
+              child: PrioritySection(
+                priority: TaskPriority.importante,
+                tasks: filteredImportante,
+                onComplete: taskService.completeTask,
+                onUncomplete: taskService.uncompleteTask,
+                onDefer: (id) => _onDeferTask(taskService, id),
+                onDelete: taskService.deleteTask,
+              ),
+            ),
+          ],
 
           // ── Hábitos ────────────────────────────────────────────────────
+          if (!userPrefs.showHabitsInHoy)
+            const SliverToBoxAdapter(child: SizedBox.shrink())
+          else
           habitsAsync.when(
             data: (habits) {
               final daily = habits.where((h) => h.frequency == HabitFrequency.daily).toList();
@@ -342,14 +405,16 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           ),
 
           // ── Otras tareas (colapsable) ──────────────────────────────────
-          if (filteredPuedeEsperar.isNotEmpty)
+          // Solo mostramos esta sección cuando hay un área filtrada; en
+          // modo "Todo" ya aparece dentro del árbol.
+          if (_selectedArea != null && filteredPuedeEsperar.isNotEmpty)
             SliverToBoxAdapter(
               child: _OtrasSection(
                 tasks: filteredPuedeEsperar,
                 expanded: _showOtras,
                 onToggle: () => setState(() => _showOtras = !_showOtras),
                 onComplete: taskService.completeTask,
-                onDefer: (id) => taskService.deferTask(id, _tomorrow()),
+                onDefer: (id) => _onDeferTask(taskService, id),
                 onDelete: taskService.deleteTask,
               ),
             ),
@@ -397,7 +462,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                       task: task,
                       onComplete: () => taskService.completeTask(task.id),
                       onUncomplete: () => taskService.uncompleteTask(task.id),
-                      onDefer: () => taskService.deferTask(task.id, _tomorrow()),
+                      onDefer: () => _onDeferTask(taskService, task.id),
                       onDelete: () => taskService.deleteTask(task.id),
                     );
                   },
@@ -409,12 +474,15 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           const SliverToBoxAdapter(child: SizedBox(height: 140)),
         ],
       ),
-    );
+    ), // Scaffold
+    ); // AnimatedContainer
   }
 
-  String _tomorrow() {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
-    return dateToId(tomorrow);
+  Future<void> _onDeferTask(dynamic taskService, String taskId) async {
+    final newDay = await showDeferPicker(context);
+    if (newDay != null) {
+      await taskService.deferTask(taskId, newDay);
+    }
   }
 }
 
@@ -472,6 +540,16 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
   TaskPriority _priority = TaskPriority.primordial;
   String? _area;
   TimeOfDay? _reminderTime;
+  ParsedTask? _parsed;
+
+  void _updateParsedFromText(String text) {
+    if (text.trim().isEmpty) {
+      if (_parsed != null) setState(() => _parsed = null);
+      return;
+    }
+    final parsed = TaskParser.parse(text);
+    setState(() => _parsed = parsed);
+  }
 
   @override
   void dispose() {
@@ -480,13 +558,19 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
   }
 
   Future<void> _submit() async {
-    final title = _controller.text.trim();
-    if (title.isEmpty) return;
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) return;
+    final parsed = _parsed ?? TaskParser.parse(raw);
+    final title = parsed.cleanTitle.isNotEmpty ? parsed.cleanTitle : raw;
+    final priority = parsed.priority ?? _priority;
+    final area = parsed.areaId ?? _area;
     String? reminderStr;
-    if (_reminderTime != null) {
+    if (parsed.scheduledTime != null) {
+      reminderStr = parsed.scheduledTime;
+    } else if (_reminderTime != null) {
       reminderStr = '${_reminderTime!.hour.toString().padLeft(2, '0')}:${_reminderTime!.minute.toString().padLeft(2, '0')}';
     }
-    await widget.onAdd(title, _priority, _area, reminderStr);
+    await widget.onAdd(title, priority, area, reminderStr);
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -499,28 +583,23 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
   }
 
   String _parseVoiceInput(String text) {
-    final lower = text.toLowerCase();
-    if (lower.contains('para trabajo') || lower.contains('de trabajo') || lower.contains('del trabajo')) {
-      setState(() => _area = 'trabajo');
-      text = text.replaceAll(RegExp(r'(para|de|del)\s+trabajo', caseSensitive: false), '').trim();
-    } else if (lower.contains('para la facu') || lower.contains('de la facu') || lower.contains('facultad')) {
-      setState(() => _area = 'estudio');
-      text = text.replaceAll(RegExp(r'(para|de)\s+(la\s+)?facu(ltad)?', caseSensitive: false), '').trim();
-    } else if (lower.contains('personal') || lower.contains('para m\u{00ED}')) {
-      setState(() => _area = 'personal');
-      text = text.replaceAll(RegExp(r'personal|para\s+m[ií]', caseSensitive: false), '').trim();
-    } else if (lower.contains('para casa') || lower.contains('de casa') || lower.contains('de la casa')) {
-      setState(() => _area = 'casa');
-      text = text.replaceAll(RegExp(r'(para|de)\s+(la\s+)?casa', caseSensitive: false), '').trim();
-    }
-    if (lower.contains('urgente') || lower.contains('primordial')) {
-      setState(() => _priority = TaskPriority.primordial);
-      text = text.replaceAll(RegExp(r'urgente|primordial', caseSensitive: false), '').trim();
-    } else if (lower.contains('importante')) {
-      setState(() => _priority = TaskPriority.importante);
-      text = text.replaceAll(RegExp(r'importante', caseSensitive: false), '').trim();
-    }
-    return text;
+    final parsed = TaskParser.parse(text);
+    setState(() {
+      _parsed = parsed;
+      if (parsed.priority != null) _priority = parsed.priority!;
+      if (parsed.areaId != null) _area = parsed.areaId;
+      if (parsed.scheduledTime != null) {
+        final parts = parsed.scheduledTime!.split(':');
+        if (parts.length == 2) {
+          final h = int.tryParse(parts[0]);
+          final m = int.tryParse(parts[1]);
+          if (h != null && m != null) {
+            _reminderTime = TimeOfDay(hour: h, minute: m);
+          }
+        }
+      }
+    });
+    return parsed.cleanTitle;
   }
 
   Color _priorityColor(TaskPriority p) => switch (p) {
@@ -624,6 +703,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                  onChanged: _updateParsedFromText,
                   onSubmitted: (_) => _submit(),
                 ),
               ),
@@ -632,10 +712,22 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                 onResult: (text) {
                   _controller.text = _parseVoiceInput(text);
                 },
+                onPartialResult: (text) {
+                  _controller.value = TextEditingValue(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                  _updateParsedFromText(text);
+                },
                 size: 44,
               ),
             ],
           ),
+          // Parser detection chips
+          if (_parsed?.hasDetections == true) ...[
+            const SizedBox(height: 10),
+            _HoyDetectionChips(parsed: _parsed!),
+          ],
           const SizedBox(height: 16),
           // Priority
           Text(
@@ -798,6 +890,7 @@ class _AreaTab extends StatelessWidget {
   final Color? color;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _AreaTab({
     required this.label,
@@ -805,41 +898,68 @@ class _AreaTab extends StatelessWidget {
     this.color,
     required this.selected,
     required this.onTap,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
-    final pillColor = color ?? context.textSecondary;
+    final pillColor = color ?? AppTheme.colorPrimary;
+    // EVERY tab is always visible as a colored pill. The selected one is
+    // bolder, brighter, slightly bigger and lifts forward with a shadow.
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(right: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      onLongPress: onLongPress,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        margin: EdgeInsets.only(
+          right: 6,
+          top: selected ? 0 : 4,
+          bottom: selected ? 0 : 2,
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: selected ? 16 : 12,
+          vertical: selected ? 10 : 8,
+        ),
         decoration: BoxDecoration(
+          // Selected: brighter fill, unselected: faint tint of its own color.
           color: selected
-              ? pillColor.withAlpha(25)
-              : pillColor.withAlpha(10),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-          border: selected
-              ? Border(
-                  top: BorderSide(color: pillColor, width: 2.5),
-                  left: BorderSide(color: pillColor.withAlpha(60)),
-                  right: BorderSide(color: pillColor.withAlpha(60)),
-                )
-              : Border.all(color: Colors.transparent),
+              ? Color.lerp(context.surfaceCard, pillColor, 0.22)
+              : pillColor.withAlpha(18),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? pillColor : pillColor.withAlpha(70),
+            width: selected ? 2 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: pillColor.withAlpha(55),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 13)),
-            const SizedBox(width: 5),
-            Text(
-              label,
+            Text(emoji, style: TextStyle(fontSize: selected ? 16 : 14)),
+            const SizedBox(width: 6),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
               style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected ? pillColor : pillColor.withAlpha(180),
+                fontSize: selected ? 13.5 : 12.5,
+                // Bold when selected, medium weight when not — text always
+                // stays fully legible thanks to the colored pill background.
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected
+                    ? context.textPrimary
+                    : pillColor,
+                letterSpacing: selected ? 0.2 : 0,
               ),
+              child: Text(label),
             ),
           ],
         ),
@@ -850,25 +970,38 @@ class _AreaTab extends StatelessWidget {
 
 
 // ── Habit pill ─────────────────────────────────────────────────────────────
-class _HabitPill extends StatelessWidget {
+class _HabitPill extends ConsumerWidget {
   final Habit habit;
   final bool isCompleted;
   final VoidCallback onToggle;
 
   const _HabitPill({required this.habit, required this.isCompleted, required this.onToggle});
 
+  Color _parseHabitColor(Color fallback) {
+    if (habit.color == null || habit.color!.isEmpty) return fallback;
+    try {
+      return Color(int.parse(habit.color!.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streak = ref.watch(habitStreakProvider(habit.id)).valueOrNull ?? 0;
+    final habitColor = _parseHabitColor(AppTheme.colorAccent);
+
     return GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isCompleted ? AppTheme.colorSuccessLight : context.surfaceCard,
+          color: isCompleted ? habitColor.withAlpha(22) : context.surfaceCard,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isCompleted ? AppTheme.colorSuccess.withAlpha(80) : context.dividerColor,
+            color: isCompleted ? habitColor.withAlpha(100) : context.dividerColor,
+            width: isCompleted ? 1.5 : 1,
           ),
           boxShadow: isCompleted ? null : AppTheme.shadowSm,
         ),
@@ -876,7 +1009,7 @@ class _HabitPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (habit.icon != null && habit.icon!.isNotEmpty)
-              Text(habit.icon!, style: const TextStyle(fontSize: 16)),
+              Text(habit.icon!, style: const TextStyle(fontSize: 18)),
             if (habit.icon != null && habit.icon!.isNotEmpty)
               const SizedBox(width: 6),
             Text(
@@ -884,13 +1017,30 @@ class _HabitPill extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: isCompleted ? AppTheme.colorSuccess : context.textPrimary,
+                color: isCompleted ? habitColor : context.textPrimary,
                 decoration: isCompleted ? TextDecoration.lineThrough : null,
               ),
             ),
             if (isCompleted) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.check_circle_rounded, size: 14, color: AppTheme.colorSuccess),
+              const SizedBox(width: 5),
+              Icon(Icons.check_circle_rounded, size: 14, color: habitColor),
+            ] else if (streak > 1) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: habitColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '🔥$streak',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: habitColor,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -1018,12 +1168,16 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
   final int completed;
   final int total;
   final Brightness brightness;
+  final Color? areaColor;
+  final Color bgColor;
 
   _StickyProgressDelegate({
     required this.progress,
     required this.completed,
     required this.total,
     required this.brightness,
+    required this.bgColor,
+    this.areaColor,
   });
 
   @override
@@ -1035,10 +1189,11 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final percent = (progress * 100).round();
     final isPinned = shrinkOffset > 0 || overlapsContent;
+    final barColor = areaColor ?? AppTheme.colorPrimary;
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: context.surfaceBase,
+        color: bgColor,
         boxShadow: isPinned
             ? [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 6, offset: const Offset(0, 2))]
             : null,
@@ -1051,7 +1206,7 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
             style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: context.textPrimary,
+              color: barColor,
             ),
           ),
           const SizedBox(width: 12),
@@ -1062,7 +1217,7 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
                 value: progress,
                 minHeight: 8,
                 backgroundColor: context.dividerColor,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.colorPrimary),
+                valueColor: AlwaysStoppedAnimation<Color>(barColor),
               ),
             ),
           ),
@@ -1085,6 +1240,517 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
       oldDelegate.progress != progress ||
       oldDelegate.completed != completed ||
       oldDelegate.total != total ||
-      oldDelegate.brightness != brightness;
+      oldDelegate.brightness != brightness ||
+      oldDelegate.areaColor != areaColor ||
+      oldDelegate.bgColor != bgColor;
 }
 
+// ── Detection chips for Hoy add-task sheet ──────────────────────────────────
+
+class _HoyDetectionChips extends StatelessWidget {
+  final ParsedTask parsed;
+  const _HoyDetectionChips({required this.parsed});
+
+  String _dayLabel(String dayId) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final parts = dayId.split('-');
+    if (parts.length != 3) return dayId;
+    final d = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    final diff = d.difference(today).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ma\u{00F1}ana';
+    if (diff == -1) return 'Ayer';
+    if (diff == 2) return 'Pasado ma\u{00F1}ana';
+    if (diff > 0 && diff < 7) return DateFormat('EEEE', 'es').format(d);
+    return DateFormat('d MMM', 'es').format(d);
+  }
+
+  String _priorityLabel(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => 'Primordial',
+    TaskPriority.importante   => 'Importante',
+    TaskPriority.puedeEsperar => 'Puede esperar',
+    TaskPriority.secundaria   => 'Side quest',
+  };
+
+  Color _priorityColor(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => AppTheme.colorDanger,
+    TaskPriority.importante   => AppTheme.colorWarning,
+    TaskPriority.puedeEsperar => AppTheme.colorPrimary,
+    TaskPriority.secundaria   => AppTheme.neutral400,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = <Widget>[];
+    if (parsed.dayId != null) {
+      chips.add(_chip(icon: Icons.event_rounded, label: _dayLabel(parsed.dayId!), color: AppTheme.colorPrimary));
+    }
+    if (parsed.scheduledTime != null) {
+      chips.add(_chip(icon: Icons.schedule_rounded, label: parsed.scheduledTime!, color: AppTheme.colorAccent));
+    }
+    if (parsed.priority != null) {
+      chips.add(_chip(icon: Icons.flag_rounded, label: _priorityLabel(parsed.priority!), color: _priorityColor(parsed.priority!)));
+    }
+    if (parsed.areaId != null) {
+      final area = getTaskArea(parsed.areaId);
+      if (area != null) {
+        chips.add(_chip(emoji: area.emoji, label: area.label, color: area.color));
+      }
+    }
+    return SizedBox(
+      height: 26,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: chips,
+      ),
+    );
+  }
+
+  Widget _chip({IconData? icon, String? emoji, required String label, required Color color}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withAlpha(80)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (emoji != null)
+            Text(emoji, style: const TextStyle(fontSize: 11))
+          else if (icon != null)
+            Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── "+" tab ────────────────────────────────────────────────────────────────
+// Minimal pill at the end of the area tab row. Taps go to the ManageAreas
+// page where the user can create / edit / reorder / delete areas.
+class _AddAreaTab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddAreaTab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(right: 6, top: 4, bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: context.dividerColor,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_rounded, size: 16, color: context.textSecondary),
+            const SizedBox(width: 4),
+            Text(
+              'Nueva',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: context.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tree view for "Todo" tab ───────────────────────────────────────────────
+// Lays out today's tasks as a side tree:
+//   └─ Sin área (tasks without an area)
+//       ├─ PRIMORDIAL
+//       ├─ IMPORTANTE
+//       └─ OTRAS
+//   └─ Trabajo
+//       ├─ PRIMORDIAL
+//       └─ …
+//   └─ Facultad
+//       └─ …
+// Each area section is collapsible and colored with its own color so the
+// visual grouping matches the area tabs above.
+class _TreeByAreaView extends StatefulWidget {
+  final List<TaskArea> areas;
+  final List<Task> primordial;
+  final List<Task> importante;
+  final List<Task> puedeEsperar;
+  final Function(String) onComplete;
+  final Function(String) onUncomplete;
+  final Function(String) onDefer;
+  final Function(String) onDelete;
+
+  const _TreeByAreaView({
+    required this.areas,
+    required this.primordial,
+    required this.importante,
+    required this.puedeEsperar,
+    required this.onComplete,
+    required this.onUncomplete,
+    required this.onDefer,
+    required this.onDelete,
+  });
+
+  @override
+  State<_TreeByAreaView> createState() => _TreeByAreaViewState();
+}
+
+class _TreeByAreaViewState extends State<_TreeByAreaView> {
+  // Collapsed-state keyed by area id; `null` key = "Sin área" branch.
+  final Set<String?> _collapsed = <String?>{};
+
+  bool _isCollapsed(String? areaId) => _collapsed.contains(areaId);
+  void _toggle(String? areaId) {
+    setState(() {
+      if (_collapsed.contains(areaId)) {
+        _collapsed.remove(areaId);
+      } else {
+        _collapsed.add(areaId);
+      }
+    });
+  }
+
+  List<Task> _filter(List<Task> src, String? areaId) =>
+      src.where((t) => t.area == areaId).toList();
+
+  @override
+  Widget build(BuildContext context) {
+    final branches = <Widget>[];
+
+    // Pre-compute the set of known area IDs. Any task whose `area` isn't in
+    // this set (including tasks with area == null) gets bucketed into the
+    // "Sin área" branch so nothing is ever invisible.
+    final knownIds = widget.areas.map((a) => a.id).toSet();
+    bool isOrphan(Task t) => t.area == null || !knownIds.contains(t.area);
+
+    // 1) "Sin área" branch — tasks with null area OR with an orphaned area id
+    // that no longer exists in the DB. This is the safety net that ensures
+    // no task is ever hidden, regardless of migration or delete order.
+    final noAreaP = widget.primordial.where(isOrphan).toList();
+    final noAreaI = widget.importante.where(isOrphan).toList();
+    final noAreaE = widget.puedeEsperar.where(isOrphan).toList();
+    if (noAreaP.isNotEmpty || noAreaI.isNotEmpty || noAreaE.isNotEmpty) {
+      branches.add(_AreaBranch(
+        areaId: null,
+        label: 'Sin área',
+        emoji: '\u{1F4CC}', // 📌
+        color: context.textSecondary,
+        primordial: noAreaP,
+        importante: noAreaI,
+        puedeEsperar: noAreaE,
+        collapsed: _isCollapsed(null),
+        onToggle: () => _toggle(null),
+        onComplete: widget.onComplete,
+        onUncomplete: widget.onUncomplete,
+        onDefer: widget.onDefer,
+        onDelete: widget.onDelete,
+      ));
+    }
+
+    // 2) One branch per area — preserves the DB sortOrder (areas list is
+    // already ordered by the stream).
+    for (final area in widget.areas) {
+      final p = _filter(widget.primordial, area.id);
+      final i = _filter(widget.importante, area.id);
+      final e = _filter(widget.puedeEsperar, area.id);
+      if (p.isEmpty && i.isEmpty && e.isEmpty) continue;
+      branches.add(_AreaBranch(
+        areaId: area.id,
+        label: area.label,
+        emoji: area.emoji,
+        color: area.color,
+        primordial: p,
+        importante: i,
+        puedeEsperar: e,
+        collapsed: _isCollapsed(area.id),
+        onToggle: () => _toggle(area.id),
+        onComplete: widget.onComplete,
+        onUncomplete: widget.onUncomplete,
+        onDefer: widget.onDefer,
+        onDelete: widget.onDelete,
+      ));
+    }
+
+    if (branches.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.spa_rounded, size: 40, color: context.textTertiary),
+              const SizedBox(height: 10),
+              Text(
+                'Ninguna tarea pendiente para hoy',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: context.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: branches,
+    );
+  }
+}
+
+// ── One area branch ────────────────────────────────────────────────────────
+class _AreaBranch extends StatelessWidget {
+  final String? areaId;
+  final String label;
+  final String emoji;
+  final Color color;
+  final List<Task> primordial;
+  final List<Task> importante;
+  final List<Task> puedeEsperar;
+  final bool collapsed;
+  final VoidCallback onToggle;
+  final Function(String) onComplete;
+  final Function(String) onUncomplete;
+  final Function(String) onDefer;
+  final Function(String) onDelete;
+
+  const _AreaBranch({
+    required this.areaId,
+    required this.label,
+    required this.emoji,
+    required this.color,
+    required this.primordial,
+    required this.importante,
+    required this.puedeEsperar,
+    required this.collapsed,
+    required this.onToggle,
+    required this.onComplete,
+    required this.onUncomplete,
+    required this.onDefer,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final total = primordial.length + importante.length + puedeEsperar.length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Area header — tap anywhere to collapse/expand.
+          GestureDetector(
+            onTap: onToggle,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: color.withAlpha(18),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withAlpha(60)),
+              ),
+              child: Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: color.withAlpha(40),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$total',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: collapsed ? -0.25 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(Icons.expand_more_rounded, color: color),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Tree contents — indented with a left color rail.
+          if (!collapsed)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Vertical "branch" rail.
+                  Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    color: color.withAlpha(60),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (primordial.isNotEmpty)
+                          _PrioritySubSection(
+                            priority: TaskPriority.primordial,
+                            tasks: primordial,
+                            onComplete: onComplete,
+                            onUncomplete: onUncomplete,
+                            onDefer: onDefer,
+                            onDelete: onDelete,
+                          ),
+                        if (importante.isNotEmpty)
+                          _PrioritySubSection(
+                            priority: TaskPriority.importante,
+                            tasks: importante,
+                            onComplete: onComplete,
+                            onUncomplete: onUncomplete,
+                            onDefer: onDefer,
+                            onDelete: onDelete,
+                          ),
+                        if (puedeEsperar.isNotEmpty)
+                          _PrioritySubSection(
+                            priority: TaskPriority.puedeEsperar,
+                            tasks: puedeEsperar,
+                            onComplete: onComplete,
+                            onUncomplete: onUncomplete,
+                            onDefer: onDefer,
+                            onDelete: onDelete,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Priority sub-section inside a branch ──────────────────────────────────
+class _PrioritySubSection extends StatelessWidget {
+  final TaskPriority priority;
+  final List<Task> tasks;
+  final Function(String) onComplete;
+  final Function(String) onUncomplete;
+  final Function(String) onDefer;
+  final Function(String) onDelete;
+
+  const _PrioritySubSection({
+    required this.priority,
+    required this.tasks,
+    required this.onComplete,
+    required this.onUncomplete,
+    required this.onDefer,
+    required this.onDelete,
+  });
+
+  Color _priorityColor(BuildContext context) => switch (priority) {
+    TaskPriority.primordial   => AppTheme.colorDanger,
+    TaskPriority.importante   => AppTheme.colorWarning,
+    TaskPriority.puedeEsperar => context.neutral400,
+    TaskPriority.secundaria   => context.neutral400,
+  };
+
+  String _priorityLabel(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => 'PRIMORDIAL',
+    TaskPriority.importante   => 'IMPORTANTE',
+    TaskPriority.puedeEsperar => 'OTRAS',
+    TaskPriority.secundaria   => 'SIDE',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _priorityColor(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sub-priority pill label.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 0, 6),
+            child: Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: c,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _priorityLabel(priority),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: c,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${tasks.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    color: context.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...tasks.map((t) => TaskCard(
+                task: t,
+                onComplete: () => onComplete(t.id),
+                onUncomplete: () => onUncomplete(t.id),
+                onDefer: () => onDefer(t.id),
+                onDelete: () => onDelete(t.id),
+              )),
+        ],
+      ),
+    );
+  }
+}

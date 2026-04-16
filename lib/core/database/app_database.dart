@@ -13,6 +13,8 @@ import 'tables/journal_entries_table.dart';
 import 'tables/weekly_plans_table.dart';
 import 'tables/week_days_table.dart';
 import 'tables/timer_sessions_table.dart';
+import 'tables/task_areas_table.dart';
+import 'tables/daily_reviews_table.dart';
 
 part 'app_database.g.dart';
 
@@ -26,18 +28,64 @@ part 'app_database.g.dart';
   WeeklyPlansTable,
   WeekDaysTable,
   TimerSessionsTable,
+  TaskAreasTable,
+  DailyReviewsTable,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async => m.createAll(),
-    onUpgrade: (m, from, to) async {},
+    onCreate: (m) async {
+      await m.createAll();
+      await _seedBuiltinAreas();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(taskAreasTable);
+        await m.createTable(dailyReviewsTable);
+        await _seedBuiltinAreas();
+      }
+    },
+    beforeOpen: (details) async {
+      // Defensive: if the areas table exists but is empty (e.g. an old
+      // restore wiped it), re-seed defaults so the UI has something to show.
+      final count = await (selectOnly(taskAreasTable)
+            ..addColumns([taskAreasTable.id.count()]))
+          .getSingleOrNull();
+      final total = count?.read(taskAreasTable.id.count()) ?? 0;
+      if (total == 0) {
+        await _seedBuiltinAreas();
+      }
+    },
   );
+
+  Future<void> _seedBuiltinAreas() async {
+    final now = DateTime.now();
+    final defaults = [
+      ('trabajo',  'Trabajo',  '\u{1F4BC}', '#5B7E9E', 0),
+      ('estudio',  'Facultad', '\u{1F4DA}', '#7B5EA7', 1),
+      ('personal', 'Personal', '\u{1F3E0}', '#5B8A5E', 2),
+      ('casa',     'Casa',     '\u{1F3E1}', '#C4963A', 3),
+      ('salud',    'Salud',    '\u{1F3E5}', '#C44B4B', 4),
+    ];
+    for (final d in defaults) {
+      await into(taskAreasTable).insertOnConflictUpdate(
+        TaskAreasTableCompanion.insert(
+          id: d.$1,
+          label: d.$2,
+          emoji: Value(d.$3),
+          colorHex: d.$4,
+          sortOrder: Value(d.$5),
+          isBuiltin: const Value(true),
+          createdAt: now,
+        ),
+      );
+    }
+  }
 }
 
 LazyDatabase _openConnection() {

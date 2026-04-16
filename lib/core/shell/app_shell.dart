@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:arquitectura_enfoque/core/providers/shell_providers.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/pages/hoy_page.dart';
@@ -86,6 +87,9 @@ class _AppShellState extends ConsumerState<AppShell> {
         onPageChanged: (index) {
           HapticFeedback.selectionClick();
           setState(() => _currentPage = index);
+          // Publish active tab so pages can react (e.g. Hoy rotates its quote
+          // every time you come back to it).
+          ref.read(currentTabIndexProvider.notifier).state = index;
         },
         physics: const BouncingScrollPhysics(),
         children: const [
@@ -171,20 +175,32 @@ class _NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      decoration: BoxDecoration(
-        color: context.surfaceCard,
-        border: Border(top: BorderSide(color: context.dividerColor)),
-        boxShadow: const [
-          BoxShadow(
-            offset: Offset(0, -2),
-            blurRadius: 8,
-            color: Color(0x0A000000),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      // Swipe horizontally on the nav bar itself to jump between pages.
+      onHorizontalDragEnd: (details) {
+        final v = details.primaryVelocity ?? 0;
+        if (v.abs() < 200) return;
+        final direction = v < 0 ? 1 : -1; // <0 = swipe left → next page
+        final target = (currentPage + direction).clamp(0, tabs.length - 1);
+        if (target != currentPage) {
+          onTabTap(target);
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        decoration: BoxDecoration(
+          color: context.surfaceCard,
+          border: Border(top: BorderSide(color: context.dividerColor)),
+          boxShadow: const [
+            BoxShadow(
+              offset: Offset(0, -2),
+              blurRadius: 8,
+              color: Color(0x0A000000),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
           final tabWidth = totalWidth / tabs.length;
@@ -277,6 +293,7 @@ class _NavBar extends StatelessWidget {
             ],
           );
         },
+      ),
       ),
     );
   }

@@ -149,4 +149,12 @@ class HabitService {
       .watch()
       .map((rows) => rows.map(_completionFromRow).toList());
   }
+
+  /// All completions across all active habits — for aggregate stats.
+  Stream<List<HabitCompletion>> watchAllCompletions() {
+    return (_db.select(_db.habitCompletionsTable)
+      ..orderBy([(t) => OrderingTerm.desc(t.dayId)]))
+      .watch()
+      .map((rows) => rows.map(_completionFromRow).toList());
+  }
 }

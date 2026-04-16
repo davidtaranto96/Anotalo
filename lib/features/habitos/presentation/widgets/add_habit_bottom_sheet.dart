@@ -123,16 +123,19 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     final isEditing = widget.initialHabit != null;
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
     return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
       padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + bottom),
       decoration: BoxDecoration(
         color: context.surfaceSheet,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: AppTheme.shadowLg,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           Center(
             child: Container(
               width: 40, height: 4,
@@ -253,6 +256,7 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

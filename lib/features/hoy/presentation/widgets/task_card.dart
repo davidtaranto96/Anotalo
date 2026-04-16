@@ -6,6 +6,7 @@ import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
 import '../../domain/models/task.dart';
+import 'add_task_bottom_sheet.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -105,13 +106,17 @@ class TaskCard extends StatelessWidget {
           ],
         ),
         child: GestureDetector(
-          // Long press en completadas → deshacer
-          onLongPress: isDone && onUncomplete != null
-              ? () {
-                  HapticFeedback.mediumImpact();
-                  onUncomplete!();
-                }
-              : null,
+          // Long press:
+          //   - Pendientes → abrir editor con los datos de la tarea.
+          //   - Completadas → deshacer (mantener el shortcut histórico).
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            if (isDone && onUncomplete != null) {
+              onUncomplete!();
+            } else if (!isDone) {
+              AddTaskBottomSheet.show(context, existing: task);
+            }
+          },
           child: Container(
           decoration: BoxDecoration(
             color: isDone ? context.neutral50 : context.surfaceCard,

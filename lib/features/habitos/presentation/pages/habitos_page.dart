@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,87 +174,108 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
 
               final weekData = weekAsync.valueOrNull ?? {};
 
+              final pendingHabits = filtered.where((h) => !completedIds.contains(h.id)).toList();
+              final completedHabits = filtered.where((h) => completedIds.contains(h.id)).toList();
+
+              final dailyHabits = filtered
+                  .where((h) => h.frequency == HabitFrequency.daily)
+                  .toList();
+              final dailyCompleted = dailyHabits
+                  .where((h) => completedIds.contains(h.id))
+                  .length;
+
               return SliverList(
                 delegate: SliverChildListDelegate([
+                  // Hero progress ring card
+                  _DailyProgressHero(
+                    completed: dailyCompleted,
+                    total: dailyHabits.length,
+                  ),
+                  // Atomic-Habits-inspired aggregate stats
+                  _AtomicStatsCard(habits: filtered),
                   // Weekly Tracker Board
                   _WeeklyTrackerBoard(
                     habits: filtered,
                     weekCompletions: weekData,
                   ),
-                  // Motivational message
-                  if (completedIds.length == habits.length && habits.isNotEmpty)
+                  // ── Pending section ──
+                  if (pendingHabits.isNotEmpty) ...[
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppTheme.colorSuccessLight,
-                              Color(0xFFD4EDDA),
-                            ],
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3, height: 14,
+                            decoration: BoxDecoration(color: AppTheme.colorPrimary, borderRadius: BorderRadius.circular(2)),
                           ),
-                          borderRadius: AppTheme.r12,
-                          border: Border.all(
-                              color: AppTheme.colorSuccess.withAlpha(60)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Text('\u{1F389}',
-                                style: TextStyle(fontSize: 18)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Todos los habitos de hoy completados!',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.colorSuccess,
-                                ),
-                              ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'PENDIENTES',
+                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: context.textTertiary, letterSpacing: 1.2),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.colorPrimary.withAlpha(20),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ],
-                        ),
+                            child: Text(
+                              '${pendingHabits.length}',
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.colorPrimary),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  // Section header
-                  Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 3,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: AppTheme.colorPrimary,
-                            borderRadius: BorderRadius.circular(2),
+                    ...pendingHabits.map((habit) => HabitCard(
+                          habit: habit,
+                          isCompleted: false,
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            AddHabitBottomSheet.showEdit(context, habit);
+                          },
+                        )),
+                  ],
+                  // ── Completed section ──
+                  if (completedHabits.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 3, height: 14,
+                            decoration: BoxDecoration(color: AppTheme.colorSuccess, borderRadius: BorderRadius.circular(2)),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'DETALLE',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: context.textTertiary,
-                            letterSpacing: 1.2,
+                          const SizedBox(width: 8),
+                          Text(
+                            'COMPLETADOS',
+                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: context.textTertiary, letterSpacing: 1.2),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppTheme.colorSuccess.withAlpha(20),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${completedHabits.length}',
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.colorSuccess),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Individual habit cards
-                  ...filtered.map((habit) => HabitCard(
-                        habit: habit,
-                        isCompleted: completedIds.contains(habit.id),
-                        onLongPress: () {
-                          HapticFeedback.mediumImpact();
-                          AddHabitBottomSheet.showEdit(context, habit);
-                        },
-                      )),
+                    ...completedHabits.map((habit) => HabitCard(
+                          habit: habit,
+                          isCompleted: true,
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            AddHabitBottomSheet.showEdit(context, habit);
+                          },
+                        )),
+                  ],
                   const SizedBox(height: 140),
                 ]),
               );
@@ -548,6 +570,460 @@ class _FilterTab extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Daily Progress Hero Card ────────────────────────────────────────────────
+
+class _DailyProgressHero extends StatelessWidget {
+  final int completed;
+  final int total;
+  const _DailyProgressHero({required this.completed, required this.total});
+
+  ({String title, String emoji}) _motivational(double pct) {
+    if (total == 0) {
+      return (title: 'Empezá tu primer hábito', emoji: '🌱');
+    }
+    if (pct >= 1.0) return (title: '¡Racha perfecta hoy!', emoji: '🔥');
+    if (pct >= 0.75) return (title: '¡Casi lo lográs!', emoji: '💪');
+    if (pct >= 0.5) return (title: '¡Vas por la mitad!', emoji: '🚀');
+    if (pct >= 0.25) return (title: 'Buen comienzo', emoji: '✨');
+    return (title: 'Dale, arrancá el día', emoji: '☀️');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = total == 0 ? 0.0 : completed / total;
+    final msg = _motivational(pct);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // Subtle gradient like racha_app hero; a bit more tint in dark mode.
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    AppTheme.colorPrimary.withAlpha(30),
+                    AppTheme.colorAccent.withAlpha(20),
+                  ]
+                : [
+                    AppTheme.colorPrimary.withAlpha(18),
+                    AppTheme.colorAccent.withAlpha(10),
+                  ],
+          ),
+          borderRadius: AppTheme.r16,
+          border: Border.all(color: AppTheme.colorPrimary.withAlpha(50)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 70,
+              height: 70,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size(70, 70),
+                    painter: _ProgressRingPainter(
+                      progress: pct,
+                      bgColor: context.neutral200,
+                      fgColor: AppTheme.colorPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${(pct * 100).round()}%',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(msg.emoji, style: const TextStyle(fontSize: 18)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          msg.title,
+                          style: GoogleFonts.lora(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: context.textPrimary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    total == 0
+                        ? 'Creá tu primer hábito'
+                        : '$completed de $total hábitos completados',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: context.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color bgColor;
+  final Color fgColor;
+
+  _ProgressRingPainter({
+    required this.progress,
+    required this.bgColor,
+    required this.fgColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 4;
+    const strokeWidth = 6.0;
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = bgColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * progress,
+        false,
+        Paint()
+          ..color = fgColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ProgressRingPainter old) =>
+      old.progress != progress ||
+      old.bgColor != bgColor ||
+      old.fgColor != fgColor;
+}
+
+// ─── Atomic Habits stats card ──────────────────────────────────────────────
+//
+// Inspired by James Clear's "Atomic Habits": identity-first, small compounding
+// improvements. Shows: longest streak across all habits, total completions,
+// 30-day completion rate, best day of the week, and an identity-style message.
+
+class _AtomicStatsCard extends ConsumerWidget {
+  final List<Habit> habits;
+  const _AtomicStatsCard({required this.habits});
+
+  static const _dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allCompletionsAsync = ref.watch(allCompletionsProvider);
+
+    return allCompletionsAsync.when(
+      loading: () => const SizedBox(height: 0),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (completions) {
+        if (habits.isEmpty) return const SizedBox.shrink();
+
+        // ── Total completions
+        final totalCompletions = completions.length;
+
+        // ── Longest streak across ALL habits (per-habit streaks, take max)
+        int longestStreak = 0;
+        // Group completions by habitId
+        final byHabit = <String, List<String>>{};
+        for (final c in completions) {
+          byHabit.putIfAbsent(c.habitId, () => []).add(c.dayId);
+        }
+        for (final days in byHabit.values) {
+          final sorted = List<String>.from(days)..sort((a, b) => b.compareTo(a));
+          int run = 0;
+          DateTime? expected;
+          for (final d in sorted) {
+            final date = idToDate(d);
+            if (expected == null) {
+              run = 1;
+              expected = date.subtract(const Duration(days: 1));
+            } else if (dateToId(expected) == d) {
+              run++;
+              expected = date.subtract(const Duration(days: 1));
+            } else {
+              if (run > longestStreak) longestStreak = run;
+              run = 1;
+              expected = date.subtract(const Duration(days: 1));
+            }
+          }
+          if (run > longestStreak) longestStreak = run;
+        }
+
+        // ── 30-day completion rate
+        final today = DateTime.now();
+        final last30 = List.generate(30, (i) {
+          final d = today.subtract(Duration(days: i));
+          return dateToId(DateTime(d.year, d.month, d.day));
+        }).toSet();
+        final dailyHabitsCount = habits
+            .where((h) => h.frequency == HabitFrequency.daily)
+            .length;
+        final completionsIn30 = completions
+            .where((c) => last30.contains(c.dayId))
+            .length;
+        final expectedIn30 = dailyHabitsCount * 30;
+        final rate30 = expectedIn30 == 0
+            ? 0.0
+            : (completionsIn30 / expectedIn30).clamp(0.0, 1.0);
+
+        // ── Best day of the week
+        final perWeekday = List<int>.filled(7, 0);
+        for (final c in completions) {
+          final d = idToDate(c.dayId);
+          perWeekday[d.weekday - 1]++;
+        }
+        int bestDayIdx = 0;
+        for (int i = 1; i < 7; i++) {
+          if (perWeekday[i] > perWeekday[bestDayIdx]) bestDayIdx = i;
+        }
+        final hasBestDay = perWeekday[bestDayIdx] > 0;
+
+        // ── Identity line (Atomic Habits framing)
+        final identity = _identityLine(habits, longestStreak, rate30);
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: context.surfaceCard,
+              borderRadius: AppTheme.r16,
+              border: Border.all(color: context.dividerColor),
+              boxShadow: AppTheme.shadowSm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('⚛️', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'HÁBITOS ATÓMICOS',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: context.textTertiary,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Stats grid — 2×2
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.local_fire_department_rounded,
+                        iconColor: AppTheme.colorWarning,
+                        value: '$longestStreak',
+                        label: 'Mejor racha',
+                        sub: longestStreak == 1 ? 'día' : 'días',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.check_circle_rounded,
+                        iconColor: AppTheme.colorSuccess,
+                        value: '$totalCompletions',
+                        label: 'Completados',
+                        sub: 'todo el tiempo',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.show_chart_rounded,
+                        iconColor: AppTheme.colorPrimary,
+                        value: '${(rate30 * 100).round()}%',
+                        label: 'Cumplimiento',
+                        sub: 'últimos 30 días',
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatTile(
+                        icon: Icons.star_rounded,
+                        iconColor: AppTheme.colorAccent,
+                        value: hasBestDay ? _dayNames[bestDayIdx] : '—',
+                        label: 'Mejor día',
+                        sub: hasBestDay
+                            ? '${perWeekday[bestDayIdx]} veces'
+                            : 'aún no hay datos',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Identity banner
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.colorPrimary.withAlpha(18),
+                    borderRadius: AppTheme.r12,
+                    border: Border.all(
+                        color: AppTheme.colorPrimary.withAlpha(50)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome_rounded,
+                          size: 16, color: AppTheme.colorPrimary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          identity,
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.colorPrimary,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _identityLine(List<Habit> habits, int longestStreak, double rate30) {
+    if (longestStreak == 0) {
+      return 'Cada pequeña acción es un voto por la persona que querés ser.';
+    }
+    if (rate30 >= 0.8) {
+      return 'Sos alguien que cumple con lo que se propone.';
+    }
+    if (rate30 >= 0.5) {
+      return 'Paso a paso estás construyendo mejores hábitos.';
+    }
+    if (longestStreak >= 7) {
+      return 'Tu mejor racha demuestra de qué sos capaz.';
+    }
+    return 'Lo que hacés hoy define lo que serás mañana.';
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
+  final String sub;
+  const _StatTile({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+    required this.sub,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: context.surfaceBase,
+        borderRadius: AppTheme.r12,
+        border: Border.all(color: context.dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: context.textTertiary,
+                    letterSpacing: 0.4,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.lora(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: context.textPrimary,
+              height: 1.0,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            sub,
+            style: GoogleFonts.inter(
+              fontSize: 10.5,
+              color: context.textTertiary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

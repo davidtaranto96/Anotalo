@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import '../../../../../core/widgets/voice_input_button.dart';
 import '../../../hoy/domain/models/task.dart';
 import '../../../hoy/presentation/providers/task_provider.dart';
 import '../../domain/models/project.dart';
+import '../../domain/models/project_note.dart';
 import '../providers/project_provider.dart';
 import '../../../../../core/utils/format_utils.dart';
 
@@ -31,21 +33,85 @@ class ProjectDetailSheet extends ConsumerStatefulWidget {
 }
 
 class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
-  late final TextEditingController _notesController;
   final TextEditingController _addTaskController = TextEditingController();
+  final TextEditingController _newNoteController = TextEditingController();
+  final TextEditingController _editNoteController = TextEditingController();
+  TaskPriority _addTaskPriority = TaskPriority.puedeEsperar;
+  List<ProjectNote> _notes = [];
+  String? _editingNoteId;
   static const _uuid = Uuid();
+
+  TaskPriority _nextPriority(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => TaskPriority.importante,
+    TaskPriority.importante   => TaskPriority.puedeEsperar,
+    TaskPriority.puedeEsperar => TaskPriority.primordial,
+    TaskPriority.secundaria   => TaskPriority.primordial,
+  };
 
   @override
   void initState() {
     super.initState();
-    _notesController = TextEditingController(text: widget.project.notes ?? '');
+    _notes = _decodeNotes(widget.project.notes);
   }
 
   @override
   void dispose() {
-    _notesController.dispose();
     _addTaskController.dispose();
+    _newNoteController.dispose();
+    _editNoteController.dispose();
     super.dispose();
+  }
+
+  List<ProjectNote> _decodeNotes(String? raw) {
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final list = jsonDecode(raw) as List;
+      return list.map((e) => ProjectNote.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      // Legacy: plain text stored as notes — migrate to single note
+      if (raw.trim().isNotEmpty) {
+        return [ProjectNote(id: _uuid.v4(), text: raw.trim(), createdAt: widget.project.createdAt)];
+      }
+      return [];
+    }
+  }
+
+  String _encodeNotes(List<ProjectNote> notes) => jsonEncode(notes.map((n) => n.toJson()).toList());
+
+  Future<void> _saveNotes() async {
+    await ref.read(projectServiceProvider).updateNotes(
+      widget.project.id,
+      _encodeNotes(_notes),
+    );
+  }
+
+  void _addNote(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    setState(() {
+      _notes = [
+        ProjectNote(id: _uuid.v4(), text: trimmed, createdAt: DateTime.now()),
+        ..._notes,
+      ];
+    });
+    _newNoteController.clear();
+    _saveNotes();
+  }
+
+  void _deleteNote(String id) {
+    setState(() => _notes = _notes.where((n) => n.id != id).toList());
+    _saveNotes();
+  }
+
+  void _commitEdit(String id) {
+    final newText = _editNoteController.text.trim();
+    if (newText.isNotEmpty) {
+      setState(() {
+        _notes = _notes.map((n) => n.id == id ? ProjectNote(id: n.id, text: newText, createdAt: n.createdAt) : n).toList();
+      });
+      _saveNotes();
+    }
+    setState(() => _editingNoteId = null);
   }
 
   Color _parseColor(String hex) {
@@ -266,7 +332,28 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.add_rounded, size: 20, color: context.textTertiary),
+                    GestureDetector(
+                      onTap: () => setState(() => _addTaskPriority = _nextPriority(_addTaskPriority)),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: _priorityColor(_addTaskPriority).withAlpha(30),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _priorityColor(_addTaskPriority), width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _addTaskPriority.name[0].toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: _priorityColor(_addTaskPriority),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
@@ -285,7 +372,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                           final task = Task(
                             id: taskId,
                             title: title,
-                            priority: TaskPriority.puedeEsperar,
+                            priority: _addTaskPriority,
                             status: TaskStatus.pending,
                             parentProjectId: widget.project.id,
                             dayId: todayId(),
@@ -314,13 +401,17 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
               ),
               child: Row(
                 children: [
-                  // Priority dot
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _priorityColor(task.priority),
+                  // Priority dot (tappable — cycles priority)
+                  GestureDetector(
+                    onTap: () => taskService.updatePriority(task.id, _nextPriority(task.priority)),
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _priorityColor(task.priority).withAlpha(35),
+                        border: Border.all(color: _priorityColor(task.priority), width: 1.5),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -389,83 +480,153 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
 
   // ── Notas tab ──
   Widget _buildNotasTab() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Toolbar: voice mic + save button
-          Row(
+    final dateFormatter = DateFormat('d MMM, HH:mm', 'es');
+    return Column(
+      children: [
+        // Notes list
+        Expanded(
+          child: _notes.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.notes_rounded, size: 40, color: context.textTertiary.withAlpha(80)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Sin notas todavía',
+                        style: GoogleFonts.inter(fontSize: 14, color: context.textTertiary),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  itemCount: _notes.length,
+                  itemBuilder: (_, i) {
+                    final note = _notes[i];
+                    final isEditing = _editingNoteId == note.id;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      decoration: BoxDecoration(
+                        color: context.surfaceCard,
+                        borderRadius: AppTheme.r12,
+                        border: Border.all(color: context.dividerColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 8, 4),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: isEditing
+                                      ? TextField(
+                                          controller: _editNoteController,
+                                          autofocus: true,
+                                          maxLines: null,
+                                          style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary, height: 1.5),
+                                          decoration: const InputDecoration(
+                                            border: InputBorder.none,
+                                            contentPadding: EdgeInsets.zero,
+                                            isDense: true,
+                                          ),
+                                          onSubmitted: (_) => _commitEdit(note.id),
+                                        )
+                                      : GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _editingNoteId = note.id;
+                                              _editNoteController.text = note.text;
+                                              _editNoteController.selection = TextSelection.collapsed(offset: note.text.length);
+                                            });
+                                          },
+                                          child: Text(
+                                            note.text,
+                                            style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary, height: 1.5),
+                                          ),
+                                        ),
+                                ),
+                                if (isEditing)
+                                  GestureDetector(
+                                    onTap: () => _commitEdit(note.id),
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Icon(Icons.check_rounded, size: 18, color: AppTheme.colorSuccess),
+                                    ),
+                                  )
+                                else
+                                  GestureDetector(
+                                    onTap: () => _deleteNote(note.id),
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Icon(Icons.close_rounded, size: 16, color: context.textTertiary),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                            child: Text(
+                              dateFormatter.format(note.createdAt),
+                              style: GoogleFonts.inter(fontSize: 11, color: context.textTertiary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+        // Add note row
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: context.surfaceInput,
+            borderRadius: AppTheme.r12,
+            border: Border.all(color: context.dividerColor),
+          ),
+          child: Row(
             children: [
               VoiceInputButton(
-                size: 40,
+                size: 36,
                 onResult: (text) {
-                  final current = _notesController.text;
-                  final separator = current.isNotEmpty ? '\n' : '';
-                  _notesController.text = '$current$separator$text';
-                  _notesController.selection = TextSelection.collapsed(
-                    offset: _notesController.text.length,
-                  );
+                  final current = _newNoteController.text;
+                  final sep = current.isNotEmpty ? ' ' : '';
+                  _newNoteController.text = '$current$sep$text';
+                  _newNoteController.selection = TextSelection.collapsed(offset: _newNoteController.text.length);
                 },
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  'Dictá o escribí tus notas',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: context.textTertiary,
+                child: TextField(
+                  controller: _newNoteController,
+                  maxLines: null,
+                  style: GoogleFonts.inter(fontSize: 14, color: context.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: 'Agregar nota...',
+                    hintStyle: GoogleFonts.inter(fontSize: 14, color: context.textTertiary),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    isDense: true,
                   ),
+                  onSubmitted: _addNote,
                 ),
               ),
-              FilledButton.tonal(
-                onPressed: () {
-                  ref.read(projectServiceProvider).updateNotes(
-                    widget.project.id,
-                    _notesController.text,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Notas guardadas', style: GoogleFonts.inter()),
-                      backgroundColor: AppTheme.colorSuccess,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              GestureDetector(
+                onTap: () => _addNote(_newNoteController.text),
+                child: const Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Icon(Icons.send_rounded, size: 20, color: AppTheme.colorPrimary),
                 ),
-                child: Text('Guardar', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: TextField(
-              controller: _notesController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: context.textPrimary,
-                height: 1.6,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Ideas, presupuesto, contexto, links...',
-                hintStyle: GoogleFonts.inter(color: context.textTertiary, fontSize: 14),
-                filled: true,
-                fillColor: context.surfaceInput,
-                border: OutlineInputBorder(
-                  borderRadius: AppTheme.r12,
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.all(16),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

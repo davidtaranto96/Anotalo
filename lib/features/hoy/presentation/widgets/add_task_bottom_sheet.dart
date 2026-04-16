@@ -8,18 +8,24 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../../../../core/widgets/voice_input_button.dart';
+import '../../../../../core/logic/task_parser.dart';
+import '../../../../../core/logic/user_prefs.dart';
 import '../../domain/models/task.dart';
 import '../providers/task_provider.dart';
 
 class AddTaskBottomSheet extends ConsumerStatefulWidget {
-  const AddTaskBottomSheet({super.key});
+  /// When provided, the sheet opens in edit mode: fields are pre-filled
+  /// and the "Agregar tarea" button updates the task instead of inserting.
+  final Task? existing;
 
-  static void show(BuildContext context) {
+  const AddTaskBottomSheet({super.key, this.existing});
+
+  static void show(BuildContext context, {Task? existing}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const AddTaskBottomSheet(),
+      builder: (_) => AddTaskBottomSheet(existing: existing),
     );
   }
 
@@ -32,7 +38,43 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
   TaskPriority _priority = TaskPriority.primordial;
   String? _area;
   TimeOfDay? _reminderTime;
+  ParsedTask? _parsed;
+  bool _initialized = false;
   static const _uuid = Uuid();
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final existing = widget.existing;
+      if (existing != null) {
+        // Edit mode → pre-fill from the task.
+        _controller.text = existing.title;
+        _priority = existing.priority;
+        _area = existing.area;
+        if (existing.reminder != null) {
+          final parts = existing.reminder!.split(':');
+          if (parts.length == 2) {
+            final h = int.tryParse(parts[0]);
+            final m = int.tryParse(parts[1]);
+            if (h != null && m != null) {
+              _reminderTime = TimeOfDay(hour: h, minute: m);
+            }
+          }
+        }
+        _initialized = true;
+      } else {
+        final prefs = ref.read(userPrefsProvider);
+        setState(() {
+          _priority = prefs.defaultPriority;
+          _area = prefs.defaultArea;
+          _initialized = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -40,82 +82,75 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
     super.dispose();
   }
 
+  void _updateParsed(String text) {
+    if (text.trim().isEmpty) {
+      if (_parsed != null) setState(() => _parsed = null);
+      return;
+    }
+    setState(() => _parsed = TaskParser.parse(text));
+  }
+
   Future<void> _submit() async {
-    final title = _controller.text.trim();
-    if (title.isEmpty) return;
+    final raw = _controller.text.trim();
+    if (raw.isEmpty) return;
+    final parsed = _parsed ?? TaskParser.parse(raw);
+    // When editing, don't let the parser change priority/area/day silently —
+    // honour the current form values (user may have tweaked them in the UI).
+    final title = parsed.cleanTitle.isNotEmpty ? parsed.cleanTitle : raw;
+    final priority = _isEditing ? _priority : (parsed.priority ?? _priority);
+    final area = _isEditing ? _area : (parsed.areaId ?? _area);
     String? reminderStr;
-    if (_reminderTime != null) {
+    if (!_isEditing && parsed.scheduledTime != null) {
+      reminderStr = parsed.scheduledTime;
+    } else if (_reminderTime != null) {
       reminderStr =
           '${_reminderTime!.hour.toString().padLeft(2, '0')}:${_reminderTime!.minute.toString().padLeft(2, '0')}';
     }
     HapticFeedback.lightImpact();
-    await ref.read(taskServiceProvider).addTask(Task(
-      id: _uuid.v4(),
-      title: title,
-      priority: _priority,
-      status: TaskStatus.pending,
-      area: _area,
-      reminder: reminderStr,
-      dayId: todayId(),
-      createdAt: DateTime.now(),
-    ));
+    final service = ref.read(taskServiceProvider);
+    if (_isEditing) {
+      await service.updateTask(
+        id: widget.existing!.id,
+        title: title,
+        priority: priority,
+        area: area,
+        clearArea: area == null,
+        reminder: reminderStr,
+        clearReminder: reminderStr == null,
+      );
+    } else {
+      await service.addTask(Task(
+        id: _uuid.v4(),
+        title: title,
+        priority: priority,
+        status: TaskStatus.pending,
+        area: area,
+        reminder: reminderStr,
+        dayId: parsed.dayId ?? todayId(),
+        createdAt: DateTime.now(),
+      ));
+    }
     if (mounted) Navigator.of(context).pop();
   }
 
   String _parseVoiceInput(String text) {
-    final lower = text.toLowerCase();
-    if (lower.contains('para trabajo') ||
-        lower.contains('de trabajo') ||
-        lower.contains('del trabajo')) {
-      setState(() => _area = 'trabajo');
-      text = text
-          .replaceAll(
-              RegExp(r'(para|de|del)\s+trabajo', caseSensitive: false), '')
-          .trim();
-    } else if (lower.contains('para la facu') ||
-        lower.contains('de la facu') ||
-        lower.contains('facultad')) {
-      setState(() => _area = 'estudio');
-      text = text
-          .replaceAll(
-              RegExp(r'(para|de)\s+(la\s+)?facu(ltad)?',
-                  caseSensitive: false),
-              '')
-          .trim();
-    } else if (lower.contains('personal') || lower.contains('para mí')) {
-      setState(() => _area = 'personal');
-      text = text
-          .replaceAll(
-              RegExp(r'personal|para\s+m[ií]', caseSensitive: false), '')
-          .trim();
-    } else if (lower.contains('para casa') ||
-        lower.contains('de casa') ||
-        lower.contains('de la casa')) {
-      setState(() => _area = 'casa');
-      text = text
-          .replaceAll(
-              RegExp(r'(para|de)\s+(la\s+)?casa', caseSensitive: false), '')
-          .trim();
-    } else if (lower.contains('para salud') || lower.contains('de salud')) {
-      setState(() => _area = 'salud');
-      text = text
-          .replaceAll(
-              RegExp(r'(para|de)\s+salud', caseSensitive: false), '')
-          .trim();
-    }
-    if (lower.contains('urgente') || lower.contains('primordial')) {
-      setState(() => _priority = TaskPriority.primordial);
-      text = text
-          .replaceAll(
-              RegExp(r'urgente|primordial', caseSensitive: false), '')
-          .trim();
-    } else if (lower.contains('importante')) {
-      setState(() => _priority = TaskPriority.importante);
-      text = text
-          .replaceAll(RegExp(r'importante', caseSensitive: false), '')
-          .trim();
-    }
-    return text;
+    final parsed = TaskParser.parse(text);
+    setState(() {
+      _parsed = parsed;
+      if (parsed.priority != null) _priority = parsed.priority!;
+      if (parsed.areaId != null) _area = parsed.areaId;
+      if (parsed.scheduledTime != null) {
+        final parts = parsed.scheduledTime!.split(':');
+        if (parts.length == 2) {
+          final h = int.tryParse(parts[0]);
+          final m = int.tryParse(parts[1]);
+          if (h != null && m != null) {
+            _reminderTime = TimeOfDay(hour: h, minute: m);
+          }
+        }
+      }
+    });
+    return parsed.cleanTitle;
   }
 
   Future<void> _pickReminderTime() async {
@@ -167,7 +202,7 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
           ),
           const SizedBox(height: 14),
           Text(
-            'Nueva tarea',
+            _isEditing ? 'Editar tarea' : 'Nueva tarea',
             style: GoogleFonts.lora(
               fontSize: 20,
               fontWeight: FontWeight.w600,
@@ -195,6 +230,7 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                  onChanged: _updateParsed,
                   onSubmitted: (_) => _submit(),
                 ),
               ),
@@ -202,10 +238,21 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
               VoiceInputButton(
                 onResult: (text) => setState(
                     () => _controller.text = _parseVoiceInput(text)),
+                onPartialResult: (text) {
+                  _controller.value = TextEditingValue(
+                    text: text,
+                    selection: TextSelection.collapsed(offset: text.length),
+                  );
+                  _updateParsed(text);
+                },
                 size: 44,
               ),
             ],
           ),
+          if (_parsed?.hasDetections == true) ...[
+            const SizedBox(height: 10),
+            _SheetDetectionChips(parsed: _parsed!),
+          ],
           const SizedBox(height: 14),
 
           // ── Prioridad ───────────────────────────────────────────────────
@@ -332,7 +379,7 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Agregar tarea',
+              child: Text(_isEditing ? 'Guardar cambios' : 'Agregar tarea',
                   style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -373,6 +420,98 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
                 )),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Detection chips (parser feedback) ───────────────────────────────────────
+
+class _SheetDetectionChips extends StatelessWidget {
+  final ParsedTask parsed;
+  const _SheetDetectionChips({required this.parsed});
+
+  String _dayLabel(String dayId) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final parts = dayId.split('-');
+    if (parts.length != 3) return dayId;
+    final d = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    final diff = d.difference(today).inDays;
+    if (diff == 0) return 'Hoy';
+    if (diff == 1) return 'Ma\u{00F1}ana';
+    if (diff == -1) return 'Ayer';
+    if (diff == 2) return 'Pasado ma\u{00F1}ana';
+    return '${d.day}/${d.month}';
+  }
+
+  String _priorityLabel(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => 'Primordial',
+    TaskPriority.importante   => 'Importante',
+    TaskPriority.puedeEsperar => 'Puede esperar',
+    TaskPriority.secundaria   => 'Side quest',
+  };
+
+  Color _priorityColor(TaskPriority p) => switch (p) {
+    TaskPriority.primordial   => AppTheme.colorDanger,
+    TaskPriority.importante   => AppTheme.colorWarning,
+    TaskPriority.puedeEsperar => AppTheme.colorPrimary,
+    TaskPriority.secundaria   => AppTheme.neutral400,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final chips = <Widget>[];
+    if (parsed.dayId != null) {
+      chips.add(_chip(icon: Icons.event_rounded, label: _dayLabel(parsed.dayId!), color: AppTheme.colorPrimary));
+    }
+    if (parsed.scheduledTime != null) {
+      chips.add(_chip(icon: Icons.schedule_rounded, label: parsed.scheduledTime!, color: AppTheme.colorAccent));
+    }
+    if (parsed.priority != null) {
+      chips.add(_chip(icon: Icons.flag_rounded, label: _priorityLabel(parsed.priority!), color: _priorityColor(parsed.priority!)));
+    }
+    if (parsed.areaId != null) {
+      final area = getTaskArea(parsed.areaId);
+      if (area != null) {
+        chips.add(_chip(emoji: area.emoji, label: area.label, color: area.color));
+      }
+    }
+    return SizedBox(
+      height: 26,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: chips,
+      ),
+    );
+  }
+
+  Widget _chip({IconData? icon, String? emoji, required String label, required Color color}) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withAlpha(22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withAlpha(80)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (emoji != null)
+            Text(emoji, style: const TextStyle(fontSize: 11))
+          else if (icon != null)
+            Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

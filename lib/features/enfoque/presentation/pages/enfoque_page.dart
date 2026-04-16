@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_utils.dart';
+import '../../../../core/logic/user_prefs.dart';
 import '../providers/timer_provider.dart';
 import '../../domain/models/timer_state.dart';
 import '../../../hoy/domain/models/task.dart';
@@ -19,6 +21,33 @@ class EnfoquePage extends ConsumerWidget {
     final state = ref.watch(timerNotifierProvider);
     final notifier = ref.read(timerNotifierProvider.notifier);
     final todayTasksAsync = ref.watch(todayTasksProvider);
+
+    // Apply user's preferred default timer mode on idle (fires when prefs load
+    // and when user changes the default in Settings).
+    ref.listen<UserPrefs>(userPrefsProvider, (prev, next) {
+      if (state.status == TimerStatus.idle && state.mode != next.defaultTimerMode) {
+        notifier.setMode(next.defaultTimerMode);
+      }
+    });
+
+    // Show completion dialog when a session ends. If a task is linked we ask
+    // whether to mark it done or add more time to finish it.
+    ref.listen<TimerState>(timerNotifierProvider, (prev, next) {
+      final justCompleted = prev?.status != TimerStatus.completed &&
+          next.status == TimerStatus.completed;
+      if (!justCompleted) return;
+      final tasks = ref.read(todayTasksProvider).valueOrNull ?? [];
+      Task? linked;
+      if (next.linkedTaskId != null) {
+        try {
+          linked = tasks.firstWhere((t) => t.id == next.linkedTaskId);
+        } catch (_) {}
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        _showCompletionSheet(context, ref, linked);
+      });
+    });
 
     final todayTasks = (todayTasksAsync.valueOrNull ?? [])
         .where((t) => t.status != TaskStatus.done && t.status != TaskStatus.deleted)
@@ -299,6 +328,157 @@ class EnfoquePage extends ConsumerWidget {
     TimerStatus.paused    => 'Pausado',
     TimerStatus.completed => '¡Sesión completada!',
   };
+}
+
+/// Bottom sheet shown when a focus session ends. Offers to mark the linked
+/// task as done, extend the timer by N minutes, or close.
+void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask) {
+  HapticFeedback.mediumImpact();
+  showModalBottomSheet<void>(
+    context: context,
+    isDismissible: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetCtx) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        decoration: BoxDecoration(
+          color: sheetCtx.surfaceSheet,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: AppTheme.shadowLg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: sheetCtx.dividerColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                const Text('🎉', style: TextStyle(fontSize: 26)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '¡Sesión completada!',
+                    style: GoogleFonts.lora(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: sheetCtx.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (linkedTask != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '¿Completaste "${linkedTask.title}"?',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: sheetCtx.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        HapticFeedback.lightImpact();
+                        await ref
+                            .read(taskServiceProvider)
+                            .completeTask(linkedTask.id);
+                        ref.read(timerNotifierProvider.notifier).resetToIdle();
+                        if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+                      },
+                      icon: const Icon(Icons.check_rounded),
+                      label: const Text('Completada'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.colorSuccess,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ] else ...[
+              const SizedBox(height: 10),
+              Text(
+                '¿Querés agregar más tiempo o terminar?',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: sheetCtx.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Text(
+              'Agregar tiempo',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: sheetCtx.textTertiary,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (final mins in const [5, 10, 15])
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: mins == 15 ? 0 : 6),
+                      child: OutlinedButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          ref
+                              .read(timerNotifierProvider.notifier)
+                              .extendBy(mins * 60);
+                          if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: sheetCtx.dividerColor),
+                          foregroundColor: AppTheme.colorPrimary,
+                        ),
+                        child: Text('+$mins min',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            )),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                ref.read(timerNotifierProvider.notifier).resetToIdle();
+                if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+              },
+              child: Text(
+                'Terminar',
+                style: GoogleFonts.inter(
+                  color: sheetCtx.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _TaskOption extends StatelessWidget {

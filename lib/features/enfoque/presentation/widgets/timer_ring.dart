@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class TimerRing extends StatefulWidget {
   final double progress;
@@ -53,6 +54,13 @@ class _TimerRingState extends State<TimerRing>
 
   @override
   Widget build(BuildContext context) {
+    // Theme-aware colors so the time and background ring stay visible on
+    // both dark and light mode.
+    final ringBg = context.dividerColor;
+    final timeColor = widget.isRunning
+        ? AppTheme.colorPrimary
+        : context.textPrimary;
+
     return SizedBox(
       width: 220,
       height: 220,
@@ -73,6 +81,7 @@ class _TimerRingState extends State<TimerRing>
                       progress: smoothProgress,
                       isRunning: widget.isRunning,
                       glowIntensity: _glowController.value,
+                      backgroundColor: ringBg,
                     ),
                   );
                 },
@@ -91,9 +100,7 @@ class _TimerRingState extends State<TimerRing>
                     fontFamily: 'Inter',
                     fontSize: 48,
                     fontWeight: FontWeight.w700,
-                    color: widget.isRunning
-                        ? AppTheme.colorPrimary
-                        : AppTheme.textPrimary,
+                    color: timeColor,
                     letterSpacing: -1,
                   ),
                 ),
@@ -110,11 +117,13 @@ class _RingPainter extends CustomPainter {
   final double progress;
   final bool isRunning;
   final double glowIntensity;
+  final Color backgroundColor;
 
   _RingPainter({
     required this.progress,
     required this.isRunning,
     required this.glowIntensity,
+    required this.backgroundColor,
   });
 
   @override
@@ -123,12 +132,12 @@ class _RingPainter extends CustomPainter {
     final radius = size.width / 2 - 10;
     const strokeWidth = 8.0;
 
-    // Background ring
+    // Background ring (theme-aware)
     canvas.drawCircle(
       center,
       radius,
       Paint()
-        ..color = AppTheme.surfaceElevated
+        ..color = backgroundColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth,
     );
@@ -173,5 +182,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) =>
       old.progress != progress ||
       old.isRunning != isRunning ||
-      old.glowIntensity != glowIntensity;
+      old.glowIntensity != glowIntensity ||
+      old.backgroundColor != backgroundColor;
 }

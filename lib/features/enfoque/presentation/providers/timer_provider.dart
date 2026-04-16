@@ -78,12 +78,48 @@ class TimerNotifier extends StateNotifier<TimerState> {
 
   void _complete() {
     _timer?.cancel();
+    // Triple pulse haptic + system alert sound so the user feels and hears
+    // the session end even with the app in the background.
     HapticFeedback.heavyImpact();
+    Future.delayed(const Duration(milliseconds: 180), () {
+      HapticFeedback.heavyImpact();
+    });
+    Future.delayed(const Duration(milliseconds: 360), () {
+      HapticFeedback.heavyImpact();
+    });
+    SystemSound.play(SystemSoundType.alert);
     _saveSession(completed: true);
     state = state.copyWith(
       status: TimerStatus.completed,
       remainingSeconds: 0,
       sessionsCompleted: state.sessionsCompleted + 1,
+    );
+  }
+
+  /// Extend an already-completed (or running/paused) session by [extraSeconds].
+  /// Used by the completion dialog when the user wants more time to finish a task.
+  void extendBy(int extraSeconds) {
+    if (extraSeconds <= 0) return;
+    HapticFeedback.lightImpact();
+    _timer?.cancel();
+    state = state.copyWith(
+      status: TimerStatus.running,
+      remainingSeconds: extraSeconds,
+      totalSeconds: state.totalSeconds + extraSeconds,
+    );
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  /// Reset to idle without saving (used after handling the completion dialog).
+  void resetToIdle() {
+    _timer?.cancel();
+    state = TimerState(
+      mode: state.mode,
+      status: TimerStatus.idle,
+      remainingSeconds: state.mode.durationSeconds,
+      totalSeconds: state.mode.durationSeconds,
+      sessionsCompleted: state.sessionsCompleted,
+      linkedTaskId: state.linkedTaskId,
     );
   }
 

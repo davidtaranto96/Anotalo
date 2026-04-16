@@ -5126,6 +5126,1194 @@ class TimerSessionsTableCompanion
   }
 }
 
+class $TaskAreasTableTable extends TaskAreasTable
+    with TableInfo<$TaskAreasTableTable, TaskAreasTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TaskAreasTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emojiMeta = const VerificationMeta('emoji');
+  @override
+  late final GeneratedColumn<String> emoji = GeneratedColumn<String>(
+    'emoji',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconNameMeta = const VerificationMeta(
+    'iconName',
+  );
+  @override
+  late final GeneratedColumn<String> iconName = GeneratedColumn<String>(
+    'icon_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isBuiltinMeta = const VerificationMeta(
+    'isBuiltin',
+  );
+  @override
+  late final GeneratedColumn<bool> isBuiltin = GeneratedColumn<bool>(
+    'is_builtin',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_builtin" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    label,
+    emoji,
+    colorHex,
+    iconName,
+    sortOrder,
+    isBuiltin,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'task_areas_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TaskAreasTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('emoji')) {
+      context.handle(
+        _emojiMeta,
+        emoji.isAcceptableOrUnknown(data['emoji']!, _emojiMeta),
+      );
+    }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorHexMeta);
+    }
+    if (data.containsKey('icon_name')) {
+      context.handle(
+        _iconNameMeta,
+        iconName.isAcceptableOrUnknown(data['icon_name']!, _iconNameMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('is_builtin')) {
+      context.handle(
+        _isBuiltinMeta,
+        isBuiltin.isAcceptableOrUnknown(data['is_builtin']!, _isBuiltinMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TaskAreasTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TaskAreasTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      emoji: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emoji'],
+      )!,
+      colorHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_hex'],
+      )!,
+      iconName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_name'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      isBuiltin: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_builtin'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TaskAreasTableTable createAlias(String alias) {
+    return $TaskAreasTableTable(attachedDatabase, alias);
+  }
+}
+
+class TaskAreasTableData extends DataClass
+    implements Insertable<TaskAreasTableData> {
+  final String id;
+  final String label;
+  final String emoji;
+  final String colorHex;
+  final String? iconName;
+  final int sortOrder;
+  final bool isBuiltin;
+  final DateTime createdAt;
+  const TaskAreasTableData({
+    required this.id,
+    required this.label,
+    required this.emoji,
+    required this.colorHex,
+    this.iconName,
+    required this.sortOrder,
+    required this.isBuiltin,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['label'] = Variable<String>(label);
+    map['emoji'] = Variable<String>(emoji);
+    map['color_hex'] = Variable<String>(colorHex);
+    if (!nullToAbsent || iconName != null) {
+      map['icon_name'] = Variable<String>(iconName);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['is_builtin'] = Variable<bool>(isBuiltin);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TaskAreasTableCompanion toCompanion(bool nullToAbsent) {
+    return TaskAreasTableCompanion(
+      id: Value(id),
+      label: Value(label),
+      emoji: Value(emoji),
+      colorHex: Value(colorHex),
+      iconName: iconName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconName),
+      sortOrder: Value(sortOrder),
+      isBuiltin: Value(isBuiltin),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TaskAreasTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TaskAreasTableData(
+      id: serializer.fromJson<String>(json['id']),
+      label: serializer.fromJson<String>(json['label']),
+      emoji: serializer.fromJson<String>(json['emoji']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
+      iconName: serializer.fromJson<String?>(json['iconName']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      isBuiltin: serializer.fromJson<bool>(json['isBuiltin']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'label': serializer.toJson<String>(label),
+      'emoji': serializer.toJson<String>(emoji),
+      'colorHex': serializer.toJson<String>(colorHex),
+      'iconName': serializer.toJson<String?>(iconName),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'isBuiltin': serializer.toJson<bool>(isBuiltin),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TaskAreasTableData copyWith({
+    String? id,
+    String? label,
+    String? emoji,
+    String? colorHex,
+    Value<String?> iconName = const Value.absent(),
+    int? sortOrder,
+    bool? isBuiltin,
+    DateTime? createdAt,
+  }) => TaskAreasTableData(
+    id: id ?? this.id,
+    label: label ?? this.label,
+    emoji: emoji ?? this.emoji,
+    colorHex: colorHex ?? this.colorHex,
+    iconName: iconName.present ? iconName.value : this.iconName,
+    sortOrder: sortOrder ?? this.sortOrder,
+    isBuiltin: isBuiltin ?? this.isBuiltin,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TaskAreasTableData copyWithCompanion(TaskAreasTableCompanion data) {
+    return TaskAreasTableData(
+      id: data.id.present ? data.id.value : this.id,
+      label: data.label.present ? data.label.value : this.label,
+      emoji: data.emoji.present ? data.emoji.value : this.emoji,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
+      iconName: data.iconName.present ? data.iconName.value : this.iconName,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      isBuiltin: data.isBuiltin.present ? data.isBuiltin.value : this.isBuiltin,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskAreasTableData(')
+          ..write('id: $id, ')
+          ..write('label: $label, ')
+          ..write('emoji: $emoji, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('iconName: $iconName, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isBuiltin: $isBuiltin, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    label,
+    emoji,
+    colorHex,
+    iconName,
+    sortOrder,
+    isBuiltin,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TaskAreasTableData &&
+          other.id == this.id &&
+          other.label == this.label &&
+          other.emoji == this.emoji &&
+          other.colorHex == this.colorHex &&
+          other.iconName == this.iconName &&
+          other.sortOrder == this.sortOrder &&
+          other.isBuiltin == this.isBuiltin &&
+          other.createdAt == this.createdAt);
+}
+
+class TaskAreasTableCompanion extends UpdateCompanion<TaskAreasTableData> {
+  final Value<String> id;
+  final Value<String> label;
+  final Value<String> emoji;
+  final Value<String> colorHex;
+  final Value<String?> iconName;
+  final Value<int> sortOrder;
+  final Value<bool> isBuiltin;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const TaskAreasTableCompanion({
+    this.id = const Value.absent(),
+    this.label = const Value.absent(),
+    this.emoji = const Value.absent(),
+    this.colorHex = const Value.absent(),
+    this.iconName = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.isBuiltin = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TaskAreasTableCompanion.insert({
+    required String id,
+    required String label,
+    this.emoji = const Value.absent(),
+    required String colorHex,
+    this.iconName = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.isBuiltin = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       label = Value(label),
+       colorHex = Value(colorHex),
+       createdAt = Value(createdAt);
+  static Insertable<TaskAreasTableData> custom({
+    Expression<String>? id,
+    Expression<String>? label,
+    Expression<String>? emoji,
+    Expression<String>? colorHex,
+    Expression<String>? iconName,
+    Expression<int>? sortOrder,
+    Expression<bool>? isBuiltin,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (label != null) 'label': label,
+      if (emoji != null) 'emoji': emoji,
+      if (colorHex != null) 'color_hex': colorHex,
+      if (iconName != null) 'icon_name': iconName,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (isBuiltin != null) 'is_builtin': isBuiltin,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TaskAreasTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? label,
+    Value<String>? emoji,
+    Value<String>? colorHex,
+    Value<String?>? iconName,
+    Value<int>? sortOrder,
+    Value<bool>? isBuiltin,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return TaskAreasTableCompanion(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      emoji: emoji ?? this.emoji,
+      colorHex: colorHex ?? this.colorHex,
+      iconName: iconName ?? this.iconName,
+      sortOrder: sortOrder ?? this.sortOrder,
+      isBuiltin: isBuiltin ?? this.isBuiltin,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (emoji.present) {
+      map['emoji'] = Variable<String>(emoji.value);
+    }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
+    if (iconName.present) {
+      map['icon_name'] = Variable<String>(iconName.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (isBuiltin.present) {
+      map['is_builtin'] = Variable<bool>(isBuiltin.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TaskAreasTableCompanion(')
+          ..write('id: $id, ')
+          ..write('label: $label, ')
+          ..write('emoji: $emoji, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('iconName: $iconName, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('isBuiltin: $isBuiltin, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DailyReviewsTableTable extends DailyReviewsTable
+    with TableInfo<$DailyReviewsTableTable, DailyReviewsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyReviewsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayIdMeta = const VerificationMeta('dayId');
+  @override
+  late final GeneratedColumn<String> dayId = GeneratedColumn<String>(
+    'day_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _moodMeta = const VerificationMeta('mood');
+  @override
+  late final GeneratedColumn<int> mood = GeneratedColumn<int>(
+    'mood',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _moodNoteMeta = const VerificationMeta(
+    'moodNote',
+  );
+  @override
+  late final GeneratedColumn<String> moodNote = GeneratedColumn<String>(
+    'mood_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _smokedMeta = const VerificationMeta('smoked');
+  @override
+  late final GeneratedColumn<bool> smoked = GeneratedColumn<bool>(
+    'smoked',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("smoked" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _tookMedicationMeta = const VerificationMeta(
+    'tookMedication',
+  );
+  @override
+  late final GeneratedColumn<bool> tookMedication = GeneratedColumn<bool>(
+    'took_medication',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("took_medication" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _patternsMeta = const VerificationMeta(
+    'patterns',
+  );
+  @override
+  late final GeneratedColumn<String> patterns = GeneratedColumn<String>(
+    'patterns',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _highlightsMeta = const VerificationMeta(
+    'highlights',
+  );
+  @override
+  late final GeneratedColumn<String> highlights = GeneratedColumn<String>(
+    'highlights',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dayId,
+    completedAt,
+    mood,
+    moodNote,
+    smoked,
+    tookMedication,
+    patterns,
+    highlights,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_reviews_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyReviewsTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('day_id')) {
+      context.handle(
+        _dayIdMeta,
+        dayId.isAcceptableOrUnknown(data['day_id']!, _dayIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayIdMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mood')) {
+      context.handle(
+        _moodMeta,
+        mood.isAcceptableOrUnknown(data['mood']!, _moodMeta),
+      );
+    }
+    if (data.containsKey('mood_note')) {
+      context.handle(
+        _moodNoteMeta,
+        moodNote.isAcceptableOrUnknown(data['mood_note']!, _moodNoteMeta),
+      );
+    }
+    if (data.containsKey('smoked')) {
+      context.handle(
+        _smokedMeta,
+        smoked.isAcceptableOrUnknown(data['smoked']!, _smokedMeta),
+      );
+    }
+    if (data.containsKey('took_medication')) {
+      context.handle(
+        _tookMedicationMeta,
+        tookMedication.isAcceptableOrUnknown(
+          data['took_medication']!,
+          _tookMedicationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('patterns')) {
+      context.handle(
+        _patternsMeta,
+        patterns.isAcceptableOrUnknown(data['patterns']!, _patternsMeta),
+      );
+    }
+    if (data.containsKey('highlights')) {
+      context.handle(
+        _highlightsMeta,
+        highlights.isAcceptableOrUnknown(data['highlights']!, _highlightsMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {dayId},
+  ];
+  @override
+  DailyReviewsTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyReviewsTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      dayId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}day_id'],
+      )!,
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      ),
+      mood: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}mood'],
+      ),
+      moodNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mood_note'],
+      ),
+      smoked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}smoked'],
+      ),
+      tookMedication: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}took_medication'],
+      ),
+      patterns: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}patterns'],
+      ),
+      highlights: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}highlights'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyReviewsTableTable createAlias(String alias) {
+    return $DailyReviewsTableTable(attachedDatabase, alias);
+  }
+}
+
+class DailyReviewsTableData extends DataClass
+    implements Insertable<DailyReviewsTableData> {
+  final String id;
+  final String dayId;
+  final DateTime? completedAt;
+  final int? mood;
+  final String? moodNote;
+  final bool? smoked;
+  final bool? tookMedication;
+  final String? patterns;
+  final String? highlights;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const DailyReviewsTableData({
+    required this.id,
+    required this.dayId,
+    this.completedAt,
+    this.mood,
+    this.moodNote,
+    this.smoked,
+    this.tookMedication,
+    this.patterns,
+    this.highlights,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['day_id'] = Variable<String>(dayId);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || mood != null) {
+      map['mood'] = Variable<int>(mood);
+    }
+    if (!nullToAbsent || moodNote != null) {
+      map['mood_note'] = Variable<String>(moodNote);
+    }
+    if (!nullToAbsent || smoked != null) {
+      map['smoked'] = Variable<bool>(smoked);
+    }
+    if (!nullToAbsent || tookMedication != null) {
+      map['took_medication'] = Variable<bool>(tookMedication);
+    }
+    if (!nullToAbsent || patterns != null) {
+      map['patterns'] = Variable<String>(patterns);
+    }
+    if (!nullToAbsent || highlights != null) {
+      map['highlights'] = Variable<String>(highlights);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DailyReviewsTableCompanion toCompanion(bool nullToAbsent) {
+    return DailyReviewsTableCompanion(
+      id: Value(id),
+      dayId: Value(dayId),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+      mood: mood == null && nullToAbsent ? const Value.absent() : Value(mood),
+      moodNote: moodNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(moodNote),
+      smoked: smoked == null && nullToAbsent
+          ? const Value.absent()
+          : Value(smoked),
+      tookMedication: tookMedication == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tookMedication),
+      patterns: patterns == null && nullToAbsent
+          ? const Value.absent()
+          : Value(patterns),
+      highlights: highlights == null && nullToAbsent
+          ? const Value.absent()
+          : Value(highlights),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DailyReviewsTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyReviewsTableData(
+      id: serializer.fromJson<String>(json['id']),
+      dayId: serializer.fromJson<String>(json['dayId']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      mood: serializer.fromJson<int?>(json['mood']),
+      moodNote: serializer.fromJson<String?>(json['moodNote']),
+      smoked: serializer.fromJson<bool?>(json['smoked']),
+      tookMedication: serializer.fromJson<bool?>(json['tookMedication']),
+      patterns: serializer.fromJson<String?>(json['patterns']),
+      highlights: serializer.fromJson<String?>(json['highlights']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'dayId': serializer.toJson<String>(dayId),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'mood': serializer.toJson<int?>(mood),
+      'moodNote': serializer.toJson<String?>(moodNote),
+      'smoked': serializer.toJson<bool?>(smoked),
+      'tookMedication': serializer.toJson<bool?>(tookMedication),
+      'patterns': serializer.toJson<String?>(patterns),
+      'highlights': serializer.toJson<String?>(highlights),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DailyReviewsTableData copyWith({
+    String? id,
+    String? dayId,
+    Value<DateTime?> completedAt = const Value.absent(),
+    Value<int?> mood = const Value.absent(),
+    Value<String?> moodNote = const Value.absent(),
+    Value<bool?> smoked = const Value.absent(),
+    Value<bool?> tookMedication = const Value.absent(),
+    Value<String?> patterns = const Value.absent(),
+    Value<String?> highlights = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => DailyReviewsTableData(
+    id: id ?? this.id,
+    dayId: dayId ?? this.dayId,
+    completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    mood: mood.present ? mood.value : this.mood,
+    moodNote: moodNote.present ? moodNote.value : this.moodNote,
+    smoked: smoked.present ? smoked.value : this.smoked,
+    tookMedication: tookMedication.present
+        ? tookMedication.value
+        : this.tookMedication,
+    patterns: patterns.present ? patterns.value : this.patterns,
+    highlights: highlights.present ? highlights.value : this.highlights,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DailyReviewsTableData copyWithCompanion(DailyReviewsTableCompanion data) {
+    return DailyReviewsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      dayId: data.dayId.present ? data.dayId.value : this.dayId,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      mood: data.mood.present ? data.mood.value : this.mood,
+      moodNote: data.moodNote.present ? data.moodNote.value : this.moodNote,
+      smoked: data.smoked.present ? data.smoked.value : this.smoked,
+      tookMedication: data.tookMedication.present
+          ? data.tookMedication.value
+          : this.tookMedication,
+      patterns: data.patterns.present ? data.patterns.value : this.patterns,
+      highlights: data.highlights.present
+          ? data.highlights.value
+          : this.highlights,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReviewsTableData(')
+          ..write('id: $id, ')
+          ..write('dayId: $dayId, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('mood: $mood, ')
+          ..write('moodNote: $moodNote, ')
+          ..write('smoked: $smoked, ')
+          ..write('tookMedication: $tookMedication, ')
+          ..write('patterns: $patterns, ')
+          ..write('highlights: $highlights, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    dayId,
+    completedAt,
+    mood,
+    moodNote,
+    smoked,
+    tookMedication,
+    patterns,
+    highlights,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyReviewsTableData &&
+          other.id == this.id &&
+          other.dayId == this.dayId &&
+          other.completedAt == this.completedAt &&
+          other.mood == this.mood &&
+          other.moodNote == this.moodNote &&
+          other.smoked == this.smoked &&
+          other.tookMedication == this.tookMedication &&
+          other.patterns == this.patterns &&
+          other.highlights == this.highlights &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DailyReviewsTableCompanion
+    extends UpdateCompanion<DailyReviewsTableData> {
+  final Value<String> id;
+  final Value<String> dayId;
+  final Value<DateTime?> completedAt;
+  final Value<int?> mood;
+  final Value<String?> moodNote;
+  final Value<bool?> smoked;
+  final Value<bool?> tookMedication;
+  final Value<String?> patterns;
+  final Value<String?> highlights;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DailyReviewsTableCompanion({
+    this.id = const Value.absent(),
+    this.dayId = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.moodNote = const Value.absent(),
+    this.smoked = const Value.absent(),
+    this.tookMedication = const Value.absent(),
+    this.patterns = const Value.absent(),
+    this.highlights = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyReviewsTableCompanion.insert({
+    required String id,
+    required String dayId,
+    this.completedAt = const Value.absent(),
+    this.mood = const Value.absent(),
+    this.moodNote = const Value.absent(),
+    this.smoked = const Value.absent(),
+    this.tookMedication = const Value.absent(),
+    this.patterns = const Value.absent(),
+    this.highlights = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       dayId = Value(dayId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<DailyReviewsTableData> custom({
+    Expression<String>? id,
+    Expression<String>? dayId,
+    Expression<DateTime>? completedAt,
+    Expression<int>? mood,
+    Expression<String>? moodNote,
+    Expression<bool>? smoked,
+    Expression<bool>? tookMedication,
+    Expression<String>? patterns,
+    Expression<String>? highlights,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dayId != null) 'day_id': dayId,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (mood != null) 'mood': mood,
+      if (moodNote != null) 'mood_note': moodNote,
+      if (smoked != null) 'smoked': smoked,
+      if (tookMedication != null) 'took_medication': tookMedication,
+      if (patterns != null) 'patterns': patterns,
+      if (highlights != null) 'highlights': highlights,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyReviewsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? dayId,
+    Value<DateTime?>? completedAt,
+    Value<int?>? mood,
+    Value<String?>? moodNote,
+    Value<bool?>? smoked,
+    Value<bool?>? tookMedication,
+    Value<String?>? patterns,
+    Value<String?>? highlights,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DailyReviewsTableCompanion(
+      id: id ?? this.id,
+      dayId: dayId ?? this.dayId,
+      completedAt: completedAt ?? this.completedAt,
+      mood: mood ?? this.mood,
+      moodNote: moodNote ?? this.moodNote,
+      smoked: smoked ?? this.smoked,
+      tookMedication: tookMedication ?? this.tookMedication,
+      patterns: patterns ?? this.patterns,
+      highlights: highlights ?? this.highlights,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (dayId.present) {
+      map['day_id'] = Variable<String>(dayId.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (mood.present) {
+      map['mood'] = Variable<int>(mood.value);
+    }
+    if (moodNote.present) {
+      map['mood_note'] = Variable<String>(moodNote.value);
+    }
+    if (smoked.present) {
+      map['smoked'] = Variable<bool>(smoked.value);
+    }
+    if (tookMedication.present) {
+      map['took_medication'] = Variable<bool>(tookMedication.value);
+    }
+    if (patterns.present) {
+      map['patterns'] = Variable<String>(patterns.value);
+    }
+    if (highlights.present) {
+      map['highlights'] = Variable<String>(highlights.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReviewsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('dayId: $dayId, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('mood: $mood, ')
+          ..write('moodNote: $moodNote, ')
+          ..write('smoked: $smoked, ')
+          ..write('tookMedication: $tookMedication, ')
+          ..write('patterns: $patterns, ')
+          ..write('highlights: $highlights, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5145,6 +6333,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WeekDaysTableTable weekDaysTable = $WeekDaysTableTable(this);
   late final $TimerSessionsTableTable timerSessionsTable =
       $TimerSessionsTableTable(this);
+  late final $TaskAreasTableTable taskAreasTable = $TaskAreasTableTable(this);
+  late final $DailyReviewsTableTable dailyReviewsTable =
+      $DailyReviewsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5159,6 +6350,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     weeklyPlansTable,
     weekDaysTable,
     timerSessionsTable,
+    taskAreasTable,
+    dailyReviewsTable,
   ];
 }
 
@@ -7763,6 +8956,602 @@ typedef $$TimerSessionsTableTableProcessedTableManager =
       TimerSessionsTableData,
       PrefetchHooks Function()
     >;
+typedef $$TaskAreasTableTableCreateCompanionBuilder =
+    TaskAreasTableCompanion Function({
+      required String id,
+      required String label,
+      Value<String> emoji,
+      required String colorHex,
+      Value<String?> iconName,
+      Value<int> sortOrder,
+      Value<bool> isBuiltin,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$TaskAreasTableTableUpdateCompanionBuilder =
+    TaskAreasTableCompanion Function({
+      Value<String> id,
+      Value<String> label,
+      Value<String> emoji,
+      Value<String> colorHex,
+      Value<String?> iconName,
+      Value<int> sortOrder,
+      Value<bool> isBuiltin,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$TaskAreasTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TaskAreasTableTable> {
+  $$TaskAreasTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emoji => $composableBuilder(
+    column: $table.emoji,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconName => $composableBuilder(
+    column: $table.iconName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBuiltin => $composableBuilder(
+    column: $table.isBuiltin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TaskAreasTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TaskAreasTableTable> {
+  $$TaskAreasTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emoji => $composableBuilder(
+    column: $table.emoji,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconName => $composableBuilder(
+    column: $table.iconName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBuiltin => $composableBuilder(
+    column: $table.isBuiltin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TaskAreasTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TaskAreasTableTable> {
+  $$TaskAreasTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get emoji =>
+      $composableBuilder(column: $table.emoji, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
+
+  GeneratedColumn<String> get iconName =>
+      $composableBuilder(column: $table.iconName, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get isBuiltin =>
+      $composableBuilder(column: $table.isBuiltin, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$TaskAreasTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TaskAreasTableTable,
+          TaskAreasTableData,
+          $$TaskAreasTableTableFilterComposer,
+          $$TaskAreasTableTableOrderingComposer,
+          $$TaskAreasTableTableAnnotationComposer,
+          $$TaskAreasTableTableCreateCompanionBuilder,
+          $$TaskAreasTableTableUpdateCompanionBuilder,
+          (
+            TaskAreasTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $TaskAreasTableTable,
+              TaskAreasTableData
+            >,
+          ),
+          TaskAreasTableData,
+          PrefetchHooks Function()
+        > {
+  $$TaskAreasTableTableTableManager(
+    _$AppDatabase db,
+    $TaskAreasTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TaskAreasTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TaskAreasTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TaskAreasTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<String> emoji = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
+                Value<String?> iconName = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> isBuiltin = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TaskAreasTableCompanion(
+                id: id,
+                label: label,
+                emoji: emoji,
+                colorHex: colorHex,
+                iconName: iconName,
+                sortOrder: sortOrder,
+                isBuiltin: isBuiltin,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String label,
+                Value<String> emoji = const Value.absent(),
+                required String colorHex,
+                Value<String?> iconName = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> isBuiltin = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => TaskAreasTableCompanion.insert(
+                id: id,
+                label: label,
+                emoji: emoji,
+                colorHex: colorHex,
+                iconName: iconName,
+                sortOrder: sortOrder,
+                isBuiltin: isBuiltin,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TaskAreasTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TaskAreasTableTable,
+      TaskAreasTableData,
+      $$TaskAreasTableTableFilterComposer,
+      $$TaskAreasTableTableOrderingComposer,
+      $$TaskAreasTableTableAnnotationComposer,
+      $$TaskAreasTableTableCreateCompanionBuilder,
+      $$TaskAreasTableTableUpdateCompanionBuilder,
+      (
+        TaskAreasTableData,
+        BaseReferences<_$AppDatabase, $TaskAreasTableTable, TaskAreasTableData>,
+      ),
+      TaskAreasTableData,
+      PrefetchHooks Function()
+    >;
+typedef $$DailyReviewsTableTableCreateCompanionBuilder =
+    DailyReviewsTableCompanion Function({
+      required String id,
+      required String dayId,
+      Value<DateTime?> completedAt,
+      Value<int?> mood,
+      Value<String?> moodNote,
+      Value<bool?> smoked,
+      Value<bool?> tookMedication,
+      Value<String?> patterns,
+      Value<String?> highlights,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DailyReviewsTableTableUpdateCompanionBuilder =
+    DailyReviewsTableCompanion Function({
+      Value<String> id,
+      Value<String> dayId,
+      Value<DateTime?> completedAt,
+      Value<int?> mood,
+      Value<String?> moodNote,
+      Value<bool?> smoked,
+      Value<bool?> tookMedication,
+      Value<String?> patterns,
+      Value<String?> highlights,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DailyReviewsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $DailyReviewsTableTable> {
+  $$DailyReviewsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dayId => $composableBuilder(
+    column: $table.dayId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get moodNote => $composableBuilder(
+    column: $table.moodNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get smoked => $composableBuilder(
+    column: $table.smoked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get tookMedication => $composableBuilder(
+    column: $table.tookMedication,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get patterns => $composableBuilder(
+    column: $table.patterns,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get highlights => $composableBuilder(
+    column: $table.highlights,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyReviewsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $DailyReviewsTableTable> {
+  $$DailyReviewsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dayId => $composableBuilder(
+    column: $table.dayId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mood => $composableBuilder(
+    column: $table.mood,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get moodNote => $composableBuilder(
+    column: $table.moodNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get smoked => $composableBuilder(
+    column: $table.smoked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get tookMedication => $composableBuilder(
+    column: $table.tookMedication,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get patterns => $composableBuilder(
+    column: $table.patterns,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get highlights => $composableBuilder(
+    column: $table.highlights,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyReviewsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DailyReviewsTableTable> {
+  $$DailyReviewsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dayId =>
+      $composableBuilder(column: $table.dayId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get mood =>
+      $composableBuilder(column: $table.mood, builder: (column) => column);
+
+  GeneratedColumn<String> get moodNote =>
+      $composableBuilder(column: $table.moodNote, builder: (column) => column);
+
+  GeneratedColumn<bool> get smoked =>
+      $composableBuilder(column: $table.smoked, builder: (column) => column);
+
+  GeneratedColumn<bool> get tookMedication => $composableBuilder(
+    column: $table.tookMedication,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get patterns =>
+      $composableBuilder(column: $table.patterns, builder: (column) => column);
+
+  GeneratedColumn<String> get highlights => $composableBuilder(
+    column: $table.highlights,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DailyReviewsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DailyReviewsTableTable,
+          DailyReviewsTableData,
+          $$DailyReviewsTableTableFilterComposer,
+          $$DailyReviewsTableTableOrderingComposer,
+          $$DailyReviewsTableTableAnnotationComposer,
+          $$DailyReviewsTableTableCreateCompanionBuilder,
+          $$DailyReviewsTableTableUpdateCompanionBuilder,
+          (
+            DailyReviewsTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $DailyReviewsTableTable,
+              DailyReviewsTableData
+            >,
+          ),
+          DailyReviewsTableData,
+          PrefetchHooks Function()
+        > {
+  $$DailyReviewsTableTableTableManager(
+    _$AppDatabase db,
+    $DailyReviewsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyReviewsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyReviewsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyReviewsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> dayId = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<String?> moodNote = const Value.absent(),
+                Value<bool?> smoked = const Value.absent(),
+                Value<bool?> tookMedication = const Value.absent(),
+                Value<String?> patterns = const Value.absent(),
+                Value<String?> highlights = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyReviewsTableCompanion(
+                id: id,
+                dayId: dayId,
+                completedAt: completedAt,
+                mood: mood,
+                moodNote: moodNote,
+                smoked: smoked,
+                tookMedication: tookMedication,
+                patterns: patterns,
+                highlights: highlights,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String dayId,
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<int?> mood = const Value.absent(),
+                Value<String?> moodNote = const Value.absent(),
+                Value<bool?> smoked = const Value.absent(),
+                Value<bool?> tookMedication = const Value.absent(),
+                Value<String?> patterns = const Value.absent(),
+                Value<String?> highlights = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DailyReviewsTableCompanion.insert(
+                id: id,
+                dayId: dayId,
+                completedAt: completedAt,
+                mood: mood,
+                moodNote: moodNote,
+                smoked: smoked,
+                tookMedication: tookMedication,
+                patterns: patterns,
+                highlights: highlights,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyReviewsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DailyReviewsTableTable,
+      DailyReviewsTableData,
+      $$DailyReviewsTableTableFilterComposer,
+      $$DailyReviewsTableTableOrderingComposer,
+      $$DailyReviewsTableTableAnnotationComposer,
+      $$DailyReviewsTableTableCreateCompanionBuilder,
+      $$DailyReviewsTableTableUpdateCompanionBuilder,
+      (
+        DailyReviewsTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $DailyReviewsTableTable,
+          DailyReviewsTableData
+        >,
+      ),
+      DailyReviewsTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7785,4 +9574,8 @@ class $AppDatabaseManager {
       $$WeekDaysTableTableTableManager(_db, _db.weekDaysTable);
   $$TimerSessionsTableTableTableManager get timerSessionsTable =>
       $$TimerSessionsTableTableTableManager(_db, _db.timerSessionsTable);
+  $$TaskAreasTableTableTableManager get taskAreasTable =>
+      $$TaskAreasTableTableTableManager(_db, _db.taskAreasTable);
+  $$DailyReviewsTableTableTableManager get dailyReviewsTable =>
+      $$DailyReviewsTableTableTableManager(_db, _db.dailyReviewsTable);
 }

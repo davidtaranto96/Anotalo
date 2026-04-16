@@ -108,6 +108,36 @@ class TaskService {
         .write(TasksTableCompanion(priority: Value(priority.value)));
   }
 
+  /// Update the editable fields of a task. Fields not provided stay untouched.
+  /// The created-at / id / dayId are intentionally not touched here — use a
+  /// dedicated defer/reschedule method for day changes.
+  Future<void> updateTask({
+    required String id,
+    String? title,
+    TaskPriority? priority,
+    String? area,
+    String? reminder,
+    int? estimatedMinutes,
+    String? dayId,
+    bool clearArea = false,
+    bool clearReminder = false,
+  }) async {
+    await (_db.update(_db.tasksTable)..where((t) => t.id.equals(id)))
+        .write(TasksTableCompanion(
+      title: title == null ? const Value.absent() : Value(title),
+      priority: priority == null ? const Value.absent() : Value(priority.value),
+      area: clearArea
+          ? const Value<String?>(null)
+          : (area == null ? const Value.absent() : Value(area)),
+      reminder: clearReminder
+          ? const Value<String?>(null)
+          : (reminder == null ? const Value.absent() : Value(reminder)),
+      estimatedMinutes:
+          estimatedMinutes == null ? const Value.absent() : Value(estimatedMinutes),
+      dayId: dayId == null ? const Value.absent() : Value(dayId),
+    ));
+  }
+
   Future<int> countCompletedToday(String dayId) async {
     final rows = await (_db.select(_db.tasksTable)
       ..where((t) => t.dayId.equals(dayId) & t.status.equals('done')))

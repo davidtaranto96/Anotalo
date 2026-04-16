@@ -5,11 +5,14 @@ import '../theme/app_colors.dart';
 
 class VoiceInputButton extends StatefulWidget {
   final ValueChanged<String> onResult;
+  /// Streams partial transcription as the user speaks. Useful for live preview.
+  final ValueChanged<String>? onPartialResult;
   final double size;
 
   const VoiceInputButton({
     super.key,
     required this.onResult,
+    this.onPartialResult,
     this.size = 40,
   });
 
@@ -66,10 +69,19 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
             setState(() => _isListening = false);
             _pulseCtrl.stop();
             _pulseCtrl.reset();
+          } else {
+            // Stream partial transcription for live preview
+            widget.onPartialResult?.call(result.recognizedWords);
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 5),
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          partialResults: true,
+          cancelOnError: false,
+          autoPunctuation: true,
+        ),
       );
     }
   }
