@@ -141,20 +141,20 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
                           child: Text(
                             '¿Qué vas a lograr hoy?',
                             style: GoogleFonts.lora(
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.w600,
                               color: context.textPrimary,
                               letterSpacing: -0.3,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 4),
                         // Daily review: tap opens today's review wizard.
                         // Long-press jumps straight to history of past reviews.
                         GestureDetector(
@@ -162,28 +162,18 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                             HapticFeedback.mediumImpact();
                             context.push('/review-history');
                           },
-                          child: IconButton(
-                            icon: Icon(Icons.rate_review_rounded, color: context.textSecondary, size: 22),
-                            tooltip: 'Revisión del día',
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                            onPressed: () => context.push('/review'),
+                          child: _HeaderIcon(
+                            icon: Icons.rate_review_rounded,
+                            onTap: () => context.push('/review'),
                           ),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.settings_rounded, color: context.textSecondary, size: 22),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(6),
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                          onPressed: () => context.push('/settings'),
+                        _HeaderIcon(
+                          icon: Icons.settings_rounded,
+                          onTap: () => context.push('/settings'),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.inbox_rounded, color: context.textSecondary, size: 22),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(6),
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                          onPressed: () => context.go('/inbox'),
+                        _HeaderIcon(
+                          icon: Icons.inbox_rounded,
+                          onTap: () => context.go('/inbox'),
                         ),
                       ],
                     ),
@@ -1333,6 +1323,25 @@ class _HoyDetectionChips extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Compact header icon ───────────────────────────────────────────────────
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIcon({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Icon(icon, size: 20, color: context.textSecondary),
       ),
     );
   }

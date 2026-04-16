@@ -12,37 +12,32 @@ final todayTasksProvider = StreamProvider<List<Task>>((ref) {
   return ref.watch(taskServiceProvider).watchTasksByDay(dayId);
 });
 
-// Hoy only shows standalone tasks (not project tasks)
-bool _isOwnTask(Task t) => t.parentProjectId == null;
-
 final primordialTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => _isOwnTask(t) && t.priority == TaskPriority.primordial && t.status != TaskStatus.done)
+      ?.where((t) => t.priority == TaskPriority.primordial && t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
 final importanteTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => _isOwnTask(t) && t.priority == TaskPriority.importante && t.status != TaskStatus.done)
+      ?.where((t) => t.priority == TaskPriority.importante && t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
 final puedeEsperarTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => _isOwnTask(t) && t.priority == TaskPriority.puedeEsperar && t.status != TaskStatus.done)
+      ?.where((t) => (t.priority == TaskPriority.puedeEsperar || t.priority == TaskPriority.secundaria) && t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
 final completedTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => _isOwnTask(t) && t.status == TaskStatus.done)
+      ?.where((t) => t.status == TaskStatus.done)
       .toList() ?? [];
 });
 
 final dayProgressProvider = Provider<double>((ref) {
-  final all = (ref.watch(todayTasksProvider).valueOrNull ?? [])
-      .where(_isOwnTask)
-      .toList();
+  final all = ref.watch(todayTasksProvider).valueOrNull ?? [];
   if (all.isEmpty) return 0.0;
   final done = all.where((t) => t.status == TaskStatus.done).length;
   return done / all.length;

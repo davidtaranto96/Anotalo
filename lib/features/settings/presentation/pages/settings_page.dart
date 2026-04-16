@@ -495,22 +495,20 @@ class SettingsPage extends ConsumerWidget {
       final service = ref.read(backupServiceProvider);
       final file = await service.saveBackupToDownloads();
       final name = file.path.split(Platform.pathSeparator).last;
+      messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
-          // Snackbars with actions normally stay until the user taps, which
-          // felt "stuck" to the user. 3s auto-dismiss matches the rest of
-          // the app and still gives time to reach the Compartir button.
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
           backgroundColor: AppTheme.colorSuccess,
           content: Text(
-            'Guardado en Descargas/$name',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            '✓ Backup guardado en Descargas/$name',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
           ),
           action: SnackBarAction(
             label: 'Compartir',
             textColor: Colors.white,
             onPressed: () {
+              messenger.hideCurrentSnackBar();
               Share.shareXFiles(
                 [XFile(file.path, mimeType: 'application/json')],
                 subject: 'Backup Anotalo',
@@ -520,12 +518,12 @@ class SettingsPage extends ConsumerWidget {
         ),
       );
     } catch (e) {
+      messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 3),
           backgroundColor: AppTheme.colorDanger,
-          content: Text('Error al crear backup: $e', style: GoogleFonts.inter()),
+          content: Text('Error al crear backup: $e', style: GoogleFonts.inter(color: Colors.white)),
         ),
       );
     }
@@ -587,26 +585,28 @@ class SettingsPage extends ConsumerWidget {
       jsonStr = await pickedFile.readAsString();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          duration: const Duration(seconds: 3),
           backgroundColor: AppTheme.colorDanger,
-          content: Text('No se pudo leer el archivo: $e', style: GoogleFonts.inter()),
-        ),
-      );
+          content: Text('No se pudo leer el archivo: $e',
+              style: GoogleFonts.inter(color: Colors.white)),
+        ));
       return;
     }
 
     final summary = service.summarizeJson(jsonStr);
     if (!context.mounted) return;
     if (summary == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          duration: const Duration(seconds: 3),
           backgroundColor: AppTheme.colorDanger,
           content: Text(
             'El archivo no es un backup valido de Anotalo',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
           ),
         ),
       );
@@ -688,24 +688,24 @@ class SettingsPage extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await service.importFromJson(jsonStr);
+      messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
           backgroundColor: AppTheme.colorSuccess,
           content: Text(
-            'Datos restaurados correctamente',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            '✓ Datos restaurados correctamente',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
           ),
         ),
       );
     } catch (e) {
+      messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
-          behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 3),
           backgroundColor: AppTheme.colorDanger,
-          content: Text('Error al restaurar: $e', style: GoogleFonts.inter()),
+          content: Text('Error al restaurar: $e', style: GoogleFonts.inter(color: Colors.white)),
         ),
       );
     }
