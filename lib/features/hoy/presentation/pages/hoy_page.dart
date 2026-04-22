@@ -140,21 +140,12 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Top toolbar (icons aligned right) ──────────────────
+                    // Iconos en su propia fila para que el título nunca se
+                    // corte aunque sea largo o el ancho de pantalla sea chico.
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Expanded(
-                          child: Text(
-                            '¿Qué vas a lograr hoy?',
-                            style: GoogleFonts.lora(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              color: context.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
                         // Daily review: tap opens today's review wizard.
                         // Long-press jumps straight to history of past reviews.
                         GestureDetector(
@@ -177,6 +168,17 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                         ),
                       ],
                     ),
+                    // Título con espacio completo
+                    Text(
+                      '¿Qué vas a lograr hoy?',
+                      style: GoogleFonts.lora(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: context.textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
                     Text(
                       dateStr,
                       style: GoogleFonts.inter(fontSize: 13, color: context.textSecondary),
@@ -257,14 +259,20 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                       label: 'Todo',
                       emoji: '\u{1F4CB}',
                       selected: _selectedArea == null,
-                      onTap: () => setState(() => _selectedArea = null),
+                      onTap: () {
+                        setState(() => _selectedArea = null);
+                        ref.read(selectedAreaProvider.notifier).state = null;
+                      },
                     ),
                     ...areas.map((area) => _AreaTab(
                           label: area.label,
                           emoji: area.emoji,
                           color: area.color,
                           selected: _selectedArea == area.id,
-                          onTap: () => setState(() => _selectedArea = area.id),
+                          onTap: () {
+                            setState(() => _selectedArea = area.id);
+                            ref.read(selectedAreaProvider.notifier).state = area.id;
+                          },
                           onLongPress: () {
                             HapticFeedback.mediumImpact();
                             context.push('/manage-areas');

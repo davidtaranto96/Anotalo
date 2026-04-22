@@ -109,7 +109,13 @@ class _AppShellState extends ConsumerState<AppShell> {
               onTap: () {
                 switch (_currentPage) {
                   case 0:
-                    AddTaskBottomSheet.show(context);
+                    // Si en Hoy hay un área filtrada, prefilteamos el sheet
+                    // para que la nueva tarea caiga directo en esa categoría.
+                    final selectedArea = ref.read(selectedAreaProvider);
+                    AddTaskBottomSheet.show(
+                      context,
+                      prefillArea: selectedArea,
+                    );
                   case 2:
                     AddProjectBottomSheet.show(context);
                   case 3:

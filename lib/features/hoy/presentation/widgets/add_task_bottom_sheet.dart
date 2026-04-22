@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
+import '../../../../../core/providers/task_area_provider.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../../../../core/widgets/voice_input_button.dart';
 import '../../../../../core/logic/task_parser.dart';
@@ -18,14 +19,22 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
   /// and the "Agregar tarea" button updates the task instead of inserting.
   final Task? existing;
 
-  const AddTaskBottomSheet({super.key, this.existing});
+  /// When provided (and not in edit mode), pre-selects this area in the
+  /// area pills row. Used when the user opens the sheet from a filtered
+  /// view (e.g. tapping "+" while inside the "Salud" tab in Hoy).
+  final String? prefillArea;
 
-  static void show(BuildContext context, {Task? existing}) {
+  const AddTaskBottomSheet({super.key, this.existing, this.prefillArea});
+
+  static void show(BuildContext context, {Task? existing, String? prefillArea}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AddTaskBottomSheet(existing: existing),
+      builder: (_) => AddTaskBottomSheet(
+        existing: existing,
+        prefillArea: prefillArea,
+      ),
     );
   }
 
@@ -69,7 +78,8 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
         final prefs = ref.read(userPrefsProvider);
         setState(() {
           _priority = prefs.defaultPriority;
-          _area = prefs.defaultArea;
+          // prefillArea (vista filtrada) gana sobre la default global.
+          _area = widget.prefillArea ?? prefs.defaultArea;
           _initialized = true;
         });
       }
@@ -304,15 +314,20 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
                   fontWeight: FontWeight.w600,
                   color: context.textSecondary)),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _areaPill(null, 'Sin área', '📋'),
-                ...kTaskAreas.map((a) => _areaPill(a.id, a.label, a.emoji)),
-              ],
-            ),
-          ),
+          // Usa la lista de áreas reactiva (incluye las editadas/creadas
+          // por el usuario), no las built-in hardcodeadas.
+          Builder(builder: (_) {
+            final liveAreas = ref.watch(taskAreasSyncProvider);
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _areaPill(null, 'Sin área', '📋'),
+                  ...liveAreas.map((a) => _areaPill(a.id, a.label, a.emoji)),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 14),
 
           // ── Recordatorio ────────────────────────────────────────────────
@@ -393,8 +408,9 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
 
   Widget _areaPill(String? id, String label, String emoji) {
     final sel = _area == id;
+    final liveAreas = ref.watch(taskAreasSyncProvider);
     final c = id != null
-        ? getTaskArea(id)?.color ?? context.textSecondary
+        ? (getTaskAreaFrom(liveAreas, id)?.color ?? context.textSecondary)
         : context.textSecondary;
     return GestureDetector(
       onTap: () => setState(() => _area = id),

@@ -89,7 +89,9 @@ class _EditAreaBottomSheetState extends ConsumerState<EditAreaBottomSheet> {
 
   Future<void> _confirmDelete() async {
     final area = widget.area;
-    if (area == null || area.isBuiltin) return;
+    // Built-ins ahora también se pueden borrar — no todos los usuarios
+    // quieren las mismas categorías por defecto.
+    if (area == null) return;
 
     HapticFeedback.mediumImpact();
 
@@ -152,7 +154,8 @@ class _EditAreaBottomSheetState extends ConsumerState<EditAreaBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final showDelete = _isEdit && !(widget.area!.isBuiltin);
+    // Cualquier área existente se puede borrar (incluidas las built-in).
+    final showDelete = _isEdit;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),

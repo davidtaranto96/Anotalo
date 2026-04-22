@@ -74,13 +74,13 @@ class TaskAreaService {
 
   /// Deletes an area. Also clears the `areaId` on any tasks that referenced
   /// it, so those tasks simply become "Sin area" instead of broken.
-  /// Built-in areas can't be deleted.
+  /// Built-ins also can be deleted — el flag se conserva sólo a fines
+  /// informativos en la UI.
   Future<bool> deleteArea(String id) async {
     final row = await (_db.select(_db.taskAreasTable)
           ..where((t) => t.id.equals(id)))
         .getSingleOrNull();
     if (row == null) return false;
-    if (row.isBuiltin) return false;
 
     await _db.transaction(() async {
       // Null out references on tasks.

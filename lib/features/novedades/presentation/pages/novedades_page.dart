@@ -28,9 +28,22 @@ class NovedadesPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         children: const [
           _VersionEntry(
-            version: '1.6.0',
+            version: '1.7.0',
             date: 'Abril 2026',
             isLatest: true,
+            changes: [
+              _Change(icon: Icons.water_drop_rounded, text: 'Rollover automático: las tareas pendientes de días anteriores siguen apareciendo en Hoy hasta que las completes, difieras o borres'),
+              _Change(icon: Icons.history_rounded, text: 'Indicador "de ayer" / "de hace N días" en cada tarea arrastrada para que sepas de cuándo viene'),
+              _Change(icon: Icons.text_fields_rounded, text: 'Título "¿Qué vas a lograr hoy?" en su propia línea — los iconos arriba ya no lo cortan'),
+              _Change(icon: Icons.delete_sweep_rounded, text: 'Áreas built-in (Trabajo, Facultad, Personal, Casa, Salud) ahora se pueden borrar — armá el set que vos uses'),
+              _Change(icon: Icons.auto_awesome_rounded, text: 'Crear tarea desde una categoría filtrada la asigna automáticamente a esa área'),
+              _Change(icon: Icons.refresh_rounded, text: 'El selector de área en "Nueva tarea" usa la lista en vivo — ves tus áreas editadas/creadas, no las defaults'),
+            ],
+          ),
+          SizedBox(height: 20),
+          _VersionEntry(
+            version: '1.6.0',
+            date: 'Abril 2026',
             changes: [
               _Change(icon: Icons.rate_review_rounded, text: 'Revisión diaria en Hoy — repasá tareas, hábitos, ánimo y cerrá el día con un toque'),
               _Change(icon: Icons.history_rounded, text: 'Historial de revisiones — volvé atrás, editá o borrá revisiones pasadas'),
