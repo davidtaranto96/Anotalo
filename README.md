@@ -2,24 +2,25 @@
 
 App Android de productividad personal inspirada en GTD + Pomodoro. Paleta terracota/crema cálida, diseño light-mode-first basado en la estética de Claude.
 
-**Versión actual: 1.6.0** | **Build: debug APK** | **Target: Android 21+**
+**Versión actual: 1.7.0** | **Build: debug APK** | **Target: Android 21+**
 
 ---
 
 ## Estado actual del proyecto
 
-### ✅ Funcionalidades completadas (v1.6.0)
+### ✅ Funcionalidades completadas (v1.7.0)
 
 | Feature | Descripción |
 |---------|-------------|
-| **Tab Hoy** | Vista diaria por prioridad GTD (primordial/importante/puede esperar). Árbol por área cuando se elige "Todo". Frases motivacionales rotativas (+1000). |
+| **Tab Hoy** | Vista diaria por prioridad GTD (primordial/importante/puede esperar). Árbol por área cuando se elige "Todo". Frases motivacionales rotativas (+1000). **Rollover automático**: tareas pendientes de días anteriores siguen apareciendo con badge "de ayer" / "de hace N días" hasta que las actúes. |
 | **Tab Semana** | Grid 7 días con contadores de tareas por prioridad. Filtros: Todo / Primordial / Importante / Puede Esperar. Botón "Volver a hoy". |
 | **Tab Proyectos** | Lista de proyectos con % completado, estado y categoría. Modal de detalle con tareas vinculadas y metas semanales. |
 | **Tab Hábitos** | Tracker con streaks, anillo de progreso, heatmap 7 semanas. Sección "Hábitos Atómicos" con métricas. |
 | **Tab Enfoque** | Timer Pomodoro con 7 modos, arco CustomPainter, sonido+vibración triple al terminar. Diálogo para sumar tiempo o completar tarea. |
 | **Inbox** | Captura rápida con voz (speech_to_text) y texto. Procesamiento: convertir nota a tarea. |
 | **Revisión** | Revisión diaria con mood (1-5), diario, estado de hábitos y tareas. Historial de revisiones editables. |
-| **Áreas editables** | CRUD de áreas (nombre, emoji, color). 5 builtin + personalizadas. Drag para reordenar. Long-press en pestaña para editar. |
+| **Áreas editables** | CRUD completo de áreas (nombre, emoji, color). 5 builtin + personalizadas. Drag para reordenar. Long-press en pestaña para editar. **Built-in también se pueden borrar** desde v1.7.0. |
+| **Prefill de área** | Al crear tarea desde una pestaña de área filtrada, la nueva tarea ya viene con esa categoría pre-seleccionada (v1.7.0). El selector usa la lista en vivo (áreas editadas/creadas del usuario, no las hardcodeadas). |
 | **Backup** | Exportar/importar JSON. Auto-save a carpeta Descargas. Respaldo Android automático. |
 | **Swipe gestures** | Deslizar tareas/hábitos: derecha = completar, izquierda = diferir + editar + borrar. |
 | **Posponer** | Presets: mañana, 2/3 días, sábado, lunes próximo, fecha libre. |
@@ -31,12 +32,27 @@ App Android de productividad personal inspirada en GTD + Pomodoro. Paleta terrac
 - Dashboard de analytics semanal (tareas completadas, minutos de foco, rachas) — `fl_chart` ya importado
 - HapticFeedback completo en todas las interacciones (parcial)
 - Drag & drop real en Semana para reasignar tareas a otro día
-- `dart analyze` → 0 errores/warnings antes de release
 - FAB long-press → QuickCapture universal en todas las tabs
+- Idea futura: tarea "fija/anclada" (campo `isPinned`) que reaparece cada día sin importar status — para lo recurrente que no encaja en Hábitos
+- Limpiar los 16 infos pre-existentes de `prefer_const_constructors` / `unnecessary_brace_in_string_interps` (0 errores/warnings actualmente)
 
 ---
 
 ## Historial de versiones
+
+### v1.7.0 (Abril 2026) — commit `9d015ce`
+- **Rollover automático de tareas** — pending tasks de días anteriores siguen apareciendo en Hoy hasta completar/diferir/borrar
+  - Nuevo método `TaskService.watchTodayTasks(today)` con query: `(dayId == today AND status != deleted) OR (dayId < today AND status == pending)`
+  - `todayTasksProvider` migrado a este stream; todos los providers derivados heredan el rollover
+  - Badge visual en `TaskCard`: icono `history_rounded` + texto "de ayer" / "de hace N días" cuando `task.dayId < todayId()`
+- **Header de Hoy rediseñado** — los 3 iconos (revisión, settings, inbox) ahora están en su propia fila arriba, el título "¿Qué vas a lograr hoy?" queda solo abajo con ancho completo y font 22. Ya no se corta por más largo que sea.
+- **Áreas built-in borrables** — removida la guarda `isBuiltin` en `TaskAreaService.deleteArea` y en `EditAreaBottomSheet._confirmDelete`. Las tareas huérfanas caen en "Sin área" (rama del tree view).
+- **Prefill de categoría** — Nuevo `selectedAreaProvider` (StateProvider<String?>) en `shell_providers.dart`. HoyPage sincroniza al tocar una pestaña. El FAB en AppShell lo lee y pasa `prefillArea` al `AddTaskBottomSheet`. Al tocar "+" en una categoría filtrada la nueva tarea viene con esa área ya seleccionada.
+- **Selector de área reactivo** — `AddTaskBottomSheet` ahora usa `taskAreasSyncProvider` en vez de la constante `kTaskAreas`, así se ven las áreas editadas/creadas por el usuario.
+- **Fixes previos (commit `3ddac61`)** incluidos en esta tanda:
+  - Bug del `_isOwnTask` que ocultaba tareas con `parentProjectId != null` en Hoy → removido.
+  - `puedeEsperarTasksProvider` ahora incluye también `TaskPriority.secundaria`.
+  - SnackBars del backup que no se ocultaban → removido `SnackBarBehavior.floating`, añadido `clearSnackBars()` + `hideCurrentSnackBar()` antes de Share.
 
 ### v1.6.0 (Abril 2026) — commit `e711ff8`
 - Revisión diaria: repasá tareas, hábitos, ánimo y cerrá el día
@@ -209,6 +225,49 @@ Windows usa rutas 8.3 para `%TEMP%` → rompe **Unix Domain Sockets** de Java qu
 ```bash
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
+
+---
+
+## Notas para la próxima sesión de Claude (contexto)
+
+**Última sesión activa**: abril 2026 — trabajo sobre las 4 quejas del usuario más el rollover.
+
+### Archivos tocados recientemente (v1.7.0 + rollover)
+- `lib/core/logic/task_service.dart` — método nuevo `watchTodayTasks(today)` para rollover. `watchTasksByDay` sigue existiendo para otros usos.
+- `lib/core/logic/task_area_service.dart` — `deleteArea` ya no bloquea built-ins.
+- `lib/core/providers/shell_providers.dart` — nuevo `selectedAreaProvider`.
+- `lib/core/shell/app_shell.dart` — FAB lee `selectedAreaProvider` y pasa `prefillArea` al sheet.
+- `lib/features/hoy/presentation/pages/hoy_page.dart` — header rediseñado (iconos arriba, título abajo), sync con `selectedAreaProvider`.
+- `lib/features/hoy/presentation/providers/task_provider.dart` — `todayTasksProvider` usa `watchTodayTasks`.
+- `lib/features/hoy/presentation/widgets/task_card.dart` — badge "de ayer" / "de hace N días".
+- `lib/features/hoy/presentation/widgets/add_task_bottom_sheet.dart` — param `prefillArea`, selector de área con `taskAreasSyncProvider`.
+- `lib/features/settings/presentation/widgets/edit_area_bottom_sheet.dart` — botón borrar visible también para built-ins.
+- `lib/features/novedades/presentation/pages/novedades_page.dart` — entrada v1.7.0.
+
+### Pedidos originales del usuario (cubiertos)
+1. ✅ Commit + push con changelog.
+2. ✅ Tareas no aparecían en Hoy (bug `_isOwnTask`) → fix.
+3. ✅ Título cortado → header rediseñado en 2 filas.
+4. ✅ Backup toast verde quedaba estático → `SnackBarBehavior.floating` removido.
+5. ✅ README actualizado con estado y commits.
+6. ✅ Rollover automático para tareas pendientes del día anterior.
+7. ✅ Editar + **borrar** built-in areas, prefill desde vista filtrada, selector reactivo.
+
+### Dos cosas que NO están en prod aún
+- El usuario estaba corriendo una build vieja cuando se quejó del "Todo" sin subcategorías. El `_TreeByAreaView` ya existe y funciona — solo necesita rebuild del APK.
+- Toda esta tanda requiere un `flutter build apk --debug && adb install -r` fresh para verse en el celu.
+
+### Problemas infraestructura conocidos
+- **Windows + Java Unix Domain Sockets**: builds desde Android Studio fallan en `stripDebugDebugSymbols`. Fix: build desde bash/terminal con `TEMP=C:/tmp` + flags JVM (ver sección "Build en Windows" más arriba).
+- El usuario ahora prefiere **Android Studio con celu conectado por USB** para iterar con hot reload en vez de builds manuales.
+
+### Convenciones del proyecto que NO olvidar
+- Commits en castellano, mensaje conciso primera línea + cuerpo con bullets técnicos.
+- `Co-Authored-By: Claude <noreply@anthropic.com>` al final de cada commit.
+- Bump `pubspec.yaml` (`version: X.Y.Z+N`) en cada release + entrada nueva en `novedades_page.dart` con icono + texto.
+- `dayId` formato `yyyy-MM-dd` (string-sortable). `dateToId(DateTime)` y `idToDate(String)` en `core/utils/format_utils.dart`.
+- Soft deletes (`status='deleted'`), jamás DELETE físico.
+- Usar `StreamProvider` (Riverpod) para listas reactivas desde Drift.
 
 ---
 
