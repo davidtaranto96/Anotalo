@@ -9,7 +9,9 @@ final taskServiceProvider = Provider((ref) =>
 
 final todayTasksProvider = StreamProvider<List<Task>>((ref) {
   final dayId = todayId();
-  return ref.watch(taskServiceProvider).watchTasksByDay(dayId);
+  // Uses the rollover-aware stream: tasks for today + pending tasks
+  // from previous days that the user never moved/completed.
+  return ref.watch(taskServiceProvider).watchTodayTasks(dayId);
 });
 
 final primordialTasksProvider = Provider<List<Task>>((ref) {

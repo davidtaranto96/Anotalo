@@ -37,6 +37,23 @@ class TaskService {
       .map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Watches tasks that should appear in the "Hoy" view:
+  /// - All tasks scheduled for today (any status except deleted), AND
+  /// - All pending tasks from previous days that were never completed,
+  ///   deferred, delegated or deleted (rollover behavior).
+  ///
+  /// This way the user doesn't lose pending tasks when a day rolls over —
+  /// they keep "raining down" into today until acted on.
+  Stream<List<Task>> watchTodayTasks(String today) {
+    return (_db.select(_db.tasksTable)
+      ..where((t) =>
+          (t.dayId.equals(today) & t.status.isNotIn(['deleted'])) |
+          (t.dayId.isSmallerThanValue(today) & t.status.equals('pending')))
+      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+      .watch()
+      .map((rows) => rows.map(_fromRow).toList());
+  }
+
   Stream<List<Task>> watchTasksByProject(String projectId) {
     return (_db.select(_db.tasksTable)
       ..where((t) => t.parentProjectId.equals(projectId) & t.status.isNotIn(['deleted'])))

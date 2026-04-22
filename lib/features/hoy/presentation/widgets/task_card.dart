@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
+import '../../../../../core/utils/format_utils.dart';
 import '../../domain/models/task.dart';
 import 'add_task_bottom_sheet.dart';
 
@@ -28,6 +29,14 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDone = task.status == TaskStatus.done;
     final priorityColor = _priorityColor(task.priority);
+    // Rollover: task whose dayId is older than today and still pending.
+    final today = todayId();
+    final isRolledOver = !isDone && task.dayId.compareTo(today) < 0;
+    final rolloverDays = isRolledOver
+        ? DateTime.now()
+            .difference(idToDate(task.dayId))
+            .inDays
+        : 0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -173,6 +182,31 @@ class TaskCard extends StatelessWidget {
                               decoration: isDone ? TextDecoration.lineThrough : null,
                             ),
                           ),
+                          if (isRolledOver)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.history_rounded,
+                                    size: 11,
+                                    color: AppTheme.colorWarning,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    rolloverDays == 1
+                                        ? 'de ayer'
+                                        : 'de hace $rolloverDays días',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppTheme.colorWarning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           if (task.area != null) ...[
                             () {
                               final area = getTaskArea(task.area);
