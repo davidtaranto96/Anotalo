@@ -102,7 +102,7 @@ class _EditAreaBottomSheetState extends ConsumerState<EditAreaBottomSheet> {
         shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
         title: Text(
           'Borrar area',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: ctx.textPrimary,
@@ -183,7 +183,7 @@ class _EditAreaBottomSheetState extends ConsumerState<EditAreaBottomSheet> {
               // Title.
               Text(
                 _isEdit ? 'Editar area' : 'Nueva area',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.fraunces(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: context.textPrimary,

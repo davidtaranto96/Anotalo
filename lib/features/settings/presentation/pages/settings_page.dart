@@ -15,8 +15,13 @@ import 'package:arquitectura_enfoque/core/providers/theme_provider.dart';
 import 'package:arquitectura_enfoque/core/logic/notification_service.dart';
 import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
 import 'package:arquitectura_enfoque/core/models/task_area.dart';
+import 'package:arquitectura_enfoque/core/widgets/anotalo_confirm_dialog.dart';
+import 'package:arquitectura_enfoque/core/widgets/anotalo_toast.dart';
 import 'package:arquitectura_enfoque/features/hoy/domain/models/task.dart';
 import 'package:arquitectura_enfoque/features/enfoque/domain/models/timer_state.dart';
+import 'package:arquitectura_enfoque/features/onboarding/domain/onboarding_prefs.dart';
+import 'package:arquitectura_enfoque/features/settings/presentation/widgets/accent_picker.dart';
+import 'package:arquitectura_enfoque/features/settings/presentation/widgets/feedback_section.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -34,7 +39,7 @@ class SettingsPage extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Configuracion',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
@@ -67,6 +72,28 @@ class SettingsPage extends ConsumerWidget {
               onChanged: (_) => ref.read(isDarkModeProvider.notifier).toggle(),
             ),
           ),
+
+          const SizedBox(height: 32),
+
+          // ── Color de acento (1.6) ──
+          const _SectionLabel('COLOR DE ACENTO'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color ?? theme.colorScheme.surface,
+              borderRadius: AppTheme.r16,
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: const AccentPicker(),
+          ),
+
+          const SizedBox(height: 32),
+
+          // ── Sonido & Hápticos (1.6) ──
+          const _SectionLabel('SONIDO & HÁPTICOS'),
+          const SizedBox(height: 12),
+          const FeedbackSection(),
 
           const SizedBox(height: 32),
 
@@ -299,18 +326,34 @@ class SettingsPage extends ConsumerWidget {
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.info_outline_rounded, color: theme.textTheme.bodyMedium?.color),
-                  title: const _Title('Version'),
+                  title: const _Title('Versión'),
                   trailing: Text(
-                    '1.6.0',
+                    '1.7.0',
                     style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
                   ),
+                ),
+                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: const _IconBadge(
+                    icon: Icons.tour_rounded,
+                    color: AppTheme.colorAccent,
+                  ),
+                  title: const _Title('Ver tour otra vez'),
+                  subtitle: const _Subtitle('Rehace la bienvenida y el setup inicial'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () async {
+                    await OnboardingPrefs.reset();
+                    if (!context.mounted) return;
+                    GoRouter.of(context).go('/login');
+                  },
                 ),
                 Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
                 const ListTile(
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.favorite_rounded, color: AppTheme.colorDanger),
                   title: _Title('Hecho con cuidado'),
-                  subtitle: _Subtitle('Anotalo - tu sistema de enfoque'),
+                  subtitle: _Subtitle('Anótalo — tu sistema de enfoque'),
                 ),
               ],
             ),
@@ -339,7 +382,7 @@ class SettingsPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(alignment: Alignment.centerLeft,
                 child: Text('Prioridad por defecto',
-                  style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600,
+                  style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w600,
                     color: Theme.of(ctx).colorScheme.onSurface))),
             ),
             for (final p in TaskPriority.values)
@@ -383,7 +426,7 @@ class SettingsPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(alignment: Alignment.centerLeft,
                 child: Text('Area por defecto',
-                  style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600,
+                  style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w600,
                     color: Theme.of(ctx).colorScheme.onSurface))),
             ),
             ListTile(
@@ -437,7 +480,7 @@ class SettingsPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Align(alignment: Alignment.centerLeft,
                 child: Text('Modo por defecto',
-                  style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600,
+                  style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w600,
                     color: Theme.of(ctx).colorScheme.onSurface))),
             ),
             for (final m in TimerMode.values)
@@ -463,69 +506,36 @@ class SettingsPage extends ConsumerWidget {
   // ── Backup / Restore ───────────────────────────────────────────────────────
 
   Future<void> _doBackup(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAnotaloConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-        title: Text(
-          'Crear backup',
-          style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        content: Text(
-          'Se va a guardar un archivo JSON con todos tus datos directamente en la carpeta Descargas. Vas a poder compartirlo o restaurarlo despues.',
-          style: GoogleFonts.inter(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancelar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.colorPrimary),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Guardar backup', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+      title: 'Crear backup',
+      body:
+          'Se va a guardar un archivo JSON con todos tus datos en la carpeta Descargas. Vas a poder compartirlo o restaurarlo después.',
+      confirmLabel: 'Guardar',
+      icon: Icons.cloud_upload_rounded,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final service = ref.read(backupServiceProvider);
       final file = await service.saveBackupToDownloads();
       final name = file.path.split(Platform.pathSeparator).last;
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 4),
-          backgroundColor: AppTheme.colorSuccess,
-          content: Text(
-            '✓ Backup guardado en Descargas/$name',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-          ),
-          action: SnackBarAction(
-            label: 'Compartir',
-            textColor: Colors.white,
-            onPressed: () {
-              messenger.hideCurrentSnackBar();
-              Share.shareXFiles(
-                [XFile(file.path, mimeType: 'application/json')],
-                subject: 'Backup Anotalo',
-              );
-            },
-          ),
-        ),
+      if (!context.mounted) return;
+      showAnotaloToast(
+        context,
+        'Backup guardado en Descargas/$name',
+        tone: ToastTone.success,
       );
+      // Compartir opcional — shortcut extra: long-press la fila "Hacer backup"
+      // (no disponible acá, fallback a share directo si el usuario quiere).
+      unawaited(Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/json')],
+        subject: 'Backup Anotalo',
+      ));
     } catch (e) {
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 3),
-          backgroundColor: AppTheme.colorDanger,
-          content: Text('Error al crear backup: $e', style: GoogleFonts.inter(color: Colors.white)),
-        ),
-      );
+      if (!context.mounted) return;
+      showAnotaloToast(context, 'Error al crear backup: $e',
+          tone: ToastTone.warn);
     }
   }
 
@@ -543,32 +553,15 @@ class SettingsPage extends ConsumerWidget {
     // 2) If not found, fall back to the SAF file picker.
     if (pickedFile == null) {
       if (!context.mounted) return;
-      final useManual = await showDialog<bool>(
+      final useManual = await showAnotaloConfirm(
         context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-          title: Text(
-            'Sin backup en Descargas',
-            style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          content: Text(
-            'No encontre ningun archivo de backup de Anotalo en la carpeta Descargas. Queres buscarlo manualmente?',
-            style: GoogleFonts.inter(fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text('Cancelar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.colorPrimary),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Buscar archivo', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
+        title: 'Sin backup en Descargas',
+        body:
+            'No encontré ningún archivo de backup de Anótalo en la carpeta Descargas. ¿Querés buscarlo manualmente?',
+        confirmLabel: 'Buscar archivo',
+        icon: Icons.folder_open_rounded,
       );
-      if (useManual != true) return;
+      if (!useManual) return;
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
@@ -585,157 +578,57 @@ class SettingsPage extends ConsumerWidget {
       jsonStr = await pickedFile.readAsString();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          duration: const Duration(seconds: 3),
-          backgroundColor: AppTheme.colorDanger,
-          content: Text('No se pudo leer el archivo: $e',
-              style: GoogleFonts.inter(color: Colors.white)),
-        ));
+      showAnotaloToast(context, 'No se pudo leer el archivo: $e',
+          tone: ToastTone.warn);
       return;
     }
 
     final summary = service.summarizeJson(jsonStr);
     if (!context.mounted) return;
     if (summary == null) {
-      ScaffoldMessenger.of(context)
-        ..clearSnackBars()
-        ..showSnackBar(SnackBar(
-          duration: const Duration(seconds: 3),
-          backgroundColor: AppTheme.colorDanger,
-          content: Text(
-            'El archivo no es un backup valido de Anotalo',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-          ),
-        ),
+      showAnotaloToast(
+        context,
+        'El archivo no es un backup válido de Anótalo',
+        tone: ToastTone.warn,
       );
       return;
     }
 
     final filename = pickedFile.path.split(Platform.pathSeparator).last;
+    final dateStr = summary.createdAt != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(summary.createdAt!)
+        : 'sin fecha';
+    final body = 'Reemplaza todos tus datos actuales. No se puede deshacer.\n\n'
+        'Archivo: $filename\n'
+        'Backup: $dateStr\n'
+        '• ${summary.tasks} tareas · ${summary.habits} hábitos · '
+        '${summary.projects} proyectos';
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAnotaloConfirm(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-        title: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: AppTheme.colorDanger),
-            const SizedBox(width: 8),
-            Text(
-              'Restaurar backup',
-              style: GoogleFonts.lora(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.colorDanger.withAlpha(20),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.colorDanger.withAlpha(60)),
-              ),
-              child: Text(
-                'Esto va a REEMPLAZAR todos tus datos actuales. No se puede deshacer.',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.colorDanger,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Archivo: $filename',
-              style: GoogleFonts.inter(fontSize: 12, fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              summary.createdAt != null
-                  ? 'Backup del ${DateFormat('dd/MM/yyyy HH:mm').format(summary.createdAt!)}'
-                  : 'Backup sin fecha',
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            _SummaryRow(label: 'Tareas', count: summary.tasks),
-            _SummaryRow(label: 'Habitos', count: summary.habits),
-            _SummaryRow(label: 'Completaciones', count: summary.habitCompletions),
-            _SummaryRow(label: 'Proyectos', count: summary.projects),
-            _SummaryRow(label: 'Notas rapidas', count: summary.quickNotes),
-            _SummaryRow(label: 'Entradas de diario', count: summary.journalEntries),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancelar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.colorDanger),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Restaurar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          ),
-        ],
-      ),
+      title: 'Restaurar backup',
+      body: body,
+      confirmLabel: 'Sí, restaurar',
+      danger: true,
+      icon: Icons.cloud_download_rounded,
     );
-    if (confirmed != true || !context.mounted) return;
+    if (!confirmed || !context.mounted) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await service.importFromJson(jsonStr);
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 4),
-          backgroundColor: AppTheme.colorSuccess,
-          content: Text(
-            '✓ Datos restaurados correctamente',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white),
-          ),
-        ),
-      );
+      if (!context.mounted) return;
+      showAnotaloToast(context, 'Datos restaurados correctamente',
+          tone: ToastTone.success);
     } catch (e) {
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 3),
-          backgroundColor: AppTheme.colorDanger,
-          content: Text('Error al restaurar: $e', style: GoogleFonts.inter(color: Colors.white)),
-        ),
-      );
+      if (!context.mounted) return;
+      showAnotaloToast(context, 'Error al restaurar: $e',
+          tone: ToastTone.warn);
     }
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  final String label;
-  final int count;
-  const _SummaryRow({required this.label, required this.count});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 2),
-    child: Row(
-      children: [
-        Text('· ', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.colorPrimary)),
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
-        ),
-        const Spacer(),
-        Text(
-          '$count',
-          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-      ],
-    ),
-  );
-}
+// Helper local — share_plus devuelve un Future que no queremos await.
+void unawaited(Future<void> _) {}
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 

@@ -33,7 +33,7 @@ class ManageAreasPage extends ConsumerWidget {
         ),
         title: Text(
           'Areas',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: context.textPrimary,

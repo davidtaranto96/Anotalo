@@ -3,17 +3,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 
+/// Changelog del sistema 1.6 — timeline vertical con dots, version label en
+/// mono, chip "Actual" en la última versión y kind-chips (Nuevo/Mejora/Fix)
+/// por item.
 class NovedadesPage extends StatelessWidget {
   const NovedadesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
       backgroundColor: context.surfaceBase,
       appBar: AppBar(
         title: Text(
-          'Novedades',
-          style: GoogleFonts.lora(
+          'Historial',
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: context.textPrimary,
@@ -25,256 +29,488 @@ class NovedadesPage extends StatelessWidget {
         iconTheme: IconThemeData(color: context.textSecondary),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        children: const [
-          _VersionEntry(
-            version: '1.7.0',
-            date: 'Abril 2026',
-            isLatest: true,
-            changes: [
-              _Change(icon: Icons.water_drop_rounded, text: 'Rollover automático: las tareas pendientes de días anteriores siguen apareciendo en Hoy hasta que las completes, difieras o borres'),
-              _Change(icon: Icons.history_rounded, text: 'Indicador "de ayer" / "de hace N días" en cada tarea arrastrada para que sepas de cuándo viene'),
-              _Change(icon: Icons.text_fields_rounded, text: 'Título "¿Qué vas a lograr hoy?" en su propia línea — los iconos arriba ya no lo cortan'),
-              _Change(icon: Icons.delete_sweep_rounded, text: 'Áreas built-in (Trabajo, Facultad, Personal, Casa, Salud) ahora se pueden borrar — armá el set que vos uses'),
-              _Change(icon: Icons.auto_awesome_rounded, text: 'Crear tarea desde una categoría filtrada la asigna automáticamente a esa área'),
-              _Change(icon: Icons.refresh_rounded, text: 'El selector de área en "Nueva tarea" usa la lista en vivo — ves tus áreas editadas/creadas, no las defaults'),
-            ],
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+        children: [
+          // Overline + bajada editorial
+          Text(
+            'NOVEDADES',
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: primary,
+              letterSpacing: 1.6,
+            ),
           ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.6.0',
-            date: 'Abril 2026',
-            changes: [
-              _Change(icon: Icons.rate_review_rounded, text: 'Revisión diaria en Hoy — repasá tareas, hábitos, ánimo y cerrá el día con un toque'),
-              _Change(icon: Icons.history_rounded, text: 'Historial de revisiones — volvé atrás, editá o borrá revisiones pasadas'),
-              _Change(icon: Icons.mood_rounded, text: 'Diario del día: cómo te sentiste, patrones, si fumaste y tomaste medicación'),
-              _Change(icon: Icons.lock_rounded, text: 'Al completar la revisión se bloquea — reabrila cuando quieras para editar'),
-              _Change(icon: Icons.account_tree_rounded, text: 'Vista "Todo" en árbol — categorías con sus primordiales, importantes y otras'),
-              _Change(icon: Icons.push_pin_rounded, text: 'Tareas sin área aparecen en su propia rama "Sin área" al principio del árbol'),
-              _Change(icon: Icons.palette_rounded, text: 'Áreas editables — creá, cambiá nombre/color/emoji y reordená tus categorías'),
-              _Change(icon: Icons.add_circle_rounded, text: 'Pestaña "+ Nueva" al final de las áreas para crear categorías al vuelo'),
-              _Change(icon: Icons.touch_app_rounded, text: 'Mantené presionada una pestaña de área para editarla directamente'),
-              _Change(icon: Icons.drag_handle_rounded, text: 'Arrastrá las áreas en Configuración para ordenarlas como quieras'),
-              _Change(icon: Icons.cloud_download_rounded, text: 'Backup automático en Descargas — se guarda solo, restaurar no requiere buscar el archivo'),
-              _Change(icon: Icons.folder_open_rounded, text: 'Si no encuentra backup en Descargas, te deja elegir el archivo manualmente'),
-              _Change(icon: Icons.format_quote_rounded, text: 'Más de mil frases nuevas — filosóficas, divertidas, que te hacen pensar y te alientan'),
-              _Change(icon: Icons.cleaning_services_rounded, text: 'Se sacaron los refranes genéricos — ahora todas las frases tienen peso'),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            'Historial de versiones',
+            style: GoogleFonts.fraunces(
+              fontSize: 26,
+              fontWeight: FontWeight.w600,
+              color: context.textPrimary,
+              letterSpacing: -0.3,
+            ),
           ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.5.0',
-            date: 'Abril 2026',
-            changes: [
-              _Change(icon: Icons.palette_rounded, text: 'Tinte del área elegida pinta el fondo de Hoy — pestañas siempre visibles con su color'),
-              _Change(icon: Icons.swipe_rounded, text: 'Swipe en tareas y hábitos: derecha = completar, izquierda = posponer + editar + borrar'),
-              _Change(icon: Icons.schedule_rounded, text: 'Posponer con presets: mañana, en 2/3 días, sábado, lunes próximo o fecha libre'),
-              _Change(icon: Icons.today_rounded, text: 'Botón "Volver a hoy" en Semana cuando navegás otras semanas'),
-              _Change(icon: Icons.swipe_left_rounded, text: 'Gesto horizontal en la barra inferior cambia de pestaña'),
-              _Change(icon: Icons.check_circle_outline_rounded, text: 'Hábitos redesignados: emoji grande, pill de frecuencia, contador semanal y check grande'),
-              _Change(icon: Icons.donut_large_rounded, text: 'Anillo de progreso diario en Hábitos con mensaje motivacional'),
-              _Change(icon: Icons.auto_graph_rounded, text: 'Sección Hábitos Atómicos: mejor racha, cumplimiento 30 días, mejor día e identidad'),
-              _Change(icon: Icons.dark_mode_rounded, text: 'Reloj del enfoque legible en modo oscuro'),
-              _Change(icon: Icons.notifications_active_rounded, text: 'Sonido + vibración triple al terminar sesión de enfoque'),
-              _Change(icon: Icons.more_time_rounded, text: 'Diálogo al terminar: completar tarea o sumar +5 / +10 / +15 minutos'),
-              _Change(icon: Icons.bug_report_rounded, text: 'Arranque corregido — la app ya no queda trabada en el logo'),
-              _Change(icon: Icons.crop_square_rounded, text: 'Formulario de Nuevo hábito sin overflow del teclado'),
-              _Change(icon: Icons.cloud_sync_rounded, text: 'Respaldo automático de Android — tus datos sobreviven a cada actualización del Play Store'),
-              _Change(icon: Icons.backup_rounded, text: 'Backup manual en Configuración — exportá todo a JSON y restauralo cuando quieras'),
-              _Change(icon: Icons.format_quote_rounded, text: 'Frase motivacional se renueva cada vez que volvés a Hoy — más citas de libros y películas épicas'),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            'Todo lo que fuimos sumando en Anótalo, versión por versión.',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: context.textSecondary,
+              height: 1.45,
+            ),
           ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.4.0',
-            date: 'Abril 2026',
-            changes: [
-              _Change(icon: Icons.swipe_rounded, text: 'Navegación con PageView real — indicador deslizante sigue el dedo'),
-              _Change(icon: Icons.expand_rounded, text: 'Completadas colapsables en Hoy — menos ruido visual'),
-              _Change(icon: Icons.undo_rounded, text: 'Deshacer completación — deslizá o mantené presionado la tarea'),
-              _Change(icon: Icons.folder_open_rounded, text: 'Proyectos en Semana separados de las tareas del día'),
-              _Change(icon: Icons.add_task_rounded, text: 'Nueva tarea inteligente con voz, área, prioridad y recordatorio'),
-            ],
-          ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.3.0',
-            date: 'Abril 2026',
-            changes: [
-              _Change(icon: Icons.tab_rounded, text: 'Tabs de área con colores mejorados — visibles en modo oscuro'),
-              _Change(icon: Icons.alarm_rounded, text: 'Recordatorios en nueva tarea'),
-              _Change(icon: Icons.view_week_rounded, text: 'Semana más limpia y enfocada'),
-              _Change(icon: Icons.new_releases_rounded, text: 'Pantalla de Novedades'),
-            ],
-          ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.2.0',
-            date: 'Abril 2026',
-            changes: [
-              _Change(icon: Icons.dark_mode_rounded, text: 'Modo oscuro funcionando en todas las pantallas'),
-              _Change(icon: Icons.swipe_rounded, text: 'Deslizá entre pestañas como en Instagram'),
-              _Change(icon: Icons.mic_rounded, text: 'Entrada por voz en nueva tarea — hablá y lo procesa'),
-              _Change(icon: Icons.workspaces_rounded, text: 'Áreas: Trabajo, Facultad, Personal, Casa, Salud'),
-            ],
-          ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.1.0',
-            date: 'Marzo 2026',
-            changes: [
-              _Change(icon: Icons.check_circle_rounded, text: 'Deshacer completación de tareas'),
-              _Change(icon: Icons.drag_indicator_rounded, text: 'Barra de progreso fija arriba de Hoy'),
-              _Change(icon: Icons.format_quote_rounded, text: 'Frases motivacionales de figuras históricas'),
-              _Change(icon: Icons.calendar_view_week_rounded, text: 'Semana con pills de días y navegación'),
-              _Change(icon: Icons.flag_rounded, text: 'Metas semanales completables'),
-            ],
-          ),
-          SizedBox(height: 20),
-          _VersionEntry(
-            version: '1.0.0',
-            date: 'Marzo 2026',
-            changes: [
-              _Change(icon: Icons.rocket_launch_rounded, text: 'Lanzamiento inicial de Anotalo'),
-              _Change(icon: Icons.task_alt_rounded, text: 'Gestión de tareas con prioridades'),
-              _Change(icon: Icons.folder_rounded, text: 'Proyectos con progreso y colores'),
-              _Change(icon: Icons.loop_rounded, text: 'Hábitos con racha diaria'),
-              _Change(icon: Icons.timer_rounded, text: 'Timer Pomodoro con modos de enfoque'),
-            ],
-          ),
-          SizedBox(height: 32),
+          const SizedBox(height: 20),
+          // Timeline
+          for (var i = 0; i < _releases.length; i++)
+            _TimelineEntry(
+              release: _releases[i],
+              isLast: i == _releases.length - 1,
+            ),
         ],
       ),
     );
   }
 }
 
-class _Change {
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+
+enum _ChangeKind { newFeature, improvement, fix }
+
+class _ChangelogItem {
+  final _ChangeKind kind;
   final IconData icon;
   final String text;
-  const _Change({required this.icon, required this.text});
+  const _ChangelogItem(this.kind, this.icon, this.text);
 }
 
-class _VersionEntry extends StatelessWidget {
+class _Release {
   final String version;
   final String date;
   final bool isLatest;
-  final List<_Change> changes;
-
-  const _VersionEntry({
+  final String? title;
+  final List<_ChangelogItem> items;
+  const _Release({
     required this.version,
     required this.date,
     this.isLatest = false,
-    required this.changes,
+    this.title,
+    required this.items,
   });
+}
+
+const _nf = _ChangeKind.newFeature;
+const _mj = _ChangeKind.improvement;
+const _fx = _ChangeKind.fix;
+
+const List<_Release> _releases = [
+  _Release(
+    version: '1.7.0',
+    date: 'Abril 2026',
+    isLatest: true,
+    title: 'Continuidad y contexto',
+    items: [
+      _ChangelogItem(_nf, Icons.water_drop_rounded,
+          'Rollover automático: las tareas pendientes de días anteriores siguen apareciendo en Hoy hasta que las completes, difieras o borres.'),
+      _ChangelogItem(_mj, Icons.history_rounded,
+          'Indicador "de ayer" / "de hace N días" en cada tarea arrastrada para que sepas de cuándo viene.'),
+      _ChangelogItem(_mj, Icons.text_fields_rounded,
+          'Título "¿Qué vas a lograr hoy?" en su propia línea — los iconos arriba ya no lo cortan.'),
+      _ChangelogItem(_mj, Icons.delete_sweep_rounded,
+          'Áreas built-in (Trabajo, Facultad, Personal, Casa, Salud) ahora se pueden borrar — armá el set que vos uses.'),
+      _ChangelogItem(_mj, Icons.auto_awesome_rounded,
+          'Crear tarea desde una categoría filtrada la asigna automáticamente a esa área.'),
+      _ChangelogItem(_fx, Icons.refresh_rounded,
+          'El selector de área en "Nueva tarea" usa la lista en vivo — ves tus áreas editadas/creadas, no las defaults.'),
+    ],
+  ),
+  _Release(
+    version: '1.6.0',
+    date: 'Abril 2026',
+    title: 'Color, sonidos y hábitos',
+    items: [
+      _ChangelogItem(_nf, Icons.rate_review_rounded,
+          'Revisión diaria en Hoy — repasá tareas, hábitos, ánimo y cerrá el día con un toque.'),
+      _ChangelogItem(_nf, Icons.history_rounded,
+          'Historial de revisiones — volvé atrás, editá o borrá revisiones pasadas.'),
+      _ChangelogItem(_nf, Icons.mood_rounded,
+          'Diario del día: cómo te sentiste, patrones, si fumaste y tomaste medicación.'),
+      _ChangelogItem(_mj, Icons.lock_rounded,
+          'Al completar la revisión se bloquea — reabrila cuando quieras para editar.'),
+      _ChangelogItem(_nf, Icons.account_tree_rounded,
+          'Vista "Todo" en árbol — categorías con sus primordiales, importantes y otras.'),
+      _ChangelogItem(_mj, Icons.push_pin_rounded,
+          'Tareas sin área aparecen en su propia rama "Sin área" al principio del árbol.'),
+      _ChangelogItem(_nf, Icons.palette_rounded,
+          'Áreas editables — creá, cambiá nombre/color/emoji y reordená tus categorías.'),
+      _ChangelogItem(_mj, Icons.add_circle_rounded,
+          'Pestaña "+ Nueva" al final de las áreas para crear categorías al vuelo.'),
+      _ChangelogItem(_mj, Icons.touch_app_rounded,
+          'Mantené presionada una pestaña de área para editarla directamente.'),
+      _ChangelogItem(_mj, Icons.drag_handle_rounded,
+          'Arrastrá las áreas en Configuración para ordenarlas como quieras.'),
+      _ChangelogItem(_nf, Icons.cloud_download_rounded,
+          'Backup automático en Descargas — se guarda solo, restaurar no requiere buscar el archivo.'),
+      _ChangelogItem(_mj, Icons.folder_open_rounded,
+          'Si no encuentra backup en Descargas, te deja elegir el archivo manualmente.'),
+      _ChangelogItem(_nf, Icons.format_quote_rounded,
+          'Más de mil frases nuevas — filosóficas, divertidas, que te hacen pensar y te alientan.'),
+      _ChangelogItem(_mj, Icons.cleaning_services_rounded,
+          'Se sacaron los refranes genéricos — ahora todas las frases tienen peso.'),
+    ],
+  ),
+  _Release(
+    version: '1.5.0',
+    date: 'Abril 2026',
+    title: 'Tinte, swipes y enfoque',
+    items: [
+      _ChangelogItem(_nf, Icons.palette_rounded,
+          'Tinte del área elegida pinta el fondo de Hoy — pestañas siempre visibles con su color.'),
+      _ChangelogItem(_nf, Icons.swipe_rounded,
+          'Swipe en tareas y hábitos: derecha = completar, izquierda = posponer + editar + borrar.'),
+      _ChangelogItem(_mj, Icons.schedule_rounded,
+          'Posponer con presets: mañana, en 2/3 días, sábado, lunes próximo o fecha libre.'),
+      _ChangelogItem(_mj, Icons.today_rounded,
+          'Botón "Volver a hoy" en Semana cuando navegás otras semanas.'),
+      _ChangelogItem(_mj, Icons.swipe_left_rounded,
+          'Gesto horizontal en la barra inferior cambia de pestaña.'),
+      _ChangelogItem(_nf, Icons.check_circle_outline_rounded,
+          'Hábitos redesignados: emoji grande, pill de frecuencia, contador semanal y check grande.'),
+      _ChangelogItem(_nf, Icons.donut_large_rounded,
+          'Anillo de progreso diario en Hábitos con mensaje motivacional.'),
+      _ChangelogItem(_nf, Icons.auto_graph_rounded,
+          'Sección Hábitos Atómicos: mejor racha, cumplimiento 30 días, mejor día e identidad.'),
+      _ChangelogItem(_fx, Icons.dark_mode_rounded,
+          'Reloj del enfoque legible en modo oscuro.'),
+      _ChangelogItem(_nf, Icons.notifications_active_rounded,
+          'Sonido + vibración triple al terminar sesión de enfoque.'),
+      _ChangelogItem(_nf, Icons.more_time_rounded,
+          'Diálogo al terminar: completar tarea o sumar +5 / +10 / +15 minutos.'),
+      _ChangelogItem(_fx, Icons.bug_report_rounded,
+          'Arranque corregido — la app ya no queda trabada en el logo.'),
+      _ChangelogItem(_fx, Icons.crop_square_rounded,
+          'Formulario de Nuevo hábito sin overflow del teclado.'),
+      _ChangelogItem(_nf, Icons.cloud_sync_rounded,
+          'Respaldo automático de Android — tus datos sobreviven a cada actualización del Play Store.'),
+      _ChangelogItem(_nf, Icons.backup_rounded,
+          'Backup manual en Configuración — exportá todo a JSON y restauralo cuando quieras.'),
+      _ChangelogItem(_mj, Icons.format_quote_rounded,
+          'Frase motivacional se renueva cada vez que volvés a Hoy — más citas de libros y películas épicas.'),
+    ],
+  ),
+  _Release(
+    version: '1.4.0',
+    date: 'Abril 2026',
+    title: 'Gestos e integración',
+    items: [
+      _ChangelogItem(_nf, Icons.swipe_rounded,
+          'Navegación con PageView real — indicador deslizante sigue el dedo.'),
+      _ChangelogItem(_mj, Icons.expand_rounded,
+          'Completadas colapsables en Hoy — menos ruido visual.'),
+      _ChangelogItem(_mj, Icons.undo_rounded,
+          'Deshacer completación — deslizá o mantené presionado la tarea.'),
+      _ChangelogItem(_mj, Icons.folder_open_rounded,
+          'Proyectos en Semana separados de las tareas del día.'),
+      _ChangelogItem(_nf, Icons.add_task_rounded,
+          'Nueva tarea inteligente con voz, área, prioridad y recordatorio.'),
+    ],
+  ),
+  _Release(
+    version: '1.3.0',
+    date: 'Abril 2026',
+    title: 'Áreas y recordatorios',
+    items: [
+      _ChangelogItem(_mj, Icons.tab_rounded,
+          'Tabs de área con colores mejorados — visibles en modo oscuro.'),
+      _ChangelogItem(_nf, Icons.alarm_rounded, 'Recordatorios en nueva tarea.'),
+      _ChangelogItem(_mj, Icons.view_week_rounded, 'Semana más limpia y enfocada.'),
+      _ChangelogItem(_nf, Icons.new_releases_rounded, 'Pantalla de Novedades.'),
+    ],
+  ),
+  _Release(
+    version: '1.2.0',
+    date: 'Abril 2026',
+    title: 'Modo oscuro + voz',
+    items: [
+      _ChangelogItem(_nf, Icons.dark_mode_rounded,
+          'Modo oscuro funcionando en todas las pantallas.'),
+      _ChangelogItem(_nf, Icons.swipe_rounded,
+          'Deslizá entre pestañas como en Instagram.'),
+      _ChangelogItem(_nf, Icons.mic_rounded,
+          'Entrada por voz en nueva tarea — hablá y lo procesa.'),
+      _ChangelogItem(_nf, Icons.workspaces_rounded,
+          'Áreas: Trabajo, Facultad, Personal, Casa, Salud.'),
+    ],
+  ),
+  _Release(
+    version: '1.1.0',
+    date: 'Marzo 2026',
+    title: 'Semana y citas',
+    items: [
+      _ChangelogItem(_mj, Icons.check_circle_rounded, 'Deshacer completación de tareas.'),
+      _ChangelogItem(_mj, Icons.drag_indicator_rounded, 'Barra de progreso fija arriba de Hoy.'),
+      _ChangelogItem(_nf, Icons.format_quote_rounded,
+          'Frases motivacionales de figuras históricas.'),
+      _ChangelogItem(_nf, Icons.calendar_view_week_rounded,
+          'Semana con pills de días y navegación.'),
+      _ChangelogItem(_nf, Icons.flag_rounded, 'Metas semanales completables.'),
+    ],
+  ),
+  _Release(
+    version: '1.0.0',
+    date: 'Marzo 2026',
+    title: 'Lanzamiento',
+    items: [
+      _ChangelogItem(_nf, Icons.rocket_launch_rounded,
+          'Lanzamiento inicial de Anótalo.'),
+      _ChangelogItem(_nf, Icons.task_alt_rounded,
+          'Gestión de tareas con prioridades.'),
+      _ChangelogItem(_nf, Icons.folder_rounded, 'Proyectos con progreso y colores.'),
+      _ChangelogItem(_nf, Icons.loop_rounded, 'Hábitos con racha diaria.'),
+      _ChangelogItem(_nf, Icons.timer_rounded, 'Timer Pomodoro con modos de enfoque.'),
+    ],
+  ),
+];
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+
+class _TimelineEntry extends StatelessWidget {
+  final _Release release;
+  final bool isLast;
+
+  const _TimelineEntry({required this.release, required this.isLast});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.surfaceCard,
-        borderRadius: AppTheme.r16,
-        border: Border.all(
-          color: isLatest ? AppTheme.colorPrimary.withAlpha(80) : context.dividerColor,
-          width: isLatest ? 1.5 : 1,
-        ),
-        boxShadow: isLatest ? AppTheme.shadowMd : AppTheme.shadowSm,
-      ),
-      child: Column(
+    final primary = Theme.of(context).colorScheme.primary;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+
+    return IntrinsicHeight(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isLatest
-                  ? AppTheme.colorPrimary.withAlpha(12)
-                  : context.surfaceElevated.withAlpha(80),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            ),
-            child: Row(
+          // Rail vertical + dot
+          SizedBox(
+            width: 24,
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'v$version',
-                          style: GoogleFonts.lora(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: isLatest ? AppTheme.colorPrimary : context.textPrimary,
-                          ),
-                        ),
-                        if (isLatest) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.colorPrimary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Actual',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      date,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: context.textTertiary,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                _TimelineDot(active: release.isLatest, color: primary),
+                Expanded(
+                  child: Container(
+                    width: 1.5,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    color: isLast
+                        ? Colors.transparent
+                        : context.dividerColor,
+                  ),
                 ),
               ],
             ),
           ),
-          // Changes list
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              children: changes.map((c) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AppTheme.colorPrimary.withAlpha(15),
-                        borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: 10),
+          // Columna del contenido
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fila versión + chip Actual + fecha
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'v${release.version}',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: onSurface,
+                          letterSpacing: -0.2,
+                        ),
                       ),
-                      child: Icon(c.icon, size: 15, color: AppTheme.colorPrimary),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          c.text,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: context.textPrimary,
-                            height: 1.4,
+                      if (release.isLatest) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: primary,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Actual',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.4,
+                            ),
                           ),
                         ),
+                      ],
+                      const Spacer(),
+                      Text(
+                        release.date,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: context.textTertiary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (release.title != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      release.title!,
+                      style: GoogleFonts.fraunces(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                        color: onSurface,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ],
+                  const SizedBox(height: 10),
+                  // Card con los items
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.surfaceCard,
+                      borderRadius: AppTheme.r12,
+                      border: Border.all(
+                        color: release.isLatest
+                            ? primary.withValues(alpha: 0.5)
+                            : context.dividerColor,
+                        width: release.isLatest ? 1.2 : 1,
+                      ),
+                      boxShadow: release.isLatest
+                          ? AppTheme.shadowMd
+                          : AppTheme.shadowSm,
+                    ),
+                    child: Column(
+                      children: [
+                        for (var i = 0; i < release.items.length; i++) ...[
+                          _ItemRow(item: release.items[i]),
+                          if (i != release.items.length - 1)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 14,
+                              endIndent: 14,
+                              color: context.dividerColor.withValues(alpha: 0.6),
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineDot extends StatelessWidget {
+  final bool active;
+  final Color color;
+  const _TimelineDot({required this.active, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? color : Colors.transparent,
+        border: Border.all(
+          color: active ? color : context.dividerColor,
+          width: active ? 1.5 : 1.5,
+        ),
+        boxShadow: active
+            ? [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.45),
+                  blurRadius: 0,
+                  spreadRadius: 3,
                 ),
-              )).toList(),
+              ]
+            : null,
+      ),
+    );
+  }
+}
+
+class _ItemRow extends StatelessWidget {
+  final _ChangelogItem item;
+  const _ItemRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final (chipColor, chipLabel) = switch (item.kind) {
+      _ChangeKind.newFeature => (
+          Theme.of(context).colorScheme.primary,
+          'Nuevo',
+        ),
+      _ChangeKind.improvement => (AppTheme.colorSuccess, 'Mejora'),
+      _ChangeKind.fix => (AppTheme.colorWarning, 'Fix'),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: chipColor.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(item.icon, size: 16, color: chipColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // chip de tipo
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: chipColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    chipLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: chipColor,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.text,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: context.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
