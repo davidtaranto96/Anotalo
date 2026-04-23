@@ -16,6 +16,9 @@ class TaskCard extends StatelessWidget {
   final VoidCallback? onUncomplete;
   final VoidCallback onDefer;
   final VoidCallback onDelete;
+  /// Área actualmente filtrada en Hoy. Si matchea `task.area`, omitimos
+  /// el chip de área en la card porque sería redundante con el filtro.
+  final String? currentFilterAreaId;
 
   const TaskCard({
     super.key,
@@ -24,6 +27,7 @@ class TaskCard extends StatelessWidget {
     this.onUncomplete,
     required this.onDefer,
     required this.onDelete,
+    this.currentFilterAreaId,
   });
 
   @override
@@ -217,51 +221,66 @@ class TaskCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (isRolledOver)
-                            Padding(
+                          // Meta row compacta: "de ayer" + chip de área
+                          // en una sola línea para no malgastar vertical.
+                          // El chip de área se omite si el usuario está
+                          // filtrando justamente por esa área (redundante).
+                          Builder(builder: (_) {
+                            final area = task.area == null
+                                ? null
+                                : getTaskArea(task.area);
+                            final showAreaChip = area != null &&
+                                task.area != currentFilterAreaId;
+                            if (!isRolledOver && !showAreaChip) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
                               padding: const EdgeInsets.only(top: 4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                              child: Wrap(
+                                spacing: 10,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.history_rounded,
-                                    size: 11,
-                                    color: AppTheme.colorWarning,
-                                  ),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    rolloverDays == 1
-                                        ? 'de ayer'
-                                        : 'de hace $rolloverDays días',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppTheme.colorWarning,
+                                  if (isRolledOver)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.history_rounded,
+                                          size: 11,
+                                          color: AppTheme.colorWarning,
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          rolloverDays == 1
+                                              ? 'de ayer'
+                                              : 'hace $rolloverDays días',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppTheme.colorWarning,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  if (showAreaChip)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(area.emoji,
+                                            style: const TextStyle(fontSize: 10)),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          area.label,
+                                          style: GoogleFonts.inter(
+                                              fontSize: 10, color: area.color),
+                                        ),
+                                      ],
+                                    ),
                                 ],
                               ),
-                            ),
-                          if (task.area != null) ...[
-                            () {
-                              final area = getTaskArea(task.area);
-                              if (area == null) return const SizedBox.shrink();
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(area.emoji, style: const TextStyle(fontSize: 10)),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      area.label,
-                                      style: GoogleFonts.inter(fontSize: 10, color: area.color),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }(),
-                          ],
+                            );
+                          }),
                           if (task.estimatedMinutes != null)
                             Padding(
                               padding: const EdgeInsets.only(top: 2),

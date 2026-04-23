@@ -303,17 +303,16 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           ),
 
           // ── Skeleton en la primera carga ────────────────────────────────
-          // Si aún no tenemos datos (`valueOrNull == null`) y el stream
-          // está cargando, mostramos shimmer. Apenas llegan los datos la
-          // rama siguiente toma control y entra con stagger.
-          if (todayTasksAsync.valueOrNull == null && todayTasksAsync.isLoading) ...[
+          // Cada rama usa un if independiente (evita las colisiones del
+          // `if-else if-else` con spread collection que antes hacía que
+          // _TreeByAreaView no se renderizara en "Todo").
+          if (todayTasksAsync.valueOrNull == null && todayTasksAsync.isLoading)
             const SliverToBoxAdapter(child: TaskSkeletonList(count: 5)),
-          ] else
-          // ── Priority sections (flat OR tree) ───────────────────────────
-          // When "Todo" is selected we group by area → priority so the user
-          // sees a side-tree layout. When a specific area is selected we
-          // keep the simple priority-stacked layout.
-          if (_selectedArea == null) ...[
+
+          // ── Tree view: "Todo" está activo ─────────────────────────────
+          if ((todayTasksAsync.valueOrNull != null ||
+                  !todayTasksAsync.isLoading) &&
+              _selectedArea == null)
             SliverToBoxAdapter(
               child: _TreeByAreaView(
                 areas: areas,
@@ -326,11 +325,16 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                 onDelete: taskService.deleteTask,
               ),
             ),
-          ] else ...[
+
+          // ── Priority sections: área específica seleccionada ───────────
+          if ((todayTasksAsync.valueOrNull != null ||
+                  !todayTasksAsync.isLoading) &&
+              _selectedArea != null) ...[
             SliverToBoxAdapter(
               child: PrioritySection(
                 priority: TaskPriority.primordial,
                 tasks: filteredPrimordial,
+                currentFilterAreaId: _selectedArea,
                 onComplete: taskService.completeTask,
                 onUncomplete: taskService.uncompleteTask,
                 onDefer: (id) => _onDeferTask(taskService, id),
@@ -341,6 +345,18 @@ class _HoyPageState extends ConsumerState<HoyPage> {
               child: PrioritySection(
                 priority: TaskPriority.importante,
                 tasks: filteredImportante,
+                currentFilterAreaId: _selectedArea,
+                onComplete: taskService.completeTask,
+                onUncomplete: taskService.uncompleteTask,
+                onDefer: (id) => _onDeferTask(taskService, id),
+                onDelete: taskService.deleteTask,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: PrioritySection(
+                priority: TaskPriority.puedeEsperar,
+                tasks: filteredPuedeEsperar,
+                currentFilterAreaId: _selectedArea,
                 onComplete: taskService.completeTask,
                 onUncomplete: taskService.uncompleteTask,
                 onDefer: (id) => _onDeferTask(taskService, id),

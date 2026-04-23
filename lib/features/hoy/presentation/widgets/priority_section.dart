@@ -12,6 +12,9 @@ class PrioritySection extends StatelessWidget {
   final Function(String)? onUncomplete;
   final Function(String) onDefer;
   final Function(String) onDelete;
+  /// Área actualmente filtrada en Hoy. Se propaga al TaskCard para que
+  /// omita mostrar el chip de área cuando es el mismo que el filtro.
+  final String? currentFilterAreaId;
 
   const PrioritySection({
     super.key,
@@ -21,6 +24,7 @@ class PrioritySection extends StatelessWidget {
     this.onUncomplete,
     required this.onDefer,
     required this.onDelete,
+    this.currentFilterAreaId,
   });
 
   @override
@@ -97,6 +101,7 @@ class PrioritySection extends StatelessWidget {
               Expanded(
                 child: TaskCard(
                   task: task,
+                  currentFilterAreaId: currentFilterAreaId,
                   onComplete: () => onComplete(task.id),
                   onUncomplete: onUncomplete != null
                       ? () => onUncomplete!(task.id)
