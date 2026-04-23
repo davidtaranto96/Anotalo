@@ -69,7 +69,7 @@ class ProjectCard extends ConsumerWidget {
                                 project.title.isNotEmpty
                                     ? project.title[0].toUpperCase()
                                     : 'P',
-                                style: GoogleFonts.lora(
+                                style: GoogleFonts.fraunces(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   color: color,

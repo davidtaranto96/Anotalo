@@ -300,7 +300,7 @@ class _DailyReviewPageState extends ConsumerState<DailyReviewPage> {
         children: [
           Text(
             'Revisión del día',
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 22,
               fontWeight: FontWeight.w600,
               color: context.textPrimary,
@@ -532,7 +532,7 @@ class _StepTareasState extends ConsumerState<_StepTareas> {
             children: [
               Text(
                 '¿Qué hiciste hoy?',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: context.textPrimary,
@@ -851,7 +851,7 @@ class _TaskRow extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('Borrar tarea',
-            style: GoogleFonts.lora(fontWeight: FontWeight.w600)),
+            style: GoogleFonts.fraunces(fontWeight: FontWeight.w600)),
         content: Text('¿Seguro que querés borrar esta tarea?',
             style: GoogleFonts.inter(fontSize: 14)),
         actions: [
@@ -987,7 +987,7 @@ class _StepHabitos extends ConsumerWidget {
             children: [
               Text(
                 'Tus hábitos de hoy',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.fraunces(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: context.textPrimary,
@@ -1283,7 +1283,7 @@ class _StepDiario extends StatelessWidget {
         children: [
           Text(
             '¿Cómo te fue?',
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: context.textPrimary,
@@ -1610,7 +1610,7 @@ class _StepCerrar extends ConsumerWidget {
                       ? 'Revisión guardada'
                       : '¿Estás listo para cerrar el día?',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.lora(
+                  style: GoogleFonts.fraunces(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     color: context.textPrimary,
@@ -1762,7 +1762,7 @@ class _StatTile extends StatelessWidget {
             value,
             style: isEmoji
                 ? const TextStyle(fontSize: 28)
-                : GoogleFonts.lora(
+                : GoogleFonts.fraunces(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     color: context.textPrimary,

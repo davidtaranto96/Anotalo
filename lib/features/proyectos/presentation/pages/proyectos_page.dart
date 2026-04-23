@@ -38,7 +38,7 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
             backgroundColor: Colors.transparent,
             surfaceTintColor: Colors.transparent,
             title: Text('📁 Proyectos',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.fraunces(
                   fontSize: 24, fontWeight: FontWeight.w600,
                   color: context.textPrimary, letterSpacing: -0.3,
                 )),

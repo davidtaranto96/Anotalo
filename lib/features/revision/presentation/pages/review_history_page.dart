@@ -34,7 +34,7 @@ class ReviewHistoryPage extends ConsumerWidget {
         ),
         title: Text(
           'Historial de revisiones',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: context.textPrimary,
@@ -116,7 +116,7 @@ class _EmptyHistory extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Todavía no hiciste ninguna revisión',
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: context.textPrimary,
@@ -202,7 +202,7 @@ class _ReviewCard extends StatelessWidget {
                           children: [
                             Text(
                               cap,
-                              style: GoogleFonts.lora(
+                              style: GoogleFonts.fraunces(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 color: context.textPrimary,
@@ -285,7 +285,7 @@ class _ReviewCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Borrar revisión',
-          style: GoogleFonts.lora(fontWeight: FontWeight.w600),
+          style: GoogleFonts.fraunces(fontWeight: FontWeight.w600),
         ),
         content: Text(
           '¿Seguro que querés eliminar esta revisión? No se puede deshacer.',

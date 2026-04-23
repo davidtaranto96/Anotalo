@@ -213,7 +213,7 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
           const SizedBox(height: 14),
           Text(
             _isEditing ? 'Editar tarea' : 'Nueva tarea',
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: context.textPrimary,

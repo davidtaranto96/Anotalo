@@ -59,7 +59,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('📥 Inbox',
-                    style: GoogleFonts.lora(
+                    style: GoogleFonts.fraunces(
                       fontSize: 22, fontWeight: FontWeight.w600,
                       color: context.textPrimary, letterSpacing: -0.3,
                     )),

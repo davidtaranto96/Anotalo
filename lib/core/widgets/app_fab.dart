@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 
+import '../feedback/feedback_service.dart';
+import '../theme/anotalo_tokens.dart';
+
+/// FAB del sistema 1.6 — 52×52, radio 14pt, sombra doble (glow del acento
+/// + drop negro). Color dinámico: usa `colorScheme.primary`, que ya está
+/// sincronizado con el acento elegido por el usuario.
 class AppFab extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -33,7 +37,7 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -46,48 +50,52 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final primary = widget.color ?? scheme.primary;
     final bgColor = _longPressed
-        ? AppTheme.colorDanger
+        ? scheme.error
         : _pressed
-            ? AppTheme.colorPrimaryDark
-            : (widget.color ?? AppTheme.colorPrimary);
+            ? scheme.secondary // primaryDark del acento
+            : primary;
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) => setState(() => _pressed = false),
       onTapCancel: () => setState(() => _pressed = false),
       onTap: () {
-        HapticFeedback.lightImpact();
+        FeedbackService.instance.tick();
         widget.onTap();
       },
-      onLongPress: widget.onLongPress == null ? null : () {
-        HapticFeedback.mediumImpact();
-        setState(() => _longPressed = true);
-        _pulseController.repeat(reverse: true);
-        widget.onLongPress!();
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() => _longPressed = false);
-            _pulseController.stop();
-            _pulseController.reset();
-          }
-        });
-      },
+      onLongPress: widget.onLongPress == null
+          ? null
+          : () {
+              FeedbackService.instance.warn();
+              setState(() => _longPressed = true);
+              _pulseController.repeat(reverse: true);
+              widget.onLongPress!();
+              Future.delayed(const Duration(seconds: 2), () {
+                if (mounted) {
+                  setState(() => _longPressed = false);
+                  _pulseController.stop();
+                  _pulseController.reset();
+                }
+              });
+            },
       child: ScaleTransition(
         scale: _pulseAnimation,
         child: AnimatedScale(
-          scale: _pressed ? 0.95 : 1.0,
-          duration: const Duration(milliseconds: 100),
+          scale: _pressed ? 0.94 : 1.0,
+          duration: const Duration(milliseconds: 120),
           curve: Curves.easeOutCubic,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOutCubic,
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: AppTheme.r16,
-              boxShadow: AppTheme.shadowMd,
+              borderRadius: BorderRadius.circular(context.radii.xl),
+              boxShadow: context.shadowsX.fab,
             ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
@@ -99,7 +107,7 @@ class _AppFabState extends State<AppFab> with SingleTickerProviderStateMixin {
                 widget.icon,
                 key: ValueKey(widget.icon),
                 color: Colors.white,
-                size: 24,
+                size: 22,
               ),
             ),
           ),

@@ -148,7 +148,7 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
           ),
           Text(
             isEditing ? 'Editar hábito' : 'Nuevo habito',
-            style: GoogleFonts.lora(fontSize: 20, fontWeight: FontWeight.w600, color: context.textPrimary),
+            style: GoogleFonts.fraunces(fontSize: 20, fontWeight: FontWeight.w600, color: context.textPrimary),
           ),
           const SizedBox(height: 20),
           TextField(

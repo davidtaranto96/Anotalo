@@ -77,7 +77,7 @@ class EnfoquePage extends ConsumerWidget {
                     children: [
                       Text(
                         '🎯 Enfoque',
-                        style: GoogleFonts.lora(
+                        style: GoogleFonts.fraunces(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                           color: context.textPrimary,
@@ -274,7 +274,7 @@ class EnfoquePage extends ConsumerWidget {
             ),
             Text(
               'Tarea a enfocar',
-              style: GoogleFonts.lora(
+              style: GoogleFonts.fraunces(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: context.textPrimary,
@@ -368,7 +368,7 @@ void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask)
                 Expanded(
                   child: Text(
                     '¡Sesión completada!',
-                    style: GoogleFonts.lora(
+                    style: GoogleFonts.fraunces(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                       color: sheetCtx.textPrimary,

@@ -1,8 +1,13 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:arquitectura_enfoque/core/feedback/feedback_service.dart';
 import 'package:arquitectura_enfoque/core/providers/shell_providers.dart';
+import 'package:arquitectura_enfoque/core/theme/anotalo_tokens.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/pages/hoy_page.dart';
@@ -28,12 +33,14 @@ class _AppShellState extends ConsumerState<AppShell> {
   late final PageController _pageController;
   int _currentPage = 0;
 
+  // Iconos Lucide 1.8pt que matchean el redesign 1.6 — stroke fino,
+  // geometría uniforme. `Icons.*` se mantienen en otras pantallas.
   static const _tabs = [
-    _TabConfig(Icons.today_rounded,               'Hoy'),
-    _TabConfig(Icons.calendar_view_week_rounded,  'Semana'),
-    _TabConfig(Icons.folder_rounded,              'Proyectos'),
-    _TabConfig(Icons.loop_rounded,                'Hábitos'),
-    _TabConfig(Icons.timer_rounded,               'Enfoque'),
+    _TabConfig(LucideIcons.calendar,   'Hoy'),
+    _TabConfig(LucideIcons.grid,       'Semana'),
+    _TabConfig(LucideIcons.folder,     'Proyectos'),
+    _TabConfig(LucideIcons.repeat,     'Hábitos'),
+    _TabConfig(LucideIcons.timer,      'Enfoque'),
   ];
 
   @override
@@ -49,7 +56,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   void _goToPage(int index) {
-    HapticFeedback.selectionClick();
+    FeedbackService.instance.tick();
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
@@ -193,20 +200,19 @@ class _NavBar extends StatelessWidget {
           onTabTap(target);
         }
       },
-      child: Container(
-        padding: EdgeInsets.only(bottom: bottomPadding),
-        decoration: BoxDecoration(
-          color: context.surfaceCard,
-          border: Border(top: BorderSide(color: context.dividerColor)),
-          boxShadow: const [
-            BoxShadow(
-              offset: Offset(0, -2),
-              blurRadius: 8,
-              color: Color(0x0A000000),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            padding: EdgeInsets.only(bottom: bottomPadding),
+            decoration: BoxDecoration(
+              // Superficie sólida (no translucida) para que el blur agregue
+              // profundidad sin dejar pasar el contenido scrolleado.
+              color: context.surfaceCard,
+              border: Border(top: BorderSide(color: context.dividerColor)),
+              boxShadow: context.shadowsX.navBarTop,
             ),
-          ],
-        ),
-        child: LayoutBuilder(
+            child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
           final tabWidth = totalWidth / tabs.length;
@@ -300,6 +306,8 @@ class _NavBar extends StatelessWidget {
           );
         },
       ),
+          ),
+        ),
       ),
     );
   }

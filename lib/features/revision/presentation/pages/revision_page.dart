@@ -52,7 +52,7 @@ class _RevisionPageState extends ConsumerState<RevisionPage>
                   ),
                   Text(
                     'Revisión',
-                    style: GoogleFonts.lora(
+                    style: GoogleFonts.fraunces(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
@@ -314,7 +314,7 @@ class _Step1 extends StatelessWidget {
       children: [
         Text(
           '¿Qué lograste hoy?',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
@@ -398,7 +398,7 @@ class _Step2 extends StatelessWidget {
       children: [
         Text(
           '¿Qué quedó pendiente?',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
@@ -551,7 +551,7 @@ class _Step3 extends StatelessWidget {
       children: [
         Text(
           'Reflexión del día',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
@@ -644,7 +644,7 @@ class _Step4 extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           '¡Revisión completa!',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 24,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
@@ -760,7 +760,7 @@ class _HistorialContentState extends State<_HistorialContent> {
       children: [
         Text(
           'Estado de ánimo',
-          style: GoogleFonts.lora(
+          style: GoogleFonts.fraunces(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
@@ -909,7 +909,7 @@ class _HistorialContentState extends State<_HistorialContent> {
             ),
             Text(
               monthLabel,
-              style: GoogleFonts.lora(
+              style: GoogleFonts.fraunces(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,

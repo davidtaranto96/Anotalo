@@ -202,7 +202,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                           Expanded(
                             child: Text(
                               project.title,
-                              style: GoogleFonts.lora(
+                              style: GoogleFonts.fraunces(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w600,
                                 color: textColor,

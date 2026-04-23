@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../../core/feedback/feedback_service.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../domain/models/task.dart';
 import 'add_task_bottom_sheet.dart';
+import 'pencil_strike_title.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -29,6 +30,11 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDone = task.status == TaskStatus.done;
     final priorityColor = _priorityColor(task.priority);
+    final area = task.area == null ? null : getTaskArea(task.area);
+    // Color para la barra-acento vertical del lado izquierdo. Si la tarea
+    // no tiene área, caemos al color de prioridad para no romper el diseño.
+    final accentBarColor = (area?.color ?? priorityColor)
+        .withValues(alpha: isDone ? 0.30 : 0.85);
     // Rollover: task whose dayId is older than today and still pending.
     final today = todayId();
     final isRolledOver = !isDone && task.dayId.compareTo(today) < 0;
@@ -50,7 +56,7 @@ class TaskCard extends StatelessWidget {
                 children: [
                   SlidableAction(
                     onPressed: (_) {
-                      HapticFeedback.mediumImpact();
+                      FeedbackService.instance.tick();
                       onUncomplete?.call();
                     },
                     backgroundColor: AppTheme.colorPrimary,
@@ -68,7 +74,7 @@ class TaskCard extends StatelessWidget {
                 children: [
                   SlidableAction(
                     onPressed: (_) {
-                      HapticFeedback.mediumImpact();
+                      FeedbackService.instance.success();
                       onComplete();
                     },
                     backgroundColor: AppTheme.colorSuccess,
@@ -88,7 +94,7 @@ class TaskCard extends StatelessWidget {
               onPressed: isDone
                   ? null
                   : (_) {
-                      HapticFeedback.lightImpact();
+                      FeedbackService.instance.tick();
                       onDefer();
                     },
               backgroundColor: isDone
@@ -102,7 +108,7 @@ class TaskCard extends StatelessWidget {
             ),
             SlidableAction(
               onPressed: (_) {
-                HapticFeedback.heavyImpact();
+                FeedbackService.instance.danger();
                 onDelete();
               },
               backgroundColor: AppTheme.colorDanger,
@@ -119,7 +125,7 @@ class TaskCard extends StatelessWidget {
           //   - Pendientes → abrir editor con los datos de la tarea.
           //   - Completadas → deshacer (mantener el shortcut histórico).
           onLongPress: () {
-            HapticFeedback.mediumImpact();
+            FeedbackService.instance.warn();
             if (isDone && onUncomplete != null) {
               onUncomplete!();
             } else if (!isDone) {
@@ -133,22 +139,40 @@ class TaskCard extends StatelessWidget {
             border: Border.all(color: isDone ? context.dividerColor : priorityColor.withAlpha(60)),
             boxShadow: isDone ? null : AppTheme.shadowSm,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Barra-acento de área (signature 1.6): 3pt pegada al borde
+                // izquierdo, redondeada solo del lado derecho.
+                Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: accentBarColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
               // Main row
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                padding: const EdgeInsets.fromLTRB(10, 12, 12, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Completion circle
                     GestureDetector(
                       onTap: () {
-                        HapticFeedback.lightImpact();
                         if (isDone && onUncomplete != null) {
+                          FeedbackService.instance.tick();
                           onUncomplete!();
                         } else {
+                          FeedbackService.instance.success();
                           onComplete();
                         }
                       },
@@ -168,18 +192,24 @@ class TaskCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    // Title
+                    // Title — con el gesto pencil-stroke: arrastrar horizontal
+                    // sobre el texto dibuja un trazo; si cubre >55% del ancho,
+                    // completa la tarea.
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            task.title,
+                          PencilStrikeTitle(
+                            title: task.title,
+                            done: isDone,
+                            strokeColor: priorityColor,
+                            onComplete: onComplete,
                             style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
-                              color: isDone ? context.textTertiary : context.textPrimary,
-                              decoration: isDone ? TextDecoration.lineThrough : null,
+                              color: isDone
+                                  ? context.textTertiary
+                                  : context.textPrimary,
                             ),
                           ),
                           if (isRolledOver)
@@ -256,7 +286,7 @@ class TaskCard extends StatelessWidget {
                         color: AppTheme.colorSuccess,
                         bgColor: AppTheme.colorSuccessLight,
                         onTap: () {
-                          HapticFeedback.lightImpact();
+                          FeedbackService.instance.success();
                           onComplete();
                         },
                       ),
@@ -266,7 +296,7 @@ class TaskCard extends StatelessWidget {
                         color: context.textSecondary,
                         bgColor: context.neutral100,
                         onTap: () {
-                          HapticFeedback.lightImpact();
+                          FeedbackService.instance.tick();
                           onDefer();
                         },
                       ),
@@ -276,7 +306,7 @@ class TaskCard extends StatelessWidget {
                         color: AppTheme.colorDanger,
                         bgColor: AppTheme.colorDangerLight,
                         onTap: () {
-                          HapticFeedback.heavyImpact();
+                          FeedbackService.instance.danger();
                           onDelete();
                         },
                       ),
@@ -285,7 +315,11 @@ class TaskCard extends StatelessWidget {
                 ),
 
               if (isDone) const SizedBox(height: 12),
-            ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         ), // GestureDetector

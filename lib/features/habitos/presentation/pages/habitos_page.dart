@@ -47,7 +47,7 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
                 return Row(
                   children: [
                     Text('Habitos',
-                        style: GoogleFonts.lora(
+                        style: GoogleFonts.fraunces(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
                           color: context.textPrimary,
@@ -79,12 +79,12 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
                 );
               },
               loading: () => Text('Habitos',
-                  style: GoogleFonts.lora(
+                  style: GoogleFonts.fraunces(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                       color: context.textPrimary)),
               error: (_, __) => Text('Habitos',
-                  style: GoogleFonts.lora(
+                  style: GoogleFonts.fraunces(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                       color: context.textPrimary)),
@@ -660,7 +660,7 @@ class _DailyProgressHero extends StatelessWidget {
                       Expanded(
                         child: Text(
                           msg.title,
-                          style: GoogleFonts.lora(
+                          style: GoogleFonts.fraunces(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
                             color: context.textPrimary,
@@ -1006,7 +1006,7 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w700,
               color: context.textPrimary,

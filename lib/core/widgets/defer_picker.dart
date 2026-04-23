@@ -122,7 +122,7 @@ class _DeferSheet extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Posponer tarea',
-                style: GoogleFonts.lora(
+                style: GoogleFonts.fraunces(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: context.textPrimary,

@@ -13,6 +13,7 @@ import '../../../habitos/domain/models/habit.dart';
 import '../../../habitos/presentation/providers/habit_provider.dart';
 import '../widgets/priority_section.dart';
 import '../widgets/task_card.dart';
+import '../widgets/task_skeleton.dart';
 import '../../../../core/models/task_area.dart';
 import '../../../../core/providers/task_area_provider.dart';
 import '../../../../core/widgets/voice_input_button.dart';
@@ -171,7 +172,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                     // Título con espacio completo
                     Text(
                       '¿Qué vas a lograr hoy?',
-                      style: GoogleFonts.lora(
+                      style: GoogleFonts.fraunces(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
                         color: context.textPrimary,
@@ -301,6 +302,13 @@ class _HoyPageState extends ConsumerState<HoyPage> {
             ),
           ),
 
+          // ── Skeleton en la primera carga ────────────────────────────────
+          // Si aún no tenemos datos (`valueOrNull == null`) y el stream
+          // está cargando, mostramos shimmer. Apenas llegan los datos la
+          // rama siguiente toma control y entra con stagger.
+          if (todayTasksAsync.valueOrNull == null && todayTasksAsync.isLoading) ...[
+            const SliverToBoxAdapter(child: TaskSkeletonList(count: 5)),
+          ] else
           // ── Priority sections (flat OR tree) ───────────────────────────
           // When "Todo" is selected we group by area → priority so the user
           // sees a side-tree layout. When a specific area is selected we
@@ -676,7 +684,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
           const SizedBox(height: 16),
           Text(
             'Nueva tarea',
-            style: GoogleFonts.lora(
+            style: GoogleFonts.fraunces(
               fontSize: 20,
               fontWeight: FontWeight.w600,
               color: context.textPrimary,

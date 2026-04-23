@@ -110,7 +110,7 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                 ),
               ),
               Text('Nuevo proyecto',
-                  style: GoogleFonts.lora(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                  style: GoogleFonts.fraunces(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
               const SizedBox(height: 20),
               TextField(
                 controller: _titleController,
