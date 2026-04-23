@@ -18,6 +18,7 @@ import 'package:arquitectura_enfoque/core/models/task_area.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_confirm_dialog.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_toast.dart';
 import 'package:arquitectura_enfoque/features/hoy/domain/models/task.dart';
+import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/task_card.dart';
 import 'package:arquitectura_enfoque/features/enfoque/domain/models/timer_state.dart';
 import 'package:arquitectura_enfoque/features/onboarding/domain/onboarding_prefs.dart';
 import 'package:arquitectura_enfoque/features/settings/presentation/widgets/accent_picker.dart';
@@ -175,6 +176,27 @@ class SettingsPage extends ConsumerWidget {
                   activeTrackColor: AppTheme.colorSuccess.withAlpha(80),
                   activeThumbColor: AppTheme.colorSuccess,
                   onChanged: prefsNotifier.setShowHabitsInHoy,
+                ),
+                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                // Grow-old-tasks: escala el fontSize del título de tareas
+                // pendientes según días de rollover. Default on.
+                ListenableBuilder(
+                  listenable: TaskCardPrefs.instance,
+                  builder: (ctx, _) => SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                    secondary: const _IconBadge(
+                      icon: Icons.format_size_rounded,
+                      color: AppTheme.colorWarning,
+                    ),
+                    title: const _Title('Agrandar tareas viejas'),
+                    subtitle: const _Subtitle(
+                        'El título crece y se vuelve más negrita con el paso de los días'),
+                    value: TaskCardPrefs.growOldTasks,
+                    activeTrackColor: AppTheme.colorWarning.withAlpha(80),
+                    activeThumbColor: AppTheme.colorWarning,
+                    onChanged: TaskCardPrefs.instance.setGrowOldTasks,
+                  ),
                 ),
               ],
             ),

@@ -65,15 +65,14 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
   image_path: "assets/icon/anotalo-icon-1024.png"
+  # Adaptive foreground: PNG transparente con el "a·" dentro del 66% safe
+  # zone (los launchers recortan el 27% externo con squircle/circle).
   adaptive_icon_background: "#F4EFE7"
-  adaptive_icon_foreground: "assets/icon/anotalo-icon-1024.png"
-  adaptive_icon_monochrome: "assets/icon/anotalo-icon-mono-1024.png"
+  adaptive_icon_foreground: "assets/icon/anotalo-icon-fg-1024.png"
+  adaptive_icon_monochrome: "assets/icon/anotalo-icon-mono-fg-1024.png"
   min_sdk_android: 21
   web:
-    generate: true
-    image_path: "assets/icon/anotalo-icon-1024.png"
-    background_color: "#F4EFE7"
-    theme_color: "#D97757"
+    generate: false
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

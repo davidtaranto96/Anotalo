@@ -6,6 +6,7 @@ import 'package:arquitectura_enfoque/app/app.dart';
 import 'core/logic/notification_service.dart';
 import 'core/feedback/feedback_service.dart';
 import 'core/theme/accent.dart';
+import 'features/hoy/presentation/widgets/task_card.dart';
 import 'features/onboarding/domain/onboarding_prefs.dart';
 
 void main() async {
@@ -50,6 +51,14 @@ void main() async {
     await OnboardingPrefs.hasCompleted().timeout(const Duration(seconds: 1));
   } catch (e) {
     debugPrint('OnboardingPrefs load skipped: $e');
+  }
+
+  // Hidratar prefs de TaskCard (growOldTasks) para que el primer render
+  // use el valor correcto y no haga flash.
+  try {
+    await TaskCardPrefs.instance.load().timeout(const Duration(seconds: 1));
+  } catch (e) {
+    debugPrint('TaskCardPrefs load skipped: $e');
   }
 
   // Run the app first — notifications init is deferred so a hung plugin call

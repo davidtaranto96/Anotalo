@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -64,64 +63,51 @@ class PrioritySection extends StatelessWidget {
             ],
           ),
         ),
-        // Stagger 1.6: cada tarea entra con fade + translateY de 8pt,
-        // con 40ms de delay entre items. AnimationLimiter se apoya en
-        // AnimationConfiguration.synchronized para limitar el stagger a
-        // la viewport visible — la key hace que se re-dispare el stagger
-        // al cambiar de área (filtro).
-        AnimationLimiter(
-          key: ValueKey('${priority.name}-${tasks.length}-${tasks.isEmpty ? '' : tasks.first.id}'),
-          child: Column(
-            children: AnimationConfiguration.toStaggeredList(
-              duration: const Duration(milliseconds: 320),
-              delay: const Duration(milliseconds: 40),
-              childAnimationBuilder: (w) => SlideAnimation(
-                verticalOffset: 8,
-                child: FadeInAnimation(child: w),
-              ),
-              children: tasks.asMap().entries.map((entry) {
-                final index = entry.key;
-                final task = entry.value;
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (priority == TaskPriority.primordial) ...[
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFD97757),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${index + 1}',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                    Expanded(
-                      child: TaskCard(
-                        task: task,
-                        onComplete: () => onComplete(task.id),
-                        onUncomplete: onUncomplete != null
-                            ? () => onUncomplete!(task.id)
-                            : null,
-                        onDefer: () => onDefer(task.id),
-                        onDelete: () => onDelete(task.id),
-                      ),
+        // Render sin stagger: la librería de animación staggered
+        // colisionaba con el Element tree al cambiar de filtro (crash
+        // "_elements.contains(element)"). Prefiero lista estática a
+        // crash — el stagger es nice-to-have.
+        ...tasks.asMap().entries.map((entry) {
+          final index = entry.key;
+          final task = entry.value;
+          return Row(
+            key: ValueKey('task-${task.id}'),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (priority == TaskPriority.primordial) ...[
+                const SizedBox(width: 16),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFD97757),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ),
+                  ),
+                ),
+              ],
+              Expanded(
+                child: TaskCard(
+                  task: task,
+                  onComplete: () => onComplete(task.id),
+                  onUncomplete: onUncomplete != null
+                      ? () => onUncomplete!(task.id)
+                      : null,
+                  onDefer: () => onDefer(task.id),
+                  onDelete: () => onDelete(task.id),
+                ),
+              ),
+            ],
+          );
+        }),
       ],
     );
   }

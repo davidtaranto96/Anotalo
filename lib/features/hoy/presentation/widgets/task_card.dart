@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../core/feedback/feedback_service.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -8,7 +9,6 @@ import '../../../../../core/models/task_area.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../domain/models/task.dart';
 import 'add_task_bottom_sheet.dart';
-import 'pencil_strike_title.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -192,24 +192,29 @@ class TaskCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    // Title — con el gesto pencil-stroke: arrastrar horizontal
-                    // sobre el texto dibuja un trazo; si cubre >55% del ancho,
-                    // completa la tarea.
+                    // Title — el tamaño escala con la antigüedad (rollover)
+                    // para que tareas viejas pidan atención visualmente.
+                    // Usamos ListenableBuilder para que el toggle en Settings
+                    // re-pinte todas las cards sin refrescar la pantalla.
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          PencilStrikeTitle(
-                            title: task.title,
-                            done: isDone,
-                            strokeColor: priorityColor,
-                            onComplete: onComplete,
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: isDone
-                                  ? context.textTertiary
-                                  : context.textPrimary,
+                          ListenableBuilder(
+                            listenable: TaskCardPrefs.instance,
+                            builder: (ctx, _) => Text(
+                              task.title,
+                              style: GoogleFonts.inter(
+                                fontSize: _scaledFontSize(rolloverDays, context),
+                                fontWeight: _scaledFontWeight(rolloverDays),
+                                color: isDone
+                                    ? context.textTertiary
+                                    : context.textPrimary,
+                                decoration: isDone
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                                height: 1.25,
+                              ),
                             ),
                           ),
                           if (isRolledOver)
@@ -333,6 +338,51 @@ class TaskCard extends StatelessWidget {
     TaskPriority.puedeEsperar => AppTheme.colorPrimary,
     TaskPriority.secundaria   => AppTheme.neutral400,
   };
+
+  /// Crecimiento del título por antigüedad (rollover). Si la prefs
+  /// `growOldTasks` está apagado, devolvemos siempre el base 15.
+  ///
+  /// Curva suave: día 0 = 15, día 1 = 15.6, día 3 = 16.8, día 7 = 19,
+  /// día 14 = 21, cap a 22 para que no explote el layout.
+  double _scaledFontSize(int rolloverDays, BuildContext context) {
+    if (!TaskCardPrefs.growOldTasks || rolloverDays <= 0) return 15;
+    final extra = (rolloverDays * 0.6).clamp(0.0, 7.0);
+    return 15 + extra;
+  }
+
+  FontWeight _scaledFontWeight(int rolloverDays) {
+    if (!TaskCardPrefs.growOldTasks || rolloverDays <= 0) return FontWeight.w500;
+    if (rolloverDays >= 7) return FontWeight.w700;
+    if (rolloverDays >= 3) return FontWeight.w600;
+    return FontWeight.w500;
+  }
+}
+
+/// Flags de comportamiento del TaskCard. Cache sincrónico para usar en
+/// hot-path de render; se hidrata al arranque en main.dart.
+class TaskCardPrefs extends ChangeNotifier {
+  TaskCardPrefs._();
+  static final TaskCardPrefs instance = TaskCardPrefs._();
+
+  static const String _kGrowOldTasks = 'taskcard.growOldTasks';
+  static bool growOldTasks = true;
+
+  Future<void> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      growOldTasks = prefs.getBool(_kGrowOldTasks) ?? true;
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> setGrowOldTasks(bool v) async {
+    growOldTasks = v;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kGrowOldTasks, v);
+    } catch (_) {}
+  }
 }
 
 class _ActionButton extends StatelessWidget {
