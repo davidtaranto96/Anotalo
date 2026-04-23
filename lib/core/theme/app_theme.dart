@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'accent.dart';
+import 'anotalo_tokens.dart';
+
 class AppTheme {
   AppTheme._();
+
+  // Paleta default (terracota) para los getters legacy.
+  static const AccentPalette _defaultAccent = AccentPalette(
+    primary: Color(0xFFD97757),
+    primaryDark: Color(0xFFC06240),
+    primarySurface: Color(0x24D97757),
+    primaryBorder: Color(0x66D97757),
+    label: 'Terracota',
+  );
+
+  // ── Area colors (tarjetas / pills por categoría) ──
+  static const areaWork     = Color(0xFF7AAED4); // slate blue
+  static const areaStudy    = Color(0xFFB890D4); // dusty violet
+  static const areaPersonal = Color(0xFF7FB069); // sage green
+  static const areaHealth   = Color(0xFFD96A6A); // muted red
+  static const areaTravel   = Color(0xFFE8B77A); // warm tan
 
   // ── Fondos y superficies ──
   static const surfaceBase     = Color(0xFFF4F3EE);
@@ -107,11 +126,11 @@ class AppTheme {
       error: colorDanger,
     ),
     textTheme: GoogleFonts.interTextTheme().copyWith(
-      displayLarge: GoogleFonts.lora(
+      displayLarge: GoogleFonts.fraunces(
         fontSize: 32, fontWeight: FontWeight.w700,
         color: textPrimary, letterSpacing: -0.5,
       ),
-      headlineMedium: GoogleFonts.lora(
+      headlineMedium: GoogleFonts.fraunces(
         fontSize: 24, fontWeight: FontWeight.w600,
         color: textPrimary, letterSpacing: -0.3,
       ),
@@ -144,7 +163,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      titleTextStyle: GoogleFonts.lora(
+      titleTextStyle: GoogleFonts.fraunces(
         fontSize: 24, fontWeight: FontWeight.w600,
         color: textPrimary,
       ),
@@ -228,11 +247,11 @@ class AppTheme {
       onPrimary: Colors.white,
     ),
     textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-      displayLarge: GoogleFonts.lora(
+      displayLarge: GoogleFonts.fraunces(
         fontSize: 32, fontWeight: FontWeight.w700,
         color: darkTextPrimary, letterSpacing: -0.5,
       ),
-      headlineMedium: GoogleFonts.lora(
+      headlineMedium: GoogleFonts.fraunces(
         fontSize: 24, fontWeight: FontWeight.w600,
         color: darkTextPrimary, letterSpacing: -0.3,
       ),
@@ -265,7 +284,7 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      titleTextStyle: GoogleFonts.lora(
+      titleTextStyle: GoogleFonts.fraunces(
         fontSize: 24, fontWeight: FontWeight.w600,
         color: darkTextPrimary,
       ),
@@ -352,4 +371,70 @@ class AppTheme {
       }),
     ),
   );
+
+  // ═══════════════════════════════════════════════════════════════
+  // Factories con acento + ThemeExtensions (sistema 1.6)
+  //   Uso: MaterialApp(theme: AppTheme.light(palette), darkTheme: AppTheme.dark(palette))
+  //   Los getters .theme / .darkTheme siguen disponibles con el acento default.
+  // ═══════════════════════════════════════════════════════════════
+
+  static ThemeData light([AccentPalette? accent]) =>
+      _withAccent(theme, accent ?? _defaultAccent, isDark: false);
+
+  static ThemeData dark([AccentPalette? accent]) =>
+      _withAccent(darkTheme, accent ?? _defaultAccent, isDark: true);
+
+  static ThemeData _withAccent(ThemeData base, AccentPalette accent,
+      {required bool isDark}) {
+    final scheme = base.colorScheme.copyWith(
+      primary: accent.primary,
+      secondary: accent.primaryDark,
+      onPrimary: Colors.white,
+    );
+
+    return base.copyWith(
+      colorScheme: scheme,
+      primaryColor: accent.primary,
+      iconTheme: base.iconTheme,
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: accent.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: r12),
+          textStyle: GoogleFonts.inter(
+              fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: accent.primary,
+          side: BorderSide(color: accent.primary, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: r12),
+        ),
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        focusedBorder: OutlineInputBorder(
+          borderRadius: r12,
+          borderSide: BorderSide(color: accent.primary, width: 1.5),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: accent.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: r16),
+        elevation: 0,
+      ),
+      bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
+        selectedItemColor: accent.primary,
+      ),
+      extensions: <ThemeExtension<dynamic>>[
+        AnotaloSpacing.standard,
+        AnotaloRadii.standard,
+        AnotaloMotion.standard,
+        AnotaloShadows(isDark: isDark, accent: accent.primary),
+      ],
+    );
+  }
 }

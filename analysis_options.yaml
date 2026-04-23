@@ -9,6 +9,13 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # La carpeta handoff/ es documentación del redesign — contiene
+    # snippets de referencia (no se compilan en la app). Excluimos para
+    # que `flutter analyze` no fracase por issues del material ejemplo.
+    - handoff/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
