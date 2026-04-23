@@ -137,47 +137,58 @@ class _HoyPageState extends ConsumerState<HoyPage> {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Top toolbar (icons aligned right) ──────────────────
-                    // Iconos en su propia fila para que el título nunca se
-                    // corte aunque sea largo o el ancho de pantalla sea chico.
+                    // Título + iconos en una sola fila: así la pregunta
+                    // queda pegada arriba al status bar y los iconos
+                    // flotan a la derecha a su altura.
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Daily review: tap opens today's review wizard.
-                        // Long-press jumps straight to history of past reviews.
-                        GestureDetector(
-                          onLongPress: () {
-                            HapticFeedback.mediumImpact();
-                            context.push('/review-history');
-                          },
-                          child: _HeaderIcon(
-                            icon: Icons.rate_review_rounded,
-                            onTap: () => context.push('/review'),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              '¿Qué vas a lograr hoy?',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.fraunces(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                                color: context.textPrimary,
+                                letterSpacing: -0.3,
+                                height: 1.15,
+                              ),
+                            ),
                           ),
                         ),
-                        _HeaderIcon(
-                          icon: Icons.settings_rounded,
-                          onTap: () => context.push('/settings'),
-                        ),
-                        _HeaderIcon(
-                          icon: Icons.inbox_rounded,
-                          onTap: () => context.go('/inbox'),
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            GestureDetector(
+                              onLongPress: () {
+                                HapticFeedback.mediumImpact();
+                                context.push('/review-history');
+                              },
+                              child: _HeaderIcon(
+                                icon: Icons.rate_review_rounded,
+                                onTap: () => context.push('/review'),
+                              ),
+                            ),
+                            _HeaderIcon(
+                              icon: Icons.settings_rounded,
+                              onTap: () => context.push('/settings'),
+                            ),
+                            _HeaderIcon(
+                              icon: Icons.inbox_rounded,
+                              onTap: () => context.go('/inbox'),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    // Título con espacio completo
-                    Text(
-                      '¿Qué vas a lograr hoy?',
-                      style: GoogleFonts.fraunces(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                        letterSpacing: -0.3,
-                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1462,6 +1473,7 @@ class _TreeByAreaView extends StatefulWidget {
 
 class _TreeByAreaViewState extends State<_TreeByAreaView> {
   // Collapsed-state keyed by area id; `null` key = "Sin área" branch.
+  // Empieza vacío = todas expandidas por default.
   final Set<String?> _collapsed = <String?>{};
 
   bool _isCollapsed(String? areaId) => _collapsed.contains(areaId);
@@ -1475,36 +1487,75 @@ class _TreeByAreaViewState extends State<_TreeByAreaView> {
     });
   }
 
-  List<Task> _filter(List<Task> src, String? areaId) =>
-      src.where((t) => t.area == areaId).toList();
-
   @override
   Widget build(BuildContext context) {
+    // Agrupamos las tareas por `task.area` directamente. Antes iterábamos
+    // `widget.areas` y filtrábamos por `area.id`, pero si una tarea tenía
+    // `area` apuntando a un id que ya no existe en el DB (área borrada o
+    // cambio de IDs), quedaba invisible. Con groupBy garantizamos que
+    // suma(visibles) == suma(pasadas).
+
+    final allTasks = [
+      ...widget.primordial,
+      ...widget.importante,
+      ...widget.puedeEsperar,
+    ];
+    // Map<areaId?, [primordial, importante, puedeEsperar]>
+    final Map<String?, List<List<Task>>> grouped = {};
+    void put(Task t, int bucket) {
+      final key = (t.area == null || t.area!.isEmpty) ? null : t.area;
+      final row = grouped.putIfAbsent(key, () => [[], [], []]);
+      row[bucket].add(t);
+    }
+    for (final t in widget.primordial) {
+      put(t, 0);
+    }
+    for (final t in widget.importante) {
+      put(t, 1);
+    }
+    for (final t in widget.puedeEsperar) {
+      put(t, 2);
+    }
+
+    // Resolvemos el look-up de metadata (label/emoji/color) a partir de
+    // widget.areas primero; si el area id es orfan, caemos a los
+    // built-ins; y si tampoco está ahí, usamos placeholder genérico.
+    TaskArea? resolveArea(String areaId) =>
+        getTaskAreaFrom(widget.areas, areaId) ?? getTaskArea(areaId);
+
+    // Orden: primero las áreas conocidas en el orden de widget.areas,
+    // después "Sin área", después cualquier área huérfana.
+    final orderedKeys = <String?>[];
+    for (final a in widget.areas) {
+      if (grouped.containsKey(a.id)) orderedKeys.add(a.id);
+    }
+    if (grouped.containsKey(null)) orderedKeys.add(null);
+    for (final key in grouped.keys) {
+      if (key == null) continue;
+      if (orderedKeys.contains(key)) continue;
+      orderedKeys.add(key);
+    }
+
     final branches = <Widget>[];
-
-    // Pre-compute the set of known area IDs. Any task whose `area` isn't in
-    // this set (including tasks with area == null) gets bucketed into the
-    // "Sin área" branch so nothing is ever invisible.
-    final knownIds = widget.areas.map((a) => a.id).toSet();
-    bool isOrphan(Task t) => t.area == null || !knownIds.contains(t.area);
-
-    // 1) "Sin área" branch — tasks with null area OR with an orphaned area id
-    // that no longer exists in the DB. This is the safety net that ensures
-    // no task is ever hidden, regardless of migration or delete order.
-    final noAreaP = widget.primordial.where(isOrphan).toList();
-    final noAreaI = widget.importante.where(isOrphan).toList();
-    final noAreaE = widget.puedeEsperar.where(isOrphan).toList();
-    if (noAreaP.isNotEmpty || noAreaI.isNotEmpty || noAreaE.isNotEmpty) {
+    for (final key in orderedKeys) {
+      final buckets = grouped[key]!;
+      if (buckets[0].isEmpty && buckets[1].isEmpty && buckets[2].isEmpty) {
+        continue;
+      }
+      final TaskArea? area = key == null ? null : resolveArea(key);
+      final label = area?.label ?? (key ?? 'Sin área');
+      final emoji = area?.emoji ?? (key == null ? '\u{1F4CC}' : '\u{1F4C2}');
+      final color = area?.color ?? context.textSecondary;
       branches.add(_AreaBranch(
-        areaId: null,
-        label: 'Sin área',
-        emoji: '\u{1F4CC}', // 📌
-        color: context.textSecondary,
-        primordial: noAreaP,
-        importante: noAreaI,
-        puedeEsperar: noAreaE,
-        collapsed: _isCollapsed(null),
-        onToggle: () => _toggle(null),
+        areaId: key,
+        label: label,
+        emoji: emoji,
+        color: color,
+        primordial: buckets[0],
+        importante: buckets[1],
+        puedeEsperar: buckets[2],
+        collapsed: _isCollapsed(key),
+        onToggle: () => _toggle(key),
         onComplete: widget.onComplete,
         onUncomplete: widget.onUncomplete,
         onDefer: widget.onDefer,
@@ -1512,29 +1563,20 @@ class _TreeByAreaViewState extends State<_TreeByAreaView> {
       ));
     }
 
-    // 2) One branch per area — preserves the DB sortOrder (areas list is
-    // already ordered by the stream).
-    for (final area in widget.areas) {
-      final p = _filter(widget.primordial, area.id);
-      final i = _filter(widget.importante, area.id);
-      final e = _filter(widget.puedeEsperar, area.id);
-      if (p.isEmpty && i.isEmpty && e.isEmpty) continue;
-      branches.add(_AreaBranch(
-        areaId: area.id,
-        label: area.label,
-        emoji: area.emoji,
-        color: area.color,
-        primordial: p,
-        importante: i,
-        puedeEsperar: e,
-        collapsed: _isCollapsed(area.id),
-        onToggle: () => _toggle(area.id),
-        onComplete: widget.onComplete,
-        onUncomplete: widget.onUncomplete,
-        onDefer: widget.onDefer,
-        onDelete: widget.onDelete,
-      ));
-    }
+    // Sanity-check para desarrollo: si el total pasado no matchea el total
+    // renderizado, loggeamos. En producción, la lista sigue funcionando.
+    assert(() {
+      final passed = allTasks.length;
+      var rendered = 0;
+      for (final buckets in grouped.values) {
+        rendered += buckets[0].length + buckets[1].length + buckets[2].length;
+      }
+      if (passed != rendered) {
+        debugPrint('[_TreeByAreaView] task count mismatch: '
+            'passed=$passed, rendered=$rendered');
+      }
+      return true;
+    }());
 
     if (branches.isEmpty) {
       return Padding(
