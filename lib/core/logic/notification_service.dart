@@ -113,4 +113,47 @@ class NotificationService {
       await _plugin.cancel(_notifId);
     } catch (_) {}
   }
+
+  /// Recordatorio diario por hábito. `notificationId` debe ser estable por
+  /// hábito (por ejemplo `habitId.hashCode`). Llamalo nuevamente con la
+  /// misma id para reprogramar/reagendar.
+  Future<void> scheduleHabitReminder({
+    required int notificationId,
+    required String habitTitle,
+    required int hour,
+    required int minute,
+  }) async {
+    if (!_initialized) return;
+    try {
+      await _plugin.cancel(notificationId);
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduled = tz.TZDateTime(
+          tz.local, now.year, now.month, now.day, hour, minute);
+      if (scheduled.isBefore(now)) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
+      const details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'anotalo_habit_reminder',
+          'Hábitos',
+          channelDescription: 'Recordatorio de hábitos diarios',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      );
+      await _plugin.zonedSchedule(
+        notificationId,
+        habitTitle,
+        'Es el momento — tu racha te espera',
+        scheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('scheduleHabitReminder failed: $e');
+    }
+  }
 }
