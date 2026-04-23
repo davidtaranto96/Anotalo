@@ -320,27 +320,14 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           if (todayTasksAsync.valueOrNull == null && todayTasksAsync.isLoading)
             const SliverToBoxAdapter(child: TaskSkeletonList(count: 5)),
 
-          // ── Tree view: "Todo" está activo ─────────────────────────────
-          if ((todayTasksAsync.valueOrNull != null ||
-                  !todayTasksAsync.isLoading) &&
-              _selectedArea == null)
-            SliverToBoxAdapter(
-              child: _TreeByAreaView(
-                areas: areas,
-                primordial: primordial,
-                importante: importante,
-                puedeEsperar: puedeEsperar,
-                onComplete: taskService.completeTask,
-                onUncomplete: taskService.uncompleteTask,
-                onDefer: (id) => _onDeferTask(taskService, id),
-                onDelete: taskService.deleteTask,
-              ),
-            ),
-
-          // ── Priority sections: área específica seleccionada ───────────
-          if ((todayTasksAsync.valueOrNull != null ||
-                  !todayTasksAsync.isLoading) &&
-              _selectedArea != null) ...[
+          // ── Priority sections ─────────────────────────────────────────
+          // Simplificación: en Todo y en cualquier filtro usamos la misma
+          // vista de tres secciones (Primordial / Importante / Puede
+          // esperar) ya filtradas por área. El tree-by-area queda
+          // disponible como widget pero fuera del flujo principal porque
+          // era frágil con IDs no-matcheantes y tareas huérfanas.
+          if (todayTasksAsync.valueOrNull != null ||
+              !todayTasksAsync.isLoading) ...[
             SliverToBoxAdapter(
               child: PrioritySection(
                 priority: TaskPriority.primordial,
