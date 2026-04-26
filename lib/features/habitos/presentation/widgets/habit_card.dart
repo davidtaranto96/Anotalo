@@ -31,8 +31,10 @@ class HabitCard extends ConsumerWidget {
     }
   }
 
-  String _frequencyLabel() =>
-      habit.frequency == HabitFrequency.daily ? 'Diario' : 'Semanal';
+  String _frequencyLabel() {
+    if (habit.frequency == HabitFrequency.daily) return 'Diario';
+    return '${habit.targetPerWeek}/sem';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,15 +43,22 @@ class HabitCard extends ConsumerWidget {
     final completionsAsync =
         ref.watch(_habitAllCompletionsProvider(habit.id));
 
-    // Compute "X/7 esta semana" without a full sub-widget.
+    // Conteo en la semana actual (lunes → domingo). Para hábitos
+    // weekly mostramos "X/N", para diarios "X/7".
     final now = DateTime.now();
-    final last7 = List.generate(
-        7, (i) => dateToId(now.subtract(Duration(days: i))));
+    final monday = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final weekIds = List.generate(
+        7, (i) => dateToId(monday.add(Duration(days: i))));
     final doneThisWeek = completionsAsync.valueOrNull
             ?.map((c) => c.dayId)
-            .where(last7.contains)
+            .where(weekIds.contains)
             .length ??
         0;
+    final weeklyTarget =
+        habit.frequency == HabitFrequency.weekly ? habit.targetPerWeek : 7;
+    final weeklyMet =
+        habit.frequency == HabitFrequency.weekly && doneThisWeek >= weeklyTarget;
 
     final inner = GestureDetector(
       onLongPress: onLongPress,
@@ -146,15 +155,24 @@ class HabitCard extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          '$doneThisWeek/7 esta semana',
+                          '$doneThisWeek/$weeklyTarget esta semana',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: context.textTertiary,
-                            fontWeight: FontWeight.w500,
+                            color: weeklyMet
+                                ? AppTheme.colorSuccess
+                                : context.textTertiary,
+                            fontWeight: weeklyMet
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (weeklyMet) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.check_circle_rounded,
+                            color: AppTheme.colorSuccess, size: 12),
+                      ],
                     ],
                   ),
                 ],

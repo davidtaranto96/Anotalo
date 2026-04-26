@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../domain/models/task.dart';
+import '../providers/task_provider.dart';
 import 'task_card.dart';
 
-class PrioritySection extends StatelessWidget {
+/// Sección de tareas filtrada por prioridad. Soporta drag-to-reorder
+/// vía long-press: el orden se persiste en `tasks.sort_order`.
+class PrioritySection extends ConsumerWidget {
   final TaskPriority priority;
   final List<Task> tasks;
   final Function(String) onComplete;
   final Function(String)? onUncomplete;
   final Function(String) onDefer;
   final Function(String) onDelete;
+
   /// Área actualmente filtrada en Hoy. Se propaga al TaskCard para que
   /// omita mostrar el chip de área cuando es el mismo que el filtro.
   final String? currentFilterAreaId;
@@ -28,7 +33,7 @@ class PrioritySection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (tasks.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -67,67 +72,87 @@ class PrioritySection extends StatelessWidget {
             ],
           ),
         ),
-        // Render sin stagger: la librería de animación staggered
-        // colisionaba con el Element tree al cambiar de filtro (crash
-        // "_elements.contains(element)"). Prefiero lista estática a
-        // crash — el stagger es nice-to-have.
-        ...tasks.asMap().entries.map((entry) {
-          final index = entry.key;
-          final task = entry.value;
-          return Row(
-            key: ValueKey('task-${task.id}'),
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (priority == TaskPriority.primordial) ...[
-                const SizedBox(width: 16),
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFD97757),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${index + 1}',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+        // ReorderableListView con long-press = drag. El swipe horizontal
+        // del Slidable adentro de TaskCard sigue funcionando — no chocan
+        // porque uno es vertical (drag) y el otro horizontal (swipe).
+        ReorderableListView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          proxyDecorator: (child, index, animation) => Material(
+            color: Colors.transparent,
+            child: child,
+          ),
+          onReorder: (oldIndex, newIndex) async {
+            final adjustedNew =
+                newIndex > oldIndex ? newIndex - 1 : newIndex;
+            final updated = List<Task>.from(tasks);
+            final moved = updated.removeAt(oldIndex);
+            updated.insert(adjustedNew, moved);
+            await ref
+                .read(taskServiceProvider)
+                .reorderTasks(updated.map((t) => t.id).toList());
+          },
+          children: [
+            for (var i = 0; i < tasks.length; i++)
+              ReorderableDelayedDragStartListener(
+                key: ValueKey('task-${tasks[i].id}'),
+                index: i,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (priority == TaskPriority.primordial) ...[
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFD97757),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${i + 1}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                    Expanded(
+                      child: TaskCard(
+                        task: tasks[i],
+                        currentFilterAreaId: currentFilterAreaId,
+                        onComplete: () => onComplete(tasks[i].id),
+                        onUncomplete: onUncomplete != null
+                            ? () => onUncomplete!(tasks[i].id)
+                            : null,
+                        onDefer: () => onDefer(tasks[i].id),
+                        onDelete: () => onDelete(tasks[i].id),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-              Expanded(
-                child: TaskCard(
-                  task: task,
-                  currentFilterAreaId: currentFilterAreaId,
-                  onComplete: () => onComplete(task.id),
-                  onUncomplete: onUncomplete != null
-                      ? () => onUncomplete!(task.id)
-                      : null,
-                  onDefer: () => onDefer(task.id),
-                  onDelete: () => onDelete(task.id),
+                  ],
                 ),
               ),
-            ],
-          );
-        }),
+          ],
+        ),
       ],
     );
   }
 
   String _priorityLabel(TaskPriority p) => switch (p) {
-    TaskPriority.primordial   => 'PRIMORDIAL',
-    TaskPriority.importante   => 'IMPORTANTE',
-    TaskPriority.puedeEsperar => 'PUEDE ESPERAR',
-    TaskPriority.secundaria   => 'SECUNDARIA',
-  };
+        TaskPriority.primordial => 'PRIMORDIAL',
+        TaskPriority.importante => 'IMPORTANTE',
+        TaskPriority.puedeEsperar => 'PUEDE ESPERAR',
+        TaskPriority.secundaria => 'SECUNDARIA',
+      };
 
   Color _priorityColor(TaskPriority p) => switch (p) {
-    TaskPriority.primordial   => AppTheme.colorDanger,
-    TaskPriority.importante   => AppTheme.colorWarning,
-    TaskPriority.puedeEsperar => AppTheme.colorPrimary,
-    TaskPriority.secundaria   => AppTheme.neutral400,
-  };
+        TaskPriority.primordial => AppTheme.colorDanger,
+        TaskPriority.importante => AppTheme.colorWarning,
+        TaskPriority.puedeEsperar => AppTheme.colorPrimary,
+        TaskPriority.secundaria => AppTheme.neutral400,
+      };
 }

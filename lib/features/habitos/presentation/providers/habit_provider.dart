@@ -29,3 +29,26 @@ final weekCompletionsProvider = StreamProvider<Map<String, Set<String>>>((ref) {
 /// All-time completions (across habits) — powers the aggregate stats section.
 final allCompletionsProvider = StreamProvider<List<HabitCompletion>>((ref) =>
     ref.watch(habitServiceProvider).watchAllCompletions());
+
+/// Conteo de completions por hábito en la semana actual (lunes → domingo).
+/// Map<habitId, count>. Lo usa el HabitCard para mostrar "X / N esta semana"
+/// en hábitos con `frequency == weekly`.
+final thisWeekCompletionCountProvider =
+    Provider<Map<String, int>>((ref) {
+  final all = ref.watch(allCompletionsProvider).valueOrNull ?? const [];
+  final now = DateTime.now();
+  // Lunes de la semana actual: weekday 1 = lunes.
+  final monday = DateTime(now.year, now.month, now.day)
+      .subtract(Duration(days: now.weekday - 1));
+  final weekIds = List<String>.generate(7, (i) {
+    final d = monday.add(Duration(days: i));
+    return dateToId(d);
+  });
+  final weekSet = weekIds.toSet();
+  final out = <String, int>{};
+  for (final c in all) {
+    if (!weekSet.contains(c.dayId)) continue;
+    out[c.habitId] = (out[c.habitId] ?? 0) + 1;
+  }
+  return out;
+});

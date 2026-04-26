@@ -114,7 +114,7 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
   }
 }
 
-class _ProjectSection extends StatelessWidget {
+class _ProjectSection extends ConsumerWidget {
   final String label;
   final List<Project> projects;
   final bool expanded;
@@ -130,7 +130,7 @@ class _ProjectSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -151,7 +151,9 @@ class _ProjectSection extends StatelessWidget {
                 ),
                 const Spacer(),
                 Icon(
-                  expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  expanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
                   color: context.textTertiary,
                   size: 18,
                 ),
@@ -160,10 +162,43 @@ class _ProjectSection extends StatelessWidget {
           ),
         ),
         if (expanded)
-          ...projects.map((p) => ProjectCard(
-            project: p,
-            onTap: () => onTap(p),
-          )),
+          // Reorderable solo en la sección "ACTIVOS" (donde tiene sentido
+          // priorizar). En las otras secciones queda como lista plana.
+          if (label == 'ACTIVOS')
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              proxyDecorator: (child, index, animation) => Material(
+                color: Colors.transparent,
+                child: child,
+              ),
+              onReorder: (oldIndex, newIndex) async {
+                final adjustedNew =
+                    newIndex > oldIndex ? newIndex - 1 : newIndex;
+                final updated = List<Project>.from(projects);
+                final moved = updated.removeAt(oldIndex);
+                updated.insert(adjustedNew, moved);
+                await ref
+                    .read(projectServiceProvider)
+                    .reorderProjects(updated.map((p) => p.id).toList());
+              },
+              children: [
+                for (final p in projects)
+                  ReorderableDelayedDragStartListener(
+                    key: ValueKey('project-${p.id}'),
+                    index: projects.indexOf(p),
+                    child: ProjectCard(
+                      project: p,
+                      onTap: () => onTap(p),
+                    ),
+                  ),
+              ],
+            )
+          else
+            ...projects.map((p) => ProjectCard(
+                  project: p,
+                  onTap: () => onTap(p),
+                )),
       ],
     );
   }

@@ -67,6 +67,7 @@ class AddHabitBottomSheet extends ConsumerStatefulWidget {
 class _State extends ConsumerState<AddHabitBottomSheet> {
   final _controller = TextEditingController();
   HabitFrequency _frequency = HabitFrequency.daily;
+  int _targetPerWeek = 3;
   Color _selectedColor = _presetColors[3]; // green default
   String? _selectedEmoji;
   static const _uuid = Uuid();
@@ -77,6 +78,7 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
     if (widget.initialHabit != null) {
       _controller.text = widget.initialHabit?.title ?? '';
       _frequency = widget.initialHabit?.frequency ?? HabitFrequency.daily;
+      _targetPerWeek = widget.initialHabit?.targetPerWeek ?? 3;
       if (widget.initialHabit?.color != null) {
         try {
           _selectedColor = Color(int.parse(widget.initialHabit!.color!, radix: 16));
@@ -103,6 +105,7 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
         widget.initialHabit!.id,
         title: title,
         frequency: _frequency,
+        targetPerWeek: _frequency == HabitFrequency.weekly ? _targetPerWeek : 1,
         color: colorHex,
         icon: _selectedEmoji,
       );
@@ -111,6 +114,7 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
         id: _uuid.v4(),
         title: title,
         frequency: _frequency,
+        targetPerWeek: _frequency == HabitFrequency.weekly ? _targetPerWeek : 1,
         color: colorHex,
         icon: _selectedEmoji,
         createdAt: DateTime.now(),
@@ -162,18 +166,65 @@ class _State extends ConsumerState<AddHabitBottomSheet> {
           Row(
             children: [
               _FreqOption(
-                label: 'Diario',
+                label: 'Todos los días',
                 selected: _frequency == HabitFrequency.daily,
                 onTap: () => setState(() => _frequency = HabitFrequency.daily),
               ),
               const SizedBox(width: 10),
               _FreqOption(
-                label: 'Semanal',
+                label: 'X veces / semana',
                 selected: _frequency == HabitFrequency.weekly,
                 onTap: () => setState(() => _frequency = HabitFrequency.weekly),
               ),
             ],
           ),
+          // Picker de N veces por semana — sólo visible si eligió "weekly".
+          if (_frequency == HabitFrequency.weekly) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Veces por semana (lunes a domingo)',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(7, (i) {
+                final n = i + 1;
+                final selected = _targetPerWeek == n;
+                return GestureDetector(
+                  onTap: () => setState(() => _targetPerWeek = n),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: selected ? _selectedColor : context.surfaceCard,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: selected ? _selectedColor : context.dividerColor,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$n',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? Colors.white : context.textPrimary,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
           const SizedBox(height: 16),
           // Color picker
           Align(

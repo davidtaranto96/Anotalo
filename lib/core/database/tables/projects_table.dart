@@ -12,6 +12,8 @@ class ProjectsTable extends Table {
   TextColumn get taskIds     => text().nullable()();
   TextColumn get weeklyGoals => text().nullable()();
   TextColumn get notes       => text().nullable()();
+  // Orden manual del usuario (drag-and-drop reordering en Proyectos).
+  IntColumn  get sortOrder   => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt   => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
 

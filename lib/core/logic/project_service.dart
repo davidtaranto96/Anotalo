@@ -28,6 +28,7 @@ class ProjectService {
     taskIds: decodeStringList(row.taskIds),
     weeklyGoals: decodeStringList(row.weeklyGoals),
     notes: row.notes,
+    sortOrder: row.sortOrder,
     createdAt: row.createdAt,
     completedAt: row.completedAt,
   );
@@ -35,12 +36,24 @@ class ProjectService {
   Stream<List<Project>> watchAllProjects() {
     return (_db.select(_db.projectsTable)
       ..where((t) => t.status.isNotIn(['archived']))
-      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.sortOrder),
+        (t) => OrderingTerm.desc(t.createdAt),
+      ]))
       .watch()
       .map((rows) => rows.map(_fromRow).toList());
   }
 
   Future<void> addProject(Project project) async {
+    int sortOrder = project.sortOrder;
+    if (sortOrder == 0) {
+      // Empuja los nuevos al final.
+      final last = await (_db.select(_db.projectsTable)
+            ..orderBy([(t) => OrderingTerm.desc(t.sortOrder)])
+            ..limit(1))
+          .getSingleOrNull();
+      sortOrder = (last?.sortOrder ?? 0) + 1;
+    }
     await _db.into(_db.projectsTable).insert(ProjectsTableCompanion.insert(
       id: project.id.isEmpty ? _uuid.v4() : project.id,
       title: project.title,
@@ -53,9 +66,23 @@ class ProjectService {
       taskIds: Value(encodeStringList(project.taskIds)),
       weeklyGoals: Value(encodeStringList(project.weeklyGoals)),
       notes: Value(project.notes),
+      sortOrder: Value(sortOrder),
       createdAt: project.createdAt,
       completedAt: Value(project.completedAt),
     ));
+  }
+
+  /// Persiste el orden manual del usuario después de un drag-and-drop.
+  Future<void> reorderProjects(List<String> idsInOrder) async {
+    await _db.batch((batch) {
+      for (var i = 0; i < idsInOrder.length; i++) {
+        batch.update(
+          _db.projectsTable,
+          ProjectsTableCompanion(sortOrder: Value(i)),
+          where: (t) => t.id.equals(idsInOrder[i]),
+        );
+      }
+    });
   }
 
   Future<void> completeProject(String id) async {

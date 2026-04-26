@@ -945,11 +945,13 @@ class _TaskCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Slidable(
         key: ValueKey('task-${task.id}'),
+        // Sin label visible: solo icono coloreado para no cortarse en el
+        // recuadro chico de la card. Más claro y rápido de leer.
         startActionPane: ActionPane(
           motion: const DrawerMotion(),
-          extentRatio: 0.28,
+          extentRatio: 0.18,
           children: [
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: (_) {
                 HapticFeedback.mediumImpact();
                 onComplete();
@@ -958,40 +960,37 @@ class _TaskCard extends StatelessWidget {
                   ? AppTheme.colorPrimary
                   : AppTheme.colorSuccess,
               foregroundColor: Colors.white,
-              icon: isDone ? Icons.undo_rounded : Icons.check_rounded,
-              label: isDone ? 'Deshacer' : 'Listo',
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(12)),
+              padding: EdgeInsets.zero,
+              child: Icon(
+                isDone ? Icons.undo_rounded : Icons.check_rounded,
+                size: 26,
+              ),
             ),
           ],
         ),
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
-          extentRatio: 0.5,
+          extentRatio: 0.36,
           children: [
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: (_) {
                 HapticFeedback.lightImpact();
                 onDefer();
               },
               backgroundColor: AppTheme.colorWarning,
               foregroundColor: Colors.white,
-              icon: Icons.schedule_rounded,
-              label: 'Posponer',
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(12)),
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.schedule_rounded, size: 26),
             ),
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: (_) {
                 HapticFeedback.heavyImpact();
                 onDelete();
               },
               backgroundColor: AppTheme.colorDanger,
               foregroundColor: Colors.white,
-              icon: Icons.delete_rounded,
-              label: 'Borrar',
-              borderRadius:
-                  const BorderRadius.horizontal(right: Radius.circular(12)),
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.delete_rounded, size: 26),
             ),
           ],
         ),

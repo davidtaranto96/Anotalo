@@ -174,9 +174,6 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
 
               final weekData = weekAsync.valueOrNull ?? {};
 
-              final pendingHabits = filtered.where((h) => !completedIds.contains(h.id)).toList();
-              final completedHabits = filtered.where((h) => completedIds.contains(h.id)).toList();
-
               final dailyHabits = filtered
                   .where((h) => h.frequency == HabitFrequency.daily)
                   .toList();
@@ -184,101 +181,107 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
                   .where((h) => completedIds.contains(h.id))
                   .length;
 
-              return SliverList(
-                delegate: SliverChildListDelegate([
-                  // Hero progress ring card
-                  _DailyProgressHero(
+              // Header de la lista. Los hábitos se muestran en orden manual
+              // (drag-and-drop con long-press) y se distinguen los
+              // completados por el tintado del card.
+              return SliverMainAxisGroup(slivers: [
+                SliverToBoxAdapter(
+                  child: _DailyProgressHero(
                     completed: dailyCompleted,
                     total: dailyHabits.length,
                   ),
-                  // Atomic-Habits-inspired aggregate stats
-                  _AtomicStatsCard(habits: filtered),
-                  // Weekly Tracker Board
-                  _WeeklyTrackerBoard(
+                ),
+                SliverToBoxAdapter(
+                  child: _AtomicStatsCard(habits: filtered),
+                ),
+                SliverToBoxAdapter(
+                  child: _WeeklyTrackerBoard(
                     habits: filtered,
                     weekCompletions: weekData,
                   ),
-                  // ── Pending section ──
-                  if (pendingHabits.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 3, height: 14,
-                            decoration: BoxDecoration(color: AppTheme.colorPrimary, borderRadius: BorderRadius.circular(2)),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 3,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: AppTheme.colorPrimary,
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'PENDIENTES',
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: context.textTertiary, letterSpacing: 1.2),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'TUS HÁBITOS',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: context.textTertiary,
+                            letterSpacing: 1.2,
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.colorPrimary.withAlpha(20),
-                              borderRadius: BorderRadius.circular(10),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.colorPrimary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${filtered.length}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.colorPrimary,
                             ),
-                            child: Text(
-                              '${pendingHabits.length}',
-                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.colorPrimary),
-                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Mantené ↕ para reordenar',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: context.textTertiary,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ),
-                    ...pendingHabits.map((habit) => HabitCard(
-                          habit: habit,
-                          isCompleted: false,
-                          onLongPress: () {
-                            HapticFeedback.mediumImpact();
-                            AddHabitBottomSheet.showEdit(context, habit);
-                          },
-                        )),
-                  ],
-                  // ── Completed section ──
-                  if (completedHabits.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 3, height: 14,
-                            decoration: BoxDecoration(color: AppTheme.colorSuccess, borderRadius: BorderRadius.circular(2)),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'COMPLETADOS',
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: context.textTertiary, letterSpacing: 1.2),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppTheme.colorSuccess.withAlpha(20),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '${completedHabits.length}',
-                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.colorSuccess),
-                            ),
-                          ),
-                        ],
+                  ),
+                ),
+                // Reorderable: mantener apretado para arrastrar arriba/abajo
+                SliverReorderableList(
+                  itemCount: filtered.length,
+                  itemBuilder: (ctx, i) {
+                    final habit = filtered[i];
+                    final isCompleted = completedIds.contains(habit.id);
+                    return ReorderableDelayedDragStartListener(
+                      key: ValueKey('habit-${habit.id}'),
+                      index: i,
+                      child: HabitCard(
+                        habit: habit,
+                        isCompleted: isCompleted,
                       ),
-                    ),
-                    ...completedHabits.map((habit) => HabitCard(
-                          habit: habit,
-                          isCompleted: true,
-                          onLongPress: () {
-                            HapticFeedback.mediumImpact();
-                            AddHabitBottomSheet.showEdit(context, habit);
-                          },
-                        )),
-                  ],
-                  const SizedBox(height: 140),
-                ]),
-              );
+                    );
+                  },
+                  onReorder: (oldIndex, newIndex) async {
+                    HapticFeedback.mediumImpact();
+                    final updated = List<Habit>.from(filtered);
+                    final adjustedNew =
+                        newIndex > oldIndex ? newIndex - 1 : newIndex;
+                    final moved = updated.removeAt(oldIndex);
+                    updated.insert(adjustedNew, moved);
+                    await ref
+                        .read(habitServiceProvider)
+                        .reorderHabits(updated.map((h) => h.id).toList());
+                  },
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 140)),
+              ]);
             },
             loading: () => const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),

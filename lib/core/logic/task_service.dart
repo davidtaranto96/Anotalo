@@ -49,7 +49,10 @@ class TaskService {
       ..where((t) =>
           (t.dayId.equals(today) & t.status.isNotIn(['deleted'])) |
           (t.dayId.isSmallerThanValue(today) & t.status.equals('pending')))
-      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.sortOrder),
+        (t) => OrderingTerm.asc(t.createdAt),
+      ]))
       .watch()
       .map((rows) => rows.map(_fromRow).toList());
   }
@@ -59,6 +62,21 @@ class TaskService {
       ..where((t) => t.parentProjectId.equals(projectId) & t.status.isNotIn(['deleted'])))
       .watch()
       .map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Persiste el orden manual del usuario (drag-and-drop dentro de una
+  /// priority section en Hoy). `idsInOrder` debe traer los ids en el
+  /// orden visual deseado.
+  Future<void> reorderTasks(List<String> idsInOrder) async {
+    await _db.batch((batch) {
+      for (var i = 0; i < idsInOrder.length; i++) {
+        batch.update(
+          _db.tasksTable,
+          TasksTableCompanion(sortOrder: Value(i)),
+          where: (t) => t.id.equals(idsInOrder[i]),
+        );
+      }
+    });
   }
 
   /// Tareas pendientes (status pending) que pertenecen a algún proyecto.

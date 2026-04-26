@@ -15,6 +15,7 @@ class Project extends Equatable {
   final List<String> taskIds;
   final List<String> weeklyGoals;
   final String? notes;
+  final int sortOrder;
   final DateTime createdAt;
   final DateTime? completedAt;
 
@@ -30,10 +31,11 @@ class Project extends Equatable {
     this.taskIds = const [],
     this.weeklyGoals = const [],
     this.notes,
+    this.sortOrder = 0,
     required this.createdAt,
     this.completedAt,
   });
 
   @override
-  List<Object?> get props => [id, title, status, category];
+  List<Object?> get props => [id, title, status, category, sortOrder];
 }

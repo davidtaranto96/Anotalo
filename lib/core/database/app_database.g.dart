@@ -164,6 +164,18 @@ class $TasksTableTable extends TasksTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -203,6 +215,7 @@ class $TasksTableTable extends TasksTable
     subtaskIds,
     dayId,
     estimatedMinutes,
+    sortOrder,
     createdAt,
     completedAt,
   ];
@@ -326,6 +339,12 @@ class $TasksTableTable extends TasksTable
         ),
       );
     }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -412,6 +431,10 @@ class $TasksTableTable extends TasksTable
         DriftSqlType.int,
         data['${effectivePrefix}estimated_minutes'],
       ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -445,6 +468,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
   final String? subtaskIds;
   final String dayId;
   final int? estimatedMinutes;
+  final int sortOrder;
   final DateTime createdAt;
   final DateTime? completedAt;
   const TasksTableData({
@@ -463,6 +487,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     this.subtaskIds,
     required this.dayId,
     this.estimatedMinutes,
+    required this.sortOrder,
     required this.createdAt,
     this.completedAt,
   });
@@ -504,6 +529,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     if (!nullToAbsent || estimatedMinutes != null) {
       map['estimated_minutes'] = Variable<int>(estimatedMinutes);
     }
+    map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
@@ -546,6 +572,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       estimatedMinutes: estimatedMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(estimatedMinutes),
+      sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
@@ -574,6 +601,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       subtaskIds: serializer.fromJson<String?>(json['subtaskIds']),
       dayId: serializer.fromJson<String>(json['dayId']),
       estimatedMinutes: serializer.fromJson<int?>(json['estimatedMinutes']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
     );
@@ -597,6 +625,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       'subtaskIds': serializer.toJson<String?>(subtaskIds),
       'dayId': serializer.toJson<String>(dayId),
       'estimatedMinutes': serializer.toJson<int?>(estimatedMinutes),
+      'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
     };
@@ -618,6 +647,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     Value<String?> subtaskIds = const Value.absent(),
     String? dayId,
     Value<int?> estimatedMinutes = const Value.absent(),
+    int? sortOrder,
     DateTime? createdAt,
     Value<DateTime?> completedAt = const Value.absent(),
   }) => TasksTableData(
@@ -642,6 +672,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     estimatedMinutes: estimatedMinutes.present
         ? estimatedMinutes.value
         : this.estimatedMinutes,
+    sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
   );
@@ -676,6 +707,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       estimatedMinutes: data.estimatedMinutes.present
           ? data.estimatedMinutes.value
           : this.estimatedMinutes,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       completedAt: data.completedAt.present
           ? data.completedAt.value
@@ -701,6 +733,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
           ..write('subtaskIds: $subtaskIds, ')
           ..write('dayId: $dayId, ')
           ..write('estimatedMinutes: $estimatedMinutes, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
@@ -724,6 +757,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     subtaskIds,
     dayId,
     estimatedMinutes,
+    sortOrder,
     createdAt,
     completedAt,
   );
@@ -746,6 +780,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
           other.subtaskIds == this.subtaskIds &&
           other.dayId == this.dayId &&
           other.estimatedMinutes == this.estimatedMinutes &&
+          other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
           other.completedAt == this.completedAt);
 }
@@ -766,6 +801,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
   final Value<String?> subtaskIds;
   final Value<String> dayId;
   final Value<int?> estimatedMinutes;
+  final Value<int> sortOrder;
   final Value<DateTime> createdAt;
   final Value<DateTime?> completedAt;
   final Value<int> rowid;
@@ -785,6 +821,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     this.subtaskIds = const Value.absent(),
     this.dayId = const Value.absent(),
     this.estimatedMinutes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -805,6 +842,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     this.subtaskIds = const Value.absent(),
     required String dayId,
     this.estimatedMinutes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     required DateTime createdAt,
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -828,6 +866,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     Expression<String>? subtaskIds,
     Expression<String>? dayId,
     Expression<int>? estimatedMinutes,
+    Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? completedAt,
     Expression<int>? rowid,
@@ -848,6 +887,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
       if (subtaskIds != null) 'subtask_ids': subtaskIds,
       if (dayId != null) 'day_id': dayId,
       if (estimatedMinutes != null) 'estimated_minutes': estimatedMinutes,
+      if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
       if (completedAt != null) 'completed_at': completedAt,
       if (rowid != null) 'rowid': rowid,
@@ -870,6 +910,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     Value<String?>? subtaskIds,
     Value<String>? dayId,
     Value<int?>? estimatedMinutes,
+    Value<int>? sortOrder,
     Value<DateTime>? createdAt,
     Value<DateTime?>? completedAt,
     Value<int>? rowid,
@@ -890,6 +931,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
       subtaskIds: subtaskIds ?? this.subtaskIds,
       dayId: dayId ?? this.dayId,
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
+      sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
       completedAt: completedAt ?? this.completedAt,
       rowid: rowid ?? this.rowid,
@@ -944,6 +986,9 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     if (estimatedMinutes.present) {
       map['estimated_minutes'] = Variable<int>(estimatedMinutes.value);
     }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -974,6 +1019,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
           ..write('subtaskIds: $subtaskIds, ')
           ..write('dayId: $dayId, ')
           ..write('estimatedMinutes: $estimatedMinutes, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
@@ -1028,6 +1074,18 @@ class $HabitsTableTable extends HabitsTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _targetPerWeekMeta = const VerificationMeta(
+    'targetPerWeek',
+  );
+  @override
+  late final GeneratedColumn<int> targetPerWeek = GeneratedColumn<int>(
+    'target_per_week',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _areaMeta = const VerificationMeta('area');
   @override
   late final GeneratedColumn<String> area = GeneratedColumn<String>(
@@ -1070,6 +1128,18 @@ class $HabitsTableTable extends HabitsTable
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1087,10 +1157,12 @@ class $HabitsTableTable extends HabitsTable
     title,
     description,
     frequency,
+    targetPerWeek,
     area,
     color,
     icon,
     isArchived,
+    sortOrder,
     createdAt,
   ];
   @override
@@ -1135,6 +1207,15 @@ class $HabitsTableTable extends HabitsTable
     } else if (isInserting) {
       context.missing(_frequencyMeta);
     }
+    if (data.containsKey('target_per_week')) {
+      context.handle(
+        _targetPerWeekMeta,
+        targetPerWeek.isAcceptableOrUnknown(
+          data['target_per_week']!,
+          _targetPerWeekMeta,
+        ),
+      );
+    }
     if (data.containsKey('area')) {
       context.handle(
         _areaMeta,
@@ -1157,6 +1238,12 @@ class $HabitsTableTable extends HabitsTable
       context.handle(
         _isArchivedMeta,
         isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -1192,6 +1279,10 @@ class $HabitsTableTable extends HabitsTable
         DriftSqlType.string,
         data['${effectivePrefix}frequency'],
       )!,
+      targetPerWeek: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_per_week'],
+      )!,
       area: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}area'],
@@ -1207,6 +1298,10 @@ class $HabitsTableTable extends HabitsTable
       isArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
       )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -1226,20 +1321,24 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
   final String title;
   final String? description;
   final String frequency;
+  final int targetPerWeek;
   final String? area;
   final String? color;
   final String? icon;
   final bool isArchived;
+  final int sortOrder;
   final DateTime createdAt;
   const HabitsTableData({
     required this.id,
     required this.title,
     this.description,
     required this.frequency,
+    required this.targetPerWeek,
     this.area,
     this.color,
     this.icon,
     required this.isArchived,
+    required this.sortOrder,
     required this.createdAt,
   });
   @override
@@ -1251,6 +1350,7 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
       map['description'] = Variable<String>(description);
     }
     map['frequency'] = Variable<String>(frequency);
+    map['target_per_week'] = Variable<int>(targetPerWeek);
     if (!nullToAbsent || area != null) {
       map['area'] = Variable<String>(area);
     }
@@ -1261,6 +1361,7 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
       map['icon'] = Variable<String>(icon);
     }
     map['is_archived'] = Variable<bool>(isArchived);
+    map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1273,12 +1374,14 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
           ? const Value.absent()
           : Value(description),
       frequency: Value(frequency),
+      targetPerWeek: Value(targetPerWeek),
       area: area == null && nullToAbsent ? const Value.absent() : Value(area),
       color: color == null && nullToAbsent
           ? const Value.absent()
           : Value(color),
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
       isArchived: Value(isArchived),
+      sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
     );
   }
@@ -1293,10 +1396,12 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
       title: serializer.fromJson<String>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
       frequency: serializer.fromJson<String>(json['frequency']),
+      targetPerWeek: serializer.fromJson<int>(json['targetPerWeek']),
       area: serializer.fromJson<String?>(json['area']),
       color: serializer.fromJson<String?>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1308,10 +1413,12 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
       'title': serializer.toJson<String>(title),
       'description': serializer.toJson<String?>(description),
       'frequency': serializer.toJson<String>(frequency),
+      'targetPerWeek': serializer.toJson<int>(targetPerWeek),
       'area': serializer.toJson<String?>(area),
       'color': serializer.toJson<String?>(color),
       'icon': serializer.toJson<String?>(icon),
       'isArchived': serializer.toJson<bool>(isArchived),
+      'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1321,20 +1428,24 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
     String? title,
     Value<String?> description = const Value.absent(),
     String? frequency,
+    int? targetPerWeek,
     Value<String?> area = const Value.absent(),
     Value<String?> color = const Value.absent(),
     Value<String?> icon = const Value.absent(),
     bool? isArchived,
+    int? sortOrder,
     DateTime? createdAt,
   }) => HabitsTableData(
     id: id ?? this.id,
     title: title ?? this.title,
     description: description.present ? description.value : this.description,
     frequency: frequency ?? this.frequency,
+    targetPerWeek: targetPerWeek ?? this.targetPerWeek,
     area: area.present ? area.value : this.area,
     color: color.present ? color.value : this.color,
     icon: icon.present ? icon.value : this.icon,
     isArchived: isArchived ?? this.isArchived,
+    sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
   );
   HabitsTableData copyWithCompanion(HabitsTableCompanion data) {
@@ -1345,12 +1456,16 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
           ? data.description.value
           : this.description,
       frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      targetPerWeek: data.targetPerWeek.present
+          ? data.targetPerWeek.value
+          : this.targetPerWeek,
       area: data.area.present ? data.area.value : this.area,
       color: data.color.present ? data.color.value : this.color,
       icon: data.icon.present ? data.icon.value : this.icon,
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1362,10 +1477,12 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('frequency: $frequency, ')
+          ..write('targetPerWeek: $targetPerWeek, ')
           ..write('area: $area, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
           ..write('isArchived: $isArchived, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1377,10 +1494,12 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
     title,
     description,
     frequency,
+    targetPerWeek,
     area,
     color,
     icon,
     isArchived,
+    sortOrder,
     createdAt,
   );
   @override
@@ -1391,10 +1510,12 @@ class HabitsTableData extends DataClass implements Insertable<HabitsTableData> {
           other.title == this.title &&
           other.description == this.description &&
           other.frequency == this.frequency &&
+          other.targetPerWeek == this.targetPerWeek &&
           other.area == this.area &&
           other.color == this.color &&
           other.icon == this.icon &&
           other.isArchived == this.isArchived &&
+          other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt);
 }
 
@@ -1403,10 +1524,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
   final Value<String> title;
   final Value<String?> description;
   final Value<String> frequency;
+  final Value<int> targetPerWeek;
   final Value<String?> area;
   final Value<String?> color;
   final Value<String?> icon;
   final Value<bool> isArchived;
+  final Value<int> sortOrder;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const HabitsTableCompanion({
@@ -1414,10 +1537,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     this.title = const Value.absent(),
     this.description = const Value.absent(),
     this.frequency = const Value.absent(),
+    this.targetPerWeek = const Value.absent(),
     this.area = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1426,10 +1551,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     required String title,
     this.description = const Value.absent(),
     required String frequency,
+    this.targetPerWeek = const Value.absent(),
     this.area = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1441,10 +1568,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     Expression<String>? title,
     Expression<String>? description,
     Expression<String>? frequency,
+    Expression<int>? targetPerWeek,
     Expression<String>? area,
     Expression<String>? color,
     Expression<String>? icon,
     Expression<bool>? isArchived,
+    Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1453,10 +1582,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (frequency != null) 'frequency': frequency,
+      if (targetPerWeek != null) 'target_per_week': targetPerWeek,
       if (area != null) 'area': area,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
       if (isArchived != null) 'is_archived': isArchived,
+      if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1467,10 +1598,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     Value<String>? title,
     Value<String?>? description,
     Value<String>? frequency,
+    Value<int>? targetPerWeek,
     Value<String?>? area,
     Value<String?>? color,
     Value<String?>? icon,
     Value<bool>? isArchived,
+    Value<int>? sortOrder,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1479,10 +1612,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
       title: title ?? this.title,
       description: description ?? this.description,
       frequency: frequency ?? this.frequency,
+      targetPerWeek: targetPerWeek ?? this.targetPerWeek,
       area: area ?? this.area,
       color: color ?? this.color,
       icon: icon ?? this.icon,
       isArchived: isArchived ?? this.isArchived,
+      sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1503,6 +1638,9 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     if (frequency.present) {
       map['frequency'] = Variable<String>(frequency.value);
     }
+    if (targetPerWeek.present) {
+      map['target_per_week'] = Variable<int>(targetPerWeek.value);
+    }
     if (area.present) {
       map['area'] = Variable<String>(area.value);
     }
@@ -1514,6 +1652,9 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
     }
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1531,10 +1672,12 @@ class HabitsTableCompanion extends UpdateCompanion<HabitsTableData> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('frequency: $frequency, ')
+          ..write('targetPerWeek: $targetPerWeek, ')
           ..write('area: $area, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
           ..write('isArchived: $isArchived, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1978,6 +2121,18 @@ class $ProjectsTableTable extends ProjectsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2013,6 +2168,7 @@ class $ProjectsTableTable extends ProjectsTable
     taskIds,
     weeklyGoals,
     notes,
+    sortOrder,
     createdAt,
     completedAt,
   ];
@@ -2105,6 +2261,12 @@ class $ProjectsTableTable extends ProjectsTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2175,6 +2337,10 @@ class $ProjectsTableTable extends ProjectsTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2205,6 +2371,7 @@ class ProjectsTableData extends DataClass
   final String? taskIds;
   final String? weeklyGoals;
   final String? notes;
+  final int sortOrder;
   final DateTime createdAt;
   final DateTime? completedAt;
   const ProjectsTableData({
@@ -2219,6 +2386,7 @@ class ProjectsTableData extends DataClass
     this.taskIds,
     this.weeklyGoals,
     this.notes,
+    required this.sortOrder,
     required this.createdAt,
     this.completedAt,
   });
@@ -2248,6 +2416,7 @@ class ProjectsTableData extends DataClass
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['sort_order'] = Variable<int>(sortOrder);
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<DateTime>(completedAt);
@@ -2278,6 +2447,7 @@ class ProjectsTableData extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      sortOrder: Value(sortOrder),
       createdAt: Value(createdAt),
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2302,6 +2472,7 @@ class ProjectsTableData extends DataClass
       taskIds: serializer.fromJson<String?>(json['taskIds']),
       weeklyGoals: serializer.fromJson<String?>(json['weeklyGoals']),
       notes: serializer.fromJson<String?>(json['notes']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
     );
@@ -2321,6 +2492,7 @@ class ProjectsTableData extends DataClass
       'taskIds': serializer.toJson<String?>(taskIds),
       'weeklyGoals': serializer.toJson<String?>(weeklyGoals),
       'notes': serializer.toJson<String?>(notes),
+      'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
     };
@@ -2338,6 +2510,7 @@ class ProjectsTableData extends DataClass
     Value<String?> taskIds = const Value.absent(),
     Value<String?> weeklyGoals = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    int? sortOrder,
     DateTime? createdAt,
     Value<DateTime?> completedAt = const Value.absent(),
   }) => ProjectsTableData(
@@ -2352,6 +2525,7 @@ class ProjectsTableData extends DataClass
     taskIds: taskIds.present ? taskIds.value : this.taskIds,
     weeklyGoals: weeklyGoals.present ? weeklyGoals.value : this.weeklyGoals,
     notes: notes.present ? notes.value : this.notes,
+    sortOrder: sortOrder ?? this.sortOrder,
     createdAt: createdAt ?? this.createdAt,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
   );
@@ -2374,6 +2548,7 @@ class ProjectsTableData extends DataClass
           ? data.weeklyGoals.value
           : this.weeklyGoals,
       notes: data.notes.present ? data.notes.value : this.notes,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       completedAt: data.completedAt.present
           ? data.completedAt.value
@@ -2395,6 +2570,7 @@ class ProjectsTableData extends DataClass
           ..write('taskIds: $taskIds, ')
           ..write('weeklyGoals: $weeklyGoals, ')
           ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('completedAt: $completedAt')
           ..write(')'))
@@ -2414,6 +2590,7 @@ class ProjectsTableData extends DataClass
     taskIds,
     weeklyGoals,
     notes,
+    sortOrder,
     createdAt,
     completedAt,
   );
@@ -2432,6 +2609,7 @@ class ProjectsTableData extends DataClass
           other.taskIds == this.taskIds &&
           other.weeklyGoals == this.weeklyGoals &&
           other.notes == this.notes &&
+          other.sortOrder == this.sortOrder &&
           other.createdAt == this.createdAt &&
           other.completedAt == this.completedAt);
 }
@@ -2448,6 +2626,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
   final Value<String?> taskIds;
   final Value<String?> weeklyGoals;
   final Value<String?> notes;
+  final Value<int> sortOrder;
   final Value<DateTime> createdAt;
   final Value<DateTime?> completedAt;
   final Value<int> rowid;
@@ -2463,6 +2642,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
     this.taskIds = const Value.absent(),
     this.weeklyGoals = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2479,6 +2659,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
     this.taskIds = const Value.absent(),
     this.weeklyGoals = const Value.absent(),
     this.notes = const Value.absent(),
+    this.sortOrder = const Value.absent(),
     required DateTime createdAt,
     this.completedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2499,6 +2680,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
     Expression<String>? taskIds,
     Expression<String>? weeklyGoals,
     Expression<String>? notes,
+    Expression<int>? sortOrder,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? completedAt,
     Expression<int>? rowid,
@@ -2515,6 +2697,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
       if (taskIds != null) 'task_ids': taskIds,
       if (weeklyGoals != null) 'weekly_goals': weeklyGoals,
       if (notes != null) 'notes': notes,
+      if (sortOrder != null) 'sort_order': sortOrder,
       if (createdAt != null) 'created_at': createdAt,
       if (completedAt != null) 'completed_at': completedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2533,6 +2716,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
     Value<String?>? taskIds,
     Value<String?>? weeklyGoals,
     Value<String?>? notes,
+    Value<int>? sortOrder,
     Value<DateTime>? createdAt,
     Value<DateTime?>? completedAt,
     Value<int>? rowid,
@@ -2549,6 +2733,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
       taskIds: taskIds ?? this.taskIds,
       weeklyGoals: weeklyGoals ?? this.weeklyGoals,
       notes: notes ?? this.notes,
+      sortOrder: sortOrder ?? this.sortOrder,
       createdAt: createdAt ?? this.createdAt,
       completedAt: completedAt ?? this.completedAt,
       rowid: rowid ?? this.rowid,
@@ -2591,6 +2776,9 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2617,6 +2805,7 @@ class ProjectsTableCompanion extends UpdateCompanion<ProjectsTableData> {
           ..write('taskIds: $taskIds, ')
           ..write('weeklyGoals: $weeklyGoals, ')
           ..write('notes: $notes, ')
+          ..write('sortOrder: $sortOrder, ')
           ..write('createdAt: $createdAt, ')
           ..write('completedAt: $completedAt, ')
           ..write('rowid: $rowid')
@@ -6372,6 +6561,7 @@ typedef $$TasksTableTableCreateCompanionBuilder =
       Value<String?> subtaskIds,
       required String dayId,
       Value<int?> estimatedMinutes,
+      Value<int> sortOrder,
       required DateTime createdAt,
       Value<DateTime?> completedAt,
       Value<int> rowid,
@@ -6393,6 +6583,7 @@ typedef $$TasksTableTableUpdateCompanionBuilder =
       Value<String?> subtaskIds,
       Value<String> dayId,
       Value<int?> estimatedMinutes,
+      Value<int> sortOrder,
       Value<DateTime> createdAt,
       Value<DateTime?> completedAt,
       Value<int> rowid,
@@ -6479,6 +6670,11 @@ class $$TasksTableTableFilterComposer
 
   ColumnFilters<int> get estimatedMinutes => $composableBuilder(
     column: $table.estimatedMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6577,6 +6773,11 @@ class $$TasksTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6656,6 +6857,9 @@ class $$TasksTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -6711,6 +6915,7 @@ class $$TasksTableTableTableManager
                 Value<String?> subtaskIds = const Value.absent(),
                 Value<String> dayId = const Value.absent(),
                 Value<int?> estimatedMinutes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6730,6 +6935,7 @@ class $$TasksTableTableTableManager
                 subtaskIds: subtaskIds,
                 dayId: dayId,
                 estimatedMinutes: estimatedMinutes,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 completedAt: completedAt,
                 rowid: rowid,
@@ -6751,6 +6957,7 @@ class $$TasksTableTableTableManager
                 Value<String?> subtaskIds = const Value.absent(),
                 required String dayId,
                 Value<int?> estimatedMinutes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6770,6 +6977,7 @@ class $$TasksTableTableTableManager
                 subtaskIds: subtaskIds,
                 dayId: dayId,
                 estimatedMinutes: estimatedMinutes,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 completedAt: completedAt,
                 rowid: rowid,
@@ -6805,10 +7013,12 @@ typedef $$HabitsTableTableCreateCompanionBuilder =
       required String title,
       Value<String?> description,
       required String frequency,
+      Value<int> targetPerWeek,
       Value<String?> area,
       Value<String?> color,
       Value<String?> icon,
       Value<bool> isArchived,
+      Value<int> sortOrder,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -6818,10 +7028,12 @@ typedef $$HabitsTableTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String?> description,
       Value<String> frequency,
+      Value<int> targetPerWeek,
       Value<String?> area,
       Value<String?> color,
       Value<String?> icon,
       Value<bool> isArchived,
+      Value<int> sortOrder,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -6855,6 +7067,11 @@ class $$HabitsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get targetPerWeek => $composableBuilder(
+    column: $table.targetPerWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get area => $composableBuilder(
     column: $table.area,
     builder: (column) => ColumnFilters(column),
@@ -6872,6 +7089,11 @@ class $$HabitsTableTableFilterComposer
 
   ColumnFilters<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6910,6 +7132,11 @@ class $$HabitsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get targetPerWeek => $composableBuilder(
+    column: $table.targetPerWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get area => $composableBuilder(
     column: $table.area,
     builder: (column) => ColumnOrderings(column),
@@ -6927,6 +7154,11 @@ class $$HabitsTableTableOrderingComposer
 
   ColumnOrderings<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -6959,6 +7191,11 @@ class $$HabitsTableTableAnnotationComposer
   GeneratedColumn<String> get frequency =>
       $composableBuilder(column: $table.frequency, builder: (column) => column);
 
+  GeneratedColumn<int> get targetPerWeek => $composableBuilder(
+    column: $table.targetPerWeek,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get area =>
       $composableBuilder(column: $table.area, builder: (column) => column);
 
@@ -6972,6 +7209,9 @@ class $$HabitsTableTableAnnotationComposer
     column: $table.isArchived,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -7012,10 +7252,12 @@ class $$HabitsTableTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<String> frequency = const Value.absent(),
+                Value<int> targetPerWeek = const Value.absent(),
                 Value<String?> area = const Value.absent(),
                 Value<String?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HabitsTableCompanion(
@@ -7023,10 +7265,12 @@ class $$HabitsTableTableTableManager
                 title: title,
                 description: description,
                 frequency: frequency,
+                targetPerWeek: targetPerWeek,
                 area: area,
                 color: color,
                 icon: icon,
                 isArchived: isArchived,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -7036,10 +7280,12 @@ class $$HabitsTableTableTableManager
                 required String title,
                 Value<String?> description = const Value.absent(),
                 required String frequency,
+                Value<int> targetPerWeek = const Value.absent(),
                 Value<String?> area = const Value.absent(),
                 Value<String?> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => HabitsTableCompanion.insert(
@@ -7047,10 +7293,12 @@ class $$HabitsTableTableTableManager
                 title: title,
                 description: description,
                 frequency: frequency,
+                targetPerWeek: targetPerWeek,
                 area: area,
                 color: color,
                 icon: icon,
                 isArchived: isArchived,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -7294,6 +7542,7 @@ typedef $$ProjectsTableTableCreateCompanionBuilder =
       Value<String?> taskIds,
       Value<String?> weeklyGoals,
       Value<String?> notes,
+      Value<int> sortOrder,
       required DateTime createdAt,
       Value<DateTime?> completedAt,
       Value<int> rowid,
@@ -7311,6 +7560,7 @@ typedef $$ProjectsTableTableUpdateCompanionBuilder =
       Value<String?> taskIds,
       Value<String?> weeklyGoals,
       Value<String?> notes,
+      Value<int> sortOrder,
       Value<DateTime> createdAt,
       Value<DateTime?> completedAt,
       Value<int> rowid,
@@ -7377,6 +7627,11 @@ class $$ProjectsTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7455,6 +7710,11 @@ class $$ProjectsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7514,6 +7774,9 @@ class $$ProjectsTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -7569,6 +7832,7 @@ class $$ProjectsTableTableTableManager
                 Value<String?> taskIds = const Value.absent(),
                 Value<String?> weeklyGoals = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7584,6 +7848,7 @@ class $$ProjectsTableTableTableManager
                 taskIds: taskIds,
                 weeklyGoals: weeklyGoals,
                 notes: notes,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 completedAt: completedAt,
                 rowid: rowid,
@@ -7601,6 +7866,7 @@ class $$ProjectsTableTableTableManager
                 Value<String?> taskIds = const Value.absent(),
                 Value<String?> weeklyGoals = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> completedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7616,6 +7882,7 @@ class $$ProjectsTableTableTableManager
                 taskIds: taskIds,
                 weeklyGoals: weeklyGoals,
                 notes: notes,
+                sortOrder: sortOrder,
                 createdAt: createdAt,
                 completedAt: completedAt,
                 rowid: rowid,

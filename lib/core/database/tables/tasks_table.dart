@@ -16,6 +16,8 @@ class TasksTable extends Table {
   TextColumn get subtaskIds      => text().nullable()();
   TextColumn get dayId           => text()();
   IntColumn  get estimatedMinutes => integer().nullable()();
+  // Orden manual del usuario dentro de la lista de Hoy/área (drag).
+  IntColumn  get sortOrder       => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt   => dateTime()();
   DateTimeColumn get completedAt => dateTime().nullable()();
 

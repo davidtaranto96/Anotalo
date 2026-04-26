@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +48,14 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(taskAreasTable);
         await m.createTable(dailyReviewsTable);
         await _seedBuiltinAreas();
+      }
+      if (from < 3) {
+        // Hábitos N/semana + reordering. Las columnas son nullables-default
+        // para que las filas existentes no se rompan al subir el schema.
+        await m.addColumn(habitsTable, habitsTable.targetPerWeek);
+        await m.addColumn(habitsTable, habitsTable.sortOrder);
+        await m.addColumn(projectsTable, projectsTable.sortOrder);
+        await m.addColumn(tasksTable, tasksTable.sortOrder);
       }
     },
     beforeOpen: (details) async {

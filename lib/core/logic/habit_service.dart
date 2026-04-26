@@ -15,10 +15,12 @@ class HabitService {
     title: row.title,
     description: row.description,
     frequency: row.frequency == 'daily' ? HabitFrequency.daily : HabitFrequency.weekly,
+    targetPerWeek: row.targetPerWeek,
     area: row.area,
     color: row.color,
     icon: row.icon,
     isArchived: row.isArchived,
+    sortOrder: row.sortOrder,
     createdAt: row.createdAt,
   );
 
@@ -31,7 +33,11 @@ class HabitService {
 
   Stream<List<Habit>> watchActiveHabits() {
     return (_db.select(_db.habitsTable)
-      ..where((t) => t.isArchived.equals(false)))
+      ..where((t) => t.isArchived.equals(false))
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.sortOrder),
+        (t) => OrderingTerm.asc(t.createdAt),
+      ]))
       .watch()
       .map((rows) => rows.map(_habitFromRow).toList());
   }
@@ -44,14 +50,26 @@ class HabitService {
   }
 
   Future<void> addHabit(Habit habit) async {
+    // Si no nos pasaron sortOrder, usamos el mayor existente + 1 para que
+    // los nuevos se sumen al final.
+    int sortOrder = habit.sortOrder;
+    if (sortOrder == 0) {
+      final all = await (_db.select(_db.habitsTable)
+            ..orderBy([(t) => OrderingTerm.desc(t.sortOrder)])
+            ..limit(1))
+          .getSingleOrNull();
+      sortOrder = (all?.sortOrder ?? 0) + 1;
+    }
     await _db.into(_db.habitsTable).insert(HabitsTableCompanion.insert(
       id: habit.id.isEmpty ? _uuid.v4() : habit.id,
       title: habit.title,
       description: Value(habit.description),
       frequency: habit.frequency == HabitFrequency.daily ? 'daily' : 'weekly',
+      targetPerWeek: Value(habit.targetPerWeek),
       area: Value(habit.area),
       color: Value(habit.color),
       icon: Value(habit.icon),
+      sortOrder: Value(sortOrder),
       createdAt: habit.createdAt,
     ));
   }
@@ -109,20 +127,42 @@ class HabitService {
 
   Future<void> updateHabit(String id, {
     String? title,
+    String? description,
     HabitFrequency? frequency,
+    int? targetPerWeek,
     String? color,
     String? icon,
+    String? area,
   }) async {
     await (_db.update(_db.habitsTable)..where((t) => t.id.equals(id))).write(
       HabitsTableCompanion(
         title: title != null ? Value(title) : const Value.absent(),
+        description: description != null ? Value(description) : const Value.absent(),
         frequency: frequency != null
             ? Value(frequency == HabitFrequency.daily ? 'daily' : 'weekly')
             : const Value.absent(),
+        targetPerWeek: targetPerWeek != null
+            ? Value(targetPerWeek)
+            : const Value.absent(),
         color: color != null ? Value(color) : const Value.absent(),
         icon: icon != null ? Value(icon) : const Value.absent(),
+        area: area != null ? Value(area) : const Value.absent(),
       ),
     );
+  }
+
+  /// Persiste el orden manual del usuario después de un drag-and-drop.
+  /// `idsInOrder` debe contener los habit ids en el orden visual deseado.
+  Future<void> reorderHabits(List<String> idsInOrder) async {
+    await _db.batch((batch) {
+      for (var i = 0; i < idsInOrder.length; i++) {
+        batch.update(
+          _db.habitsTable,
+          HabitsTableCompanion(sortOrder: Value(i)),
+          where: (t) => t.id.equals(idsInOrder[i]),
+        );
+      }
+    });
   }
 
   /// Returns a map of dayId -> Set<habitId> for the given days of the week.
