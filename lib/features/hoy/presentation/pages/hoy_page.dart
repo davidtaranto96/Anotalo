@@ -363,12 +363,6 @@ class _HoyPageState extends ConsumerState<HoyPage> {
               ),
             ),
 
-            // ── Proyectos activos ─────────────────────────────────────
-            // Cada proyecto activo es una fila colapsable que por
-            // default solo muestra la próxima tarea. Las tareas-de-
-            // proyecto ya no aparecen mezcladas en las priority
-            // sections de arriba (los providers las filtran).
-            const SliverToBoxAdapter(child: ActiveProjectsSection()),
           ],
 
           // ── Hábitos ────────────────────────────────────────────────────
@@ -377,12 +371,28 @@ class _HoyPageState extends ConsumerState<HoyPage> {
           else
           habitsAsync.when(
             data: (habits) {
-              final daily = habits.where((h) => h.frequency == HabitFrequency.daily).toList();
-              if (daily.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-              final completionIds =
-                  completionsAsync.valueOrNull?.map((c) => c.habitId).toSet() ?? {};
-              final doneCount = daily.where((h) => completionIds.contains(h.id)).length;
+              if (habits.isEmpty) {
+                return const SliverToBoxAdapter(child: SizedBox.shrink());
+              }
+              final completionIds = completionsAsync.valueOrNull
+                      ?.map((c) => c.habitId)
+                      .toSet() ??
+                  {};
+              final weekCount =
+                  ref.watch(thisWeekCompletionCountProvider);
 
+              // Un hábito está "cerrado" hoy si:
+              //   daily  → ya se marcó hoy
+              //   weekly → ya se cumplió el target de la semana
+              bool isClosed(Habit h) {
+                if (h.frequency == HabitFrequency.daily) {
+                  return completionIds.contains(h.id);
+                }
+                final c = weekCount[h.id] ?? 0;
+                return c >= h.targetPerWeek;
+              }
+
+              final doneCount = habits.where(isClosed).length;
               return SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -402,7 +412,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '$doneCount/${daily.length}',
+                            '$doneCount/${habits.length}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: context.textTertiary,
@@ -414,12 +424,15 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: daily.map((h) => _HabitPill(
+                        children: habits.map((h) => _HabitPill(
                           habit: h,
-                          isCompleted: completionIds.contains(h.id),
+                          isCompleted: isClosed(h),
+                          weeklyDone: weekCount[h.id] ?? 0,
                           onToggle: () {
                             HapticFeedback.lightImpact();
-                            ref.read(habitServiceProvider).toggleCompletion(h.id, todayId());
+                            ref
+                                .read(habitServiceProvider)
+                                .toggleCompletion(h.id, todayId());
                           },
                         )).toList(),
                       ),
@@ -431,6 +444,13 @@ class _HoyPageState extends ConsumerState<HoyPage> {
             loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
+
+          // ── Proyectos activos (resumen) ───────────────────────────────
+          // Las tareas-de-proyecto ya aparecen arriba en las priority
+          // sections junto con las sueltas (no se duplican). Esta
+          // sección queda como resumen visual con el progreso del
+          // proyecto y un tap → abre el detalle.
+          const SliverToBoxAdapter(child: ActiveProjectsSection()),
 
           // ── Otras tareas (colapsable) ──────────────────────────────────
           // Solo mostramos esta sección cuando hay un área filtrada; en
@@ -1000,10 +1020,20 @@ class _AreaTab extends StatelessWidget {
 // ── Habit pill ─────────────────────────────────────────────────────────────
 class _HabitPill extends ConsumerWidget {
   final Habit habit;
+  /// True si el hábito está "cerrado" para hoy/esta semana (daily ya
+  /// marcado o weekly al target).
   final bool isCompleted;
+  /// Cuántas veces se completó esta semana — sólo se muestra para
+  /// hábitos `weekly` con `targetPerWeek > 1`.
+  final int weeklyDone;
   final VoidCallback onToggle;
 
-  const _HabitPill({required this.habit, required this.isCompleted, required this.onToggle});
+  const _HabitPill({
+    required this.habit,
+    required this.isCompleted,
+    required this.onToggle,
+    this.weeklyDone = 0,
+  });
 
   Color _parseHabitColor(Color fallback) {
     if (habit.color == null || habit.color!.isEmpty) return fallback;
@@ -1052,6 +1082,24 @@ class _HabitPill extends ConsumerWidget {
             if (isCompleted) ...[
               const SizedBox(width: 5),
               Icon(Icons.check_circle_rounded, size: 14, color: habitColor),
+            ] else if (habit.frequency == HabitFrequency.weekly) ...[
+              // Hábito weekly aún no cumplido: mostrar progreso "X/N".
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: habitColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$weeklyDone/${habit.targetPerWeek}',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: habitColor,
+                  ),
+                ),
+              ),
             ] else if (streak > 1) ...[
               const SizedBox(width: 5),
               Container(

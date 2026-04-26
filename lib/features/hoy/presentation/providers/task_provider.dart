@@ -14,18 +14,16 @@ final todayTasksProvider = StreamProvider<List<Task>>((ref) {
   return ref.watch(taskServiceProvider).watchTodayTasks(dayId);
 });
 
-/// Las priority sections de Hoy SOLO muestran tareas sueltas (sin
-/// proyecto). Las tareas-de-proyecto viven en la sección "Proyectos
-/// activos" abajo, agrupadas por proyecto y colapsables.
-bool _isStandalone(Task t) =>
-    t.parentProjectId == null || t.parentProjectId!.isEmpty;
+// Las priority sections muestran TODAS las tareas pendientes — incluyendo
+// las que pertenecen a un proyecto. La sección "Proyectos activos"
+// abajo de hábitos es sólo un resumen informativo (progreso por
+// proyecto), sin duplicar las tareas individuales.
 
 final primordialTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
       ?.where((t) =>
           t.priority == TaskPriority.primordial &&
-          t.status != TaskStatus.done &&
-          _isStandalone(t))
+          t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
@@ -33,8 +31,7 @@ final importanteTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
       ?.where((t) =>
           t.priority == TaskPriority.importante &&
-          t.status != TaskStatus.done &&
-          _isStandalone(t))
+          t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
@@ -43,8 +40,7 @@ final puedeEsperarTasksProvider = Provider<List<Task>>((ref) {
       ?.where((t) =>
           (t.priority == TaskPriority.puedeEsperar ||
               t.priority == TaskPriority.secundaria) &&
-          t.status != TaskStatus.done &&
-          _isStandalone(t))
+          t.status != TaskStatus.done)
       .toList() ?? [];
 });
 
