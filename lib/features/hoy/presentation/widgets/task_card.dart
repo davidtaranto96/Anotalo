@@ -9,6 +9,7 @@ import '../../../../../core/models/task_area.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../domain/models/task.dart';
 import 'add_task_bottom_sheet.dart';
+import 'pencil_strike_title.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -206,17 +207,18 @@ class TaskCard extends StatelessWidget {
                         children: [
                           ListenableBuilder(
                             listenable: TaskCardPrefs.instance,
-                            builder: (ctx, _) => Text(
-                              task.title,
+                            builder: (ctx, _) => PencilStrikeTitle(
+                              title: task.title,
+                              done: isDone,
+                              strokeColor: priorityColor,
+                              onComplete: onComplete,
                               style: GoogleFonts.inter(
-                                fontSize: _scaledFontSize(rolloverDays, context),
+                                fontSize:
+                                    _scaledFontSize(rolloverDays, context),
                                 fontWeight: _scaledFontWeight(rolloverDays),
                                 color: isDone
                                     ? context.textTertiary
                                     : context.textPrimary,
-                                decoration: isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
                                 height: 1.25,
                               ),
                             ),

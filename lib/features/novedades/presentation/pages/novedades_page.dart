@@ -107,9 +107,36 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.7.0',
+    version: '1.8.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Apunto: vista mensual + drag + hábitos N/sem',
+    items: [
+      _ChangelogItem(_nf, Icons.calendar_month_rounded,
+          'Vista mensual nueva: calendario con dots por prioridad por día y bottom sheet con las tareas agrupadas por área al tocar cualquier día.'),
+      _ChangelogItem(_nf, Icons.drag_indicator_rounded,
+          'Mové tareas entre días con long-press: arrastrá una tarea desde el día A y suéltala en otra celda del mes — se reasigna sola.'),
+      _ChangelogItem(_nf, Icons.bar_chart_rounded,
+          'Valoración del mes: completado vs pendiente, ratio por área, hábitos cumplidos %, mejor día y lo que te queda hacer.'),
+      _ChangelogItem(_nf, Icons.repeat_rounded,
+          'Hábitos editables con frecuencia "X veces por semana" (1-7, lunes a domingo). El contador "X/N esta semana" se vuelve verde al cumplir.'),
+      _ChangelogItem(_nf, Icons.swap_vert_rounded,
+          'Reordená proyectos, hábitos y tareas con long-press: arrastrá arriba o abajo y queda guardado.'),
+      _ChangelogItem(_nf, Icons.brush_rounded,
+          'Pencil-stroke con confirmación: arrastrá horizontal sobre el título de una tarea pendiente, aparece un botón "Confirmar" — la tarea no se completa hasta tocarlo.'),
+      _ChangelogItem(_nf, Icons.folder_special_rounded,
+          'Sección "Proyectos activos" en Hoy: las tareas de proyectos ya no se mezclan con las sueltas. Cada proyecto se muestra colapsado con su próxima tarea.'),
+      _ChangelogItem(_mj, Icons.label_rounded,
+          'Renombré la app a "Apunto" — más corto, más directo.'),
+      _ChangelogItem(_mj, Icons.swipe_rounded,
+          'Swipe en Semana: ahora se ve solo el icono (sin texto cortado) en cards angostas.'),
+      _ChangelogItem(_mj, Icons.format_size_rounded,
+          'Toggle nuevo en Configuración: "Agrandar tareas viejas" — el título crece y se vuelve más negrita con el paso de los días.'),
+    ],
+  ),
+  _Release(
+    version: '1.7.0',
+    date: 'Abril 2026',
     title: 'Continuidad y contexto',
     items: [
       _ChangelogItem(_nf, Icons.water_drop_rounded,

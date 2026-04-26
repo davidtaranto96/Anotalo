@@ -64,6 +64,28 @@ class TaskService {
       .map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Tareas dentro de un rango de días — para la vista mensual. Excluye
+  /// las eliminadas. Devuelve cualquier status (pending / done / etc).
+  Stream<List<Task>> watchTasksInRange(String fromDayId, String toDayId) {
+    return (_db.select(_db.tasksTable)
+      ..where((t) =>
+          t.dayId.isBiggerOrEqualValue(fromDayId) &
+          t.dayId.isSmallerOrEqualValue(toDayId) &
+          t.status.isNotIn(['deleted']))
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.dayId),
+        (t) => OrderingTerm.asc(t.priority),
+      ]))
+      .watch()
+      .map((rows) => rows.map(_fromRow).toList());
+  }
+
+  /// Mueve una tarea a otro día (drag-and-drop entre celdas del mes).
+  Future<void> moveTaskToDay(String taskId, String newDayId) async {
+    await (_db.update(_db.tasksTable)..where((t) => t.id.equals(taskId)))
+        .write(TasksTableCompanion(dayId: Value(newDayId)));
+  }
+
   /// Persiste el orden manual del usuario (drag-and-drop dentro de una
   /// priority section en Hoy). `idsInOrder` debe traer los ids en el
   /// orden visual deseado.

@@ -24,9 +24,24 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
   /// view (e.g. tapping "+" while inside the "Salud" tab in Hoy).
   final String? prefillArea;
 
-  const AddTaskBottomSheet({super.key, this.existing, this.prefillArea});
+  /// Día específico al que pertenece la nueva tarea. Si es null, usa
+  /// `todayId()`. Lo usa la vista mensual al "Agregar tarea" desde un
+  /// día puntual.
+  final String? prefillDayId;
 
-  static void show(BuildContext context, {Task? existing, String? prefillArea}) {
+  const AddTaskBottomSheet({
+    super.key,
+    this.existing,
+    this.prefillArea,
+    this.prefillDayId,
+  });
+
+  static void show(
+    BuildContext context, {
+    Task? existing,
+    String? prefillArea,
+    String? prefillDayId,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -34,6 +49,7 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
       builder: (_) => AddTaskBottomSheet(
         existing: existing,
         prefillArea: prefillArea,
+        prefillDayId: prefillDayId,
       ),
     );
   }
@@ -136,7 +152,9 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
         status: TaskStatus.pending,
         area: area,
         reminder: reminderStr,
-        dayId: parsed.dayId ?? todayId(),
+        // Prioridad de fuentes: parser ("mañana") > prefillDayId
+        // (vista mensual: día seleccionado) > today.
+        dayId: parsed.dayId ?? widget.prefillDayId ?? todayId(),
         createdAt: DateTime.now(),
       ));
     }
