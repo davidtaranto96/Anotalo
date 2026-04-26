@@ -144,13 +144,17 @@ class TaskCard extends StatelessWidget {
             border: Border.all(color: isDone ? context.dividerColor : priorityColor.withAlpha(60)),
             boxShadow: isDone ? null : AppTheme.shadowSm,
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Barra-acento de área (signature 1.6): 3pt pegada al borde
-                // izquierdo, redondeada solo del lado derecho.
-                Container(
+          // Stack en lugar de IntrinsicHeight+Row: el LayoutBuilder
+          // interno del PencilStrikeTitle no soporta intrinsic dims y
+          // crashea al medir. Con Stack, la barra-acento se estira con
+          // Positioned y el contenido ocupa altura natural.
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
                   width: 3,
                   decoration: BoxDecoration(
                     color: accentBarColor,
@@ -160,10 +164,12 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 3),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // Main row
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 12, 12, 0),
@@ -341,11 +347,10 @@ class TaskCard extends StatelessWidget {
                 ),
 
               if (isDone) const SizedBox(height: 12),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         ), // GestureDetector
