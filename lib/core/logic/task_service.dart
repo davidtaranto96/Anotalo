@@ -61,6 +61,24 @@ class TaskService {
       .map((rows) => rows.map(_fromRow).toList());
   }
 
+  /// Tareas pendientes (status pending) que pertenecen a algún proyecto.
+  /// Sirve para armar la sección "Proyectos activos" en Hoy con un solo
+  /// stream en vez de uno por proyecto. Ordenadas por prioridad asc
+  /// (primordial primero) y luego por createdAt asc (la más vieja
+  /// primero) — así el "next task" sale a la cabeza.
+  Stream<List<Task>> watchAllPendingProjectTasks() {
+    return (_db.select(_db.tasksTable)
+      ..where((t) =>
+          t.parentProjectId.isNotNull() &
+          t.status.equals('pending'))
+      ..orderBy([
+        (t) => OrderingTerm.asc(t.priority),
+        (t) => OrderingTerm.asc(t.createdAt),
+      ]))
+      .watch()
+      .map((rows) => rows.map(_fromRow).toList());
+  }
+
   Future<void> addTask(Task task) async {
     await _db.into(_db.tasksTable).insert(TasksTableCompanion.insert(
       id: task.id.isEmpty ? _uuid.v4() : task.id,

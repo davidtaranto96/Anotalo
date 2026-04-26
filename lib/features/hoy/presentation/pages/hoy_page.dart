@@ -11,6 +11,7 @@ import '../../domain/models/task.dart';
 import '../providers/task_provider.dart';
 import '../../../habitos/domain/models/habit.dart';
 import '../../../habitos/presentation/providers/habit_provider.dart';
+import '../widgets/active_projects_section.dart';
 import '../widgets/priority_section.dart';
 import '../widgets/task_card.dart';
 import '../widgets/task_skeleton.dart';
@@ -361,6 +362,13 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                 onDelete: taskService.deleteTask,
               ),
             ),
+
+            // ── Proyectos activos ─────────────────────────────────────
+            // Cada proyecto activo es una fila colapsable que por
+            // default solo muestra la próxima tarea. Las tareas-de-
+            // proyecto ya no aparecen mezcladas en las priority
+            // sections de arriba (los providers las filtran).
+            const SliverToBoxAdapter(child: ActiveProjectsSection()),
           ],
 
           // ── Hábitos ────────────────────────────────────────────────────

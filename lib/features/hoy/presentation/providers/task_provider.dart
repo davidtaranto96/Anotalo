@@ -14,22 +14,57 @@ final todayTasksProvider = StreamProvider<List<Task>>((ref) {
   return ref.watch(taskServiceProvider).watchTodayTasks(dayId);
 });
 
+/// Las priority sections de Hoy SOLO muestran tareas sueltas (sin
+/// proyecto). Las tareas-de-proyecto viven en la sección "Proyectos
+/// activos" abajo, agrupadas por proyecto y colapsables.
+bool _isStandalone(Task t) =>
+    t.parentProjectId == null || t.parentProjectId!.isEmpty;
+
 final primordialTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => t.priority == TaskPriority.primordial && t.status != TaskStatus.done)
+      ?.where((t) =>
+          t.priority == TaskPriority.primordial &&
+          t.status != TaskStatus.done &&
+          _isStandalone(t))
       .toList() ?? [];
 });
 
 final importanteTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => t.priority == TaskPriority.importante && t.status != TaskStatus.done)
+      ?.where((t) =>
+          t.priority == TaskPriority.importante &&
+          t.status != TaskStatus.done &&
+          _isStandalone(t))
       .toList() ?? [];
 });
 
 final puedeEsperarTasksProvider = Provider<List<Task>>((ref) {
   return ref.watch(todayTasksProvider).valueOrNull
-      ?.where((t) => (t.priority == TaskPriority.puedeEsperar || t.priority == TaskPriority.secundaria) && t.status != TaskStatus.done)
+      ?.where((t) =>
+          (t.priority == TaskPriority.puedeEsperar ||
+              t.priority == TaskPriority.secundaria) &&
+          t.status != TaskStatus.done &&
+          _isStandalone(t))
       .toList() ?? [];
+});
+
+/// Stream de todas las tareas pendientes pertenecientes a un proyecto.
+/// La consume `pendingProjectTasksByProjectProvider` que las agrupa.
+final pendingProjectTasksProvider = StreamProvider<List<Task>>((ref) =>
+    ref.watch(taskServiceProvider).watchAllPendingProjectTasks());
+
+/// Map<projectId, List<Task>> con las tareas pendientes ya agrupadas
+/// por proyecto. Cada lista viene ordenada por prioridad asc
+/// (primordial primero) — el `first` de cada lista es la "next task".
+final pendingTasksByProjectProvider = Provider<Map<String, List<Task>>>((ref) {
+  final tasks = ref.watch(pendingProjectTasksProvider).valueOrNull ?? [];
+  final map = <String, List<Task>>{};
+  for (final t in tasks) {
+    final pid = t.parentProjectId;
+    if (pid == null || pid.isEmpty) continue;
+    map.putIfAbsent(pid, () => []).add(t);
+  }
+  return map;
 });
 
 final completedTasksProvider = Provider<List<Task>>((ref) {
