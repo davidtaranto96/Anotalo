@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../domain/models/task.dart';
-import '../providers/task_provider.dart';
 import 'task_card.dart';
 
-/// Sección de tareas filtrada por prioridad. Soporta drag-to-reorder
-/// vía long-press: el orden se persiste en `tasks.sort_order`.
-class PrioritySection extends ConsumerWidget {
+/// Sección de tareas filtrada por prioridad.
+///
+/// Reorder via drag-and-drop fue removido temporalmente: el combo
+/// `ReorderableListView(shrinkWrap, NeverScrollable) + Slidable +
+/// PencilStrikeTitle (LayoutBuilder)` disparaba assertions de
+/// layout en runtime ("RelayoutBoundaryAlreadyMarkedNeedsLayout").
+/// Volvemos a una Column estática hasta que se pueda implementar
+/// reorder de forma segura (ej. con un drag handle dedicado).
+class PrioritySection extends StatelessWidget {
   final TaskPriority priority;
   final List<Task> tasks;
   final Function(String) onComplete;
   final Function(String)? onUncomplete;
   final Function(String) onDefer;
   final Function(String) onDelete;
-
-  /// Área actualmente filtrada en Hoy. Se propaga al TaskCard para que
-  /// omita mostrar el chip de área cuando es el mismo que el filtro.
   final String? currentFilterAreaId;
 
   const PrioritySection({
@@ -33,7 +34,7 @@ class PrioritySection extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (tasks.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -72,72 +73,45 @@ class PrioritySection extends ConsumerWidget {
             ],
           ),
         ),
-        // ReorderableListView con long-press = drag. El swipe horizontal
-        // del Slidable adentro de TaskCard sigue funcionando — no chocan
-        // porque uno es vertical (drag) y el otro horizontal (swipe).
-        ReorderableListView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          buildDefaultDragHandles: false,
-          proxyDecorator: (child, index, animation) => Material(
-            color: Colors.transparent,
-            child: child,
-          ),
-          onReorder: (oldIndex, newIndex) async {
-            final adjustedNew =
-                newIndex > oldIndex ? newIndex - 1 : newIndex;
-            final updated = List<Task>.from(tasks);
-            final moved = updated.removeAt(oldIndex);
-            updated.insert(adjustedNew, moved);
-            await ref
-                .read(taskServiceProvider)
-                .reorderTasks(updated.map((t) => t.id).toList());
-          },
-          children: [
-            for (var i = 0; i < tasks.length; i++)
-              ReorderableDelayedDragStartListener(
-                key: ValueKey('task-${tasks[i].id}'),
-                index: i,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    if (priority == TaskPriority.primordial) ...[
-                      const SizedBox(width: 16),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Color(0xFFD97757),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${i + 1}',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                    Expanded(
-                      child: TaskCard(
-                        task: tasks[i],
-                        currentFilterAreaId: currentFilterAreaId,
-                        onComplete: () => onComplete(tasks[i].id),
-                        onUncomplete: onUncomplete != null
-                            ? () => onUncomplete!(tasks[i].id)
-                            : null,
-                        onDefer: () => onDefer(tasks[i].id),
-                        onDelete: () => onDelete(tasks[i].id),
-                      ),
+        for (var i = 0; i < tasks.length; i++)
+          Row(
+            key: ValueKey('task-${tasks[i].id}'),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (priority == TaskPriority.primordial) ...[
+                const SizedBox(width: 16),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFD97757),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${i + 1}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
-                  ],
+                  ),
+                ),
+              ],
+              Expanded(
+                child: TaskCard(
+                  task: tasks[i],
+                  currentFilterAreaId: currentFilterAreaId,
+                  onComplete: () => onComplete(tasks[i].id),
+                  onUncomplete: onUncomplete != null
+                      ? () => onUncomplete!(tasks[i].id)
+                      : null,
+                  onDefer: () => onDefer(tasks[i].id),
+                  onDelete: () => onDelete(tasks[i].id),
                 ),
               ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }

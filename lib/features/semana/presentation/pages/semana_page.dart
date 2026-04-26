@@ -298,6 +298,10 @@ class _SemanaPageState extends ConsumerState<SemanaPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       children: [
+        // ── Inline add task (ARRIBA de la lista, debajo del calendario) ─
+        _buildInlineAddTask(selectedDayId),
+        const SizedBox(height: 16),
+
         // ── Task list ─────────────────────────────────────────────────
         tasksAsync.when(
           loading: () => const Padding(
@@ -371,10 +375,6 @@ class _SemanaPageState extends ConsumerState<SemanaPage> {
             );
           },
         ),
-
-        // ── Inline add task ─────────────────────────────────────────
-        const SizedBox(height: 8),
-        _buildInlineAddTask(selectedDayId),
 
         const SizedBox(height: 28),
 

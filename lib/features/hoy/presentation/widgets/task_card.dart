@@ -9,7 +9,6 @@ import '../../../../../core/models/task_area.dart';
 import '../../../../../core/utils/format_utils.dart';
 import '../../domain/models/task.dart';
 import 'add_task_bottom_sheet.dart';
-import 'pencil_strike_title.dart';
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -211,13 +210,16 @@ class TaskCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Texto simple: el PencilStrikeTitle con su
+                          // LayoutBuilder interno disparaba crashes de
+                          // layout (intrinsic dimensions / relayout
+                          // boundary). Vuelvo a Text estático y dejo
+                          // que el usuario complete via swipe o el
+                          // botón "✓ Completar" del action bar.
                           ListenableBuilder(
                             listenable: TaskCardPrefs.instance,
-                            builder: (ctx, _) => PencilStrikeTitle(
-                              title: task.title,
-                              done: isDone,
-                              strokeColor: priorityColor,
-                              onComplete: onComplete,
+                            builder: (ctx, _) => Text(
+                              task.title,
                               style: GoogleFonts.inter(
                                 fontSize:
                                     _scaledFontSize(rolloverDays, context),
@@ -225,6 +227,9 @@ class TaskCard extends StatelessWidget {
                                 color: isDone
                                     ? context.textTertiary
                                     : context.textPrimary,
+                                decoration: isDone
+                                    ? TextDecoration.lineThrough
+                                    : null,
                                 height: 1.25,
                               ),
                             ),
