@@ -259,7 +259,7 @@ class _StepWelcome extends StatelessWidget {
         children: [
           const Spacer(flex: 2),
           Text(
-            'Bienvenido a\nAnótalo',
+            'Bienvenido a\nApunto',
             style: GoogleFonts.fraunces(
               fontSize: 36,
               fontWeight: FontWeight.w600,

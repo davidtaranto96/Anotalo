@@ -77,7 +77,7 @@ class LoginPage extends StatelessWidget {
               const SizedBox(height: 24),
               Center(
                 child: Text(
-                  'Anótalo',
+                  'Apunto',
                   style: GoogleFonts.fraunces(
                     fontSize: 28,
                     fontWeight: FontWeight.w600,

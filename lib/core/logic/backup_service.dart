@@ -38,7 +38,7 @@ class BackupService {
     final dailyReviews = await _db.select(_db.dailyReviewsTable).get();
 
     final payload = <String, dynamic>{
-      'app': 'Anotalo',
+      'app': 'Apunto',
       'version': _backupVersion,
       'createdAt': DateTime.now().toIso8601String(),
       'counts': {
@@ -164,7 +164,7 @@ class BackupService {
   BackupSummary? summarizeJson(String jsonStr) {
     try {
       final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-      if (map['app'] != 'Anotalo') return null;
+      if (map['app'] != 'Apunto') return null;
       final counts = (map['counts'] as Map?)?.cast<String, dynamic>() ?? {};
       return BackupSummary(
         version: (map['version'] as int?) ?? 0,
@@ -185,8 +185,8 @@ class BackupService {
   /// a transaction so a mid-restore crash leaves the DB untouched.
   Future<void> importFromJson(String jsonStr) async {
     final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-    if (map['app'] != 'Anotalo') {
-      throw const FormatException('No es un backup de Anotalo');
+    if (map['app'] != 'Apunto') {
+      throw const FormatException('No es un backup de Apunto');
     }
     final tables = (map['tables'] as Map).cast<String, dynamic>();
 

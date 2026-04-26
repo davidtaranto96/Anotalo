@@ -1,4 +1,4 @@
-// Curated quotes for Anotalo v1.6.0.
+// Curated quotes for Apunto v1.6.0.
 //
 // Replaces the old 85-quote list that was too repetitive and full of generic
 // refranes. This file holds ~500+ curated entries organized loosely by theme

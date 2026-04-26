@@ -16,7 +16,7 @@ class App extends ConsumerWidget {
     ref.watch(accentProvider);
     final palette = accentPalettes[ref.read(accentProvider)]!;
     return MaterialApp.router(
-      title: 'Anótalo',
+      title: 'Apunto',
       theme: AppTheme.light(palette),
       darkTheme: AppTheme.dark(palette),
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,

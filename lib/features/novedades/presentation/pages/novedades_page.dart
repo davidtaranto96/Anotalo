@@ -53,7 +53,7 @@ class NovedadesPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Todo lo que fuimos sumando en Anótalo, versión por versión.',
+            'Todo lo que fuimos sumando en Apunto, versión por versión.',
             style: GoogleFonts.inter(
               fontSize: 13,
               color: context.textSecondary,
@@ -264,7 +264,7 @@ const List<_Release> _releases = [
     title: 'Lanzamiento',
     items: [
       _ChangelogItem(_nf, Icons.rocket_launch_rounded,
-          'Lanzamiento inicial de Anótalo.'),
+          'Lanzamiento inicial de Apunto.'),
       _ChangelogItem(_nf, Icons.task_alt_rounded,
           'Gestión de tareas con prioridades.'),
       _ChangelogItem(_nf, Icons.folder_rounded, 'Proyectos con progreso y colores.'),

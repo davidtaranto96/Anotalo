@@ -375,7 +375,7 @@ class SettingsPage extends ConsumerWidget {
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.favorite_rounded, color: AppTheme.colorDanger),
                   title: _Title('Hecho con cuidado'),
-                  subtitle: _Subtitle('Anótalo — tu sistema de enfoque'),
+                  subtitle: _Subtitle('Apunto — tu sistema de enfoque'),
                 ),
               ],
             ),
@@ -552,7 +552,7 @@ class SettingsPage extends ConsumerWidget {
       // (no disponible acá, fallback a share directo si el usuario quiere).
       unawaited(Share.shareXFiles(
         [XFile(file.path, mimeType: 'application/json')],
-        subject: 'Backup Anotalo',
+        subject: 'Backup Apunto',
       ));
     } catch (e) {
       if (!context.mounted) return;
@@ -579,7 +579,7 @@ class SettingsPage extends ConsumerWidget {
         context: context,
         title: 'Sin backup en Descargas',
         body:
-            'No encontré ningún archivo de backup de Anótalo en la carpeta Descargas. ¿Querés buscarlo manualmente?',
+            'No encontré ningún archivo de backup de Apunto en la carpeta Descargas. ¿Querés buscarlo manualmente?',
         confirmLabel: 'Buscar archivo',
         icon: Icons.folder_open_rounded,
       );
@@ -610,7 +610,7 @@ class SettingsPage extends ConsumerWidget {
     if (summary == null) {
       showAnotaloToast(
         context,
-        'El archivo no es un backup válido de Anótalo',
+        'El archivo no es un backup válido de Apunto',
         tone: ToastTone.warn,
       );
       return;
