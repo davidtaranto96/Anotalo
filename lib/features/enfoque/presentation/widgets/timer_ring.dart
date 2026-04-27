@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
-import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 
 class TimerRing extends StatefulWidget {
@@ -54,12 +54,13 @@ class _TimerRingState extends State<TimerRing>
 
   @override
   Widget build(BuildContext context) {
-    // Theme-aware colors so the time and background ring stay visible on
-    // both dark and light mode.
+    // Theme-aware colors. El primary/accent vienen del context para que
+    // soporten acentos custom y dark mode. Pasamos los colores al painter
+    // por constructor (CustomPainter no tiene acceso a BuildContext).
     final ringBg = context.dividerColor;
-    final timeColor = widget.isRunning
-        ? AppTheme.colorPrimary
-        : context.textPrimary;
+    final primary = context.colorPrimary;
+    final accent = context.colorAccent;
+    final timeColor = widget.isRunning ? primary : context.textPrimary;
 
     return SizedBox(
       width: 220,
@@ -82,6 +83,8 @@ class _TimerRingState extends State<TimerRing>
                       isRunning: widget.isRunning,
                       glowIntensity: _glowController.value,
                       backgroundColor: ringBg,
+                      primaryColor: primary,
+                      accentColor: accent,
                     ),
                   );
                 },
@@ -96,8 +99,7 @@ class _TimerRingState extends State<TimerRing>
                 child: Text(
                   widget.timeDisplay,
                   key: ValueKey(widget.timeDisplay),
-                  style: TextStyle(
-                    fontFamily: 'Inter',
+                  style: GoogleFonts.inter(
                     fontSize: 48,
                     fontWeight: FontWeight.w700,
                     color: timeColor,
@@ -118,12 +120,16 @@ class _RingPainter extends CustomPainter {
   final bool isRunning;
   final double glowIntensity;
   final Color backgroundColor;
+  final Color primaryColor;
+  final Color accentColor;
 
   _RingPainter({
     required this.progress,
     required this.isRunning,
     required this.glowIntensity,
     required this.backgroundColor,
+    required this.primaryColor,
+    required this.accentColor,
   });
 
   @override
@@ -155,7 +161,7 @@ class _RingPainter extends CustomPainter {
           sweepAngle,
           false,
           Paint()
-            ..color = AppTheme.colorPrimary.withValues(alpha: 0.4 * glowIntensity)
+            ..color = primaryColor.withValues(alpha: 0.4 * glowIntensity)
             ..style = PaintingStyle.stroke
             ..strokeWidth = strokeWidth + 6
             ..strokeCap = StrokeCap.round
@@ -170,7 +176,7 @@ class _RingPainter extends CustomPainter {
         sweepAngle,
         false,
         Paint()
-          ..color = isRunning ? AppTheme.colorPrimary : AppTheme.colorAccent
+          ..color = isRunning ? primaryColor : accentColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = strokeWidth
           ..strokeCap = StrokeCap.round,
@@ -183,5 +189,7 @@ class _RingPainter extends CustomPainter {
       old.progress != progress ||
       old.isRunning != isRunning ||
       old.glowIntensity != glowIntensity ||
-      old.backgroundColor != backgroundColor;
+      old.backgroundColor != backgroundColor ||
+      old.primaryColor != primaryColor ||
+      old.accentColor != accentColor;
 }

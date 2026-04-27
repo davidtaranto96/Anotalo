@@ -129,12 +129,32 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
     ProjectCategory.travel       => ('Viaje', '✈️'),
   };
 
-  (String, Color, Color) _statusInfo(ProjectStatus s) => switch (s) {
-    ProjectStatus.active    => ('Activo', AppTheme.colorSuccess, AppTheme.colorSuccessLight),
-    ProjectStatus.paused    => ('Pausado', AppTheme.colorWarning, AppTheme.colorWarningLight),
-    ProjectStatus.completed => ('Completado', AppTheme.colorInfo, const Color(0xFFE3EDF5)),
-    ProjectStatus.archived  => ('Archivado', AppTheme.textTertiary, AppTheme.neutral100),
-  };
+  /// Info por estado: label + color de texto + tinted-bg.
+  /// El bg usa alpha sobre el color para respetar dark mode automáticamente.
+  (String, Color, Color) _statusInfo(BuildContext ctx, ProjectStatus s) {
+    return switch (s) {
+      ProjectStatus.active => (
+          'Activo',
+          AppTheme.colorSuccess,
+          AppTheme.colorSuccess.withAlpha(28),
+        ),
+      ProjectStatus.paused => (
+          'Pausado',
+          AppTheme.colorWarning,
+          AppTheme.colorWarning.withAlpha(28),
+        ),
+      ProjectStatus.completed => (
+          'Completado',
+          AppTheme.colorInfo,
+          AppTheme.colorInfo.withAlpha(28),
+        ),
+      ProjectStatus.archived => (
+          'Archivado',
+          ctx.textTertiary,
+          ctx.neutral100,
+        ),
+    };
+  }
 
   Color _priorityColor(TaskPriority p) => switch (p) {
     TaskPriority.primordial   => AppTheme.colorDanger,
@@ -147,12 +167,6 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
   Widget build(BuildContext context) {
     final project = widget.project;
     final color = _parseColor(project.color);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppTheme.darkSurfaceSheet : AppTheme.surfaceSheet;
-    final textColor = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    final secondaryTextColor = isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
-    final tertiaryTextColor = isDark ? AppTheme.darkTextTertiary : AppTheme.textTertiary;
-    final dividerColor = isDark ? AppTheme.darkDivider : AppTheme.divider;
 
     return DefaultTabController(
       length: 3,
@@ -160,11 +174,12 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
         initialChildSize: 0.7,
         maxChildSize: 0.92,
         minChildSize: 0.4,
-        builder: (context, scrollController) {
+        builder: (sheetCtx, scrollController) {
           return Container(
             decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              color: sheetCtx.surfaceSheet,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: AppTheme.shadowLg,
             ),
             child: Column(
@@ -176,7 +191,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                     height: 4,
                     margin: const EdgeInsets.only(top: 12, bottom: 16),
                     decoration: BoxDecoration(
-                      color: dividerColor,
+                      color: sheetCtx.neutral300,
                       borderRadius: AppTheme.rFull,
                     ),
                   ),
@@ -204,7 +219,8 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                               style: GoogleFonts.fraunces(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w600,
-                                color: textColor,
+                                color: sheetCtx.textPrimary,
+                                letterSpacing: -0.3,
                               ),
                             ),
                           ),
@@ -216,7 +232,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                           project.description!,
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: secondaryTextColor,
+                            color: sheetCtx.textSecondary,
                             height: 1.4,
                           ),
                         ),
@@ -227,13 +243,15 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                 const SizedBox(height: 12),
                 // Tab bar
                 TabBar(
-                  labelColor: AppTheme.colorPrimary,
-                  unselectedLabelColor: tertiaryTextColor,
-                  indicatorColor: AppTheme.colorPrimary,
+                  labelColor: sheetCtx.colorPrimary,
+                  unselectedLabelColor: sheetCtx.textTertiary,
+                  indicatorColor: sheetCtx.colorPrimary,
                   indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-                  unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400),
-                  dividerColor: dividerColor,
+                  labelStyle: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w600),
+                  unselectedLabelStyle: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w400),
+                  dividerColor: sheetCtx.dividerColor,
                   tabs: const [
                     Tab(text: 'Tareas'),
                     Tab(text: 'Notas'),
@@ -299,7 +317,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.colorPrimary,
+                            color: context.colorPrimary,
                           ),
                         ),
                       ],
@@ -311,7 +329,8 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                         value: progress,
                         minHeight: 6,
                         backgroundColor: context.dividerColor,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.colorPrimary),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(context.colorPrimary),
                       ),
                     ),
                   ],
@@ -396,85 +415,116 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
 
             final task = tasks[i - 1]; // offset by 1 for progress header
             final isDone = task.status == TaskStatus.done;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isDone ? context.neutral50 : context.surfaceCard,
-                borderRadius: AppTheme.r12,
-                border: Border.all(color: context.dividerColor),
-              ),
-              child: Row(
-                children: [
-                  // Priority dot (tappable — cycles priority)
-                  GestureDetector(
-                    onTap: () => taskService.updatePriority(task.id, _nextPriority(task.priority)),
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _priorityColor(task.priority).withAlpha(35),
-                        border: Border.all(color: _priorityColor(task.priority), width: 1.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Complete/uncomplete circle
-                  GestureDetector(
-                    onTap: () {
-                      if (isDone) {
-                        taskService.uncompleteTask(task.id);
-                      } else {
-                        taskService.completeTask(task.id);
-                      }
-                    },
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isDone ? AppTheme.colorSuccess : Colors.transparent,
-                        border: Border.all(
-                          color: isDone ? AppTheme.colorSuccess : AppTheme.neutral400,
-                          width: 2,
+            final priorityColor = _priorityColor(task.priority);
+            final accent = priorityColor.withValues(alpha: isDone ? 0.30 : 0.85);
+
+            // Mismo lenguaje visual que TaskCard de Hoy: Stack con barra-
+            // acento 3pt a la izquierda + checkbox circular del color de
+            // prioridad. Long-press en la fila cicla la prioridad (gesto
+            // discreto para que no interfiera con el tap del checkbox).
+            return GestureDetector(
+              onLongPress: () => taskService.updatePriority(
+                  task.id, _nextPriority(task.priority)),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: isDone ? context.neutral50 : context.surfaceCard,
+                  borderRadius: AppTheme.r12,
+                  border: Border.all(
+                      color: isDone
+                          ? context.dividerColor
+                          : priorityColor.withAlpha(60)),
+                  boxShadow: isDone ? null : AppTheme.shadowSm,
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 3,
+                        decoration: BoxDecoration(
+                          color: accent,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            bottomLeft: Radius.circular(12),
+                          ),
                         ),
                       ),
-                      child: isDone
-                          ? const Icon(Icons.check, size: 12, color: Colors.white)
-                          : null,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      task.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: isDone ? context.textTertiary : context.textPrimary,
-                        decoration: isDone ? TextDecoration.lineThrough : null,
+                    Padding(
+                      padding:
+                          const EdgeInsets.fromLTRB(13, 10, 8, 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              if (isDone) {
+                                taskService.uncompleteTask(task.id);
+                              } else {
+                                taskService.completeTask(task.id);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isDone
+                                    ? priorityColor
+                                    : Colors.transparent,
+                                border: Border.all(
+                                    color: priorityColor, width: 2),
+                              ),
+                              child: isDone
+                                  ? const Icon(Icons.check,
+                                      size: 12, color: Colors.white)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              task.title,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: isDone
+                                    ? context.textTertiary
+                                    : context.textPrimary,
+                                decoration: isDone
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                                height: 1.25,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Quitar del proyecto',
+                            icon: const Icon(Icons.close_rounded,
+                                size: 16),
+                            color: context.textTertiary,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                                minWidth: 32, minHeight: 32),
+                            padding: EdgeInsets.zero,
+                            onPressed: () async {
+                              await projectService
+                                  .removeTaskFromProject(
+                                widget.project.id,
+                                task.id,
+                              );
+                              await taskService.deleteTask(task.id);
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  // Delete button
-                  GestureDetector(
-                    onTap: () async {
-                      await projectService.removeTaskFromProject(
-                        widget.project.id,
-                        task.id,
-                      );
-                      await taskService.deleteTask(task.id);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: context.textTertiary,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -558,7 +608,9 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                                     onTap: () => _commitEdit(note.id),
                                     child: const Padding(
                                       padding: EdgeInsets.only(left: 4),
-                                      child: Icon(Icons.check_rounded, size: 18, color: AppTheme.colorSuccess),
+                                      child: Icon(Icons.check_rounded,
+                                          size: 18,
+                                          color: AppTheme.colorSuccess),
                                     ),
                                   )
                                 else
@@ -638,7 +690,8 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
   // ── Info tab ──
   Widget _buildInfoTab(Project project, Color color) {
     final (catLabel, catEmoji) = _categoryInfo(project.category);
-    final (statusLabel, statusColor, statusBg) = _statusInfo(project.status);
+    final (statusLabel, statusColor, statusBg) =
+        _statusInfo(context, project.status);
     final textColor = context.textPrimary;
     final secondaryTextColor = context.textSecondary;
     final tertiaryTextColor = context.textTertiary;
@@ -825,7 +878,7 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
       buttons.add(_actionButton(
         'Archivar',
         Icons.archive_outlined,
-        AppTheme.textTertiary,
+        context.textTertiary,
         () => _updateStatus(ProjectStatus.archived),
         cardColor,
         dividerColor,

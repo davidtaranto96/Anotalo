@@ -254,9 +254,12 @@ class _GoalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Densidad pareja con TaskCard de Hoy: padding chico, font 13,
+    // checkbox 18×18 y delete-icon 14 con VisualDensity.compact. Antes
+    // las metas ocupaban casi el doble que las tareas.
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: isDone
             ? AppTheme.colorSuccess.withAlpha(20)
@@ -273,16 +276,17 @@ class _GoalRow extends StatelessWidget {
           GestureDetector(
             onTap: onToggle,
             child: Container(
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDone ? AppTheme.colorSuccess : Colors.transparent,
+                color:
+                    isDone ? AppTheme.colorSuccess : Colors.transparent,
                 border:
                     Border.all(color: AppTheme.colorSuccess, width: 2),
               ),
               child: isDone
-                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                  ? const Icon(Icons.check, size: 10, color: Colors.white)
                   : null,
             ),
           ),
@@ -296,15 +300,17 @@ class _GoalRow extends StatelessWidget {
                 color:
                     isDone ? context.textTertiary : context.textPrimary,
                 decoration: isDone ? TextDecoration.lineThrough : null,
+                height: 1.2,
               ),
             ),
           ),
           IconButton(
             tooltip: 'Borrar',
-            icon: const Icon(Icons.close_rounded, size: 16),
+            icon: const Icon(Icons.close_rounded, size: 14),
             color: AppTheme.colorDanger.withAlpha(180),
+            visualDensity: VisualDensity.compact,
             constraints:
-                const BoxConstraints(minWidth: 28, minHeight: 28),
+                const BoxConstraints(minWidth: 24, minHeight: 24),
             padding: EdgeInsets.zero,
             onPressed: onDelete,
           ),

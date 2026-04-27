@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../domain/models/timer_state.dart';
 
 class TimerModeSelector extends StatelessWidget {
@@ -39,20 +40,28 @@ class TimerModeSelector extends StatelessWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppTheme.colorPrimaryLight : AppTheme.surfaceCard,
-                borderRadius: AppTheme.rFull,
+                color: isSelected
+                    ? context.colorPrimary.withValues(alpha: 0.12)
+                    : context.surfaceCard,
+                borderRadius: AppTheme.r12,
                 border: Border.all(
-                  color: isSelected ? AppTheme.colorPrimary : AppTheme.divider,
+                  color: isSelected
+                      ? context.colorPrimary
+                      : context.dividerColor,
                 ),
               ),
               child: Text(
                 mode.label,
                 style: GoogleFonts.inter(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? AppTheme.colorPrimary : AppTheme.textSecondary,
+                  fontWeight:
+                      isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? context.colorPrimary
+                      : context.textSecondary,
                 ),
               ),
             ),

@@ -94,15 +94,40 @@ class EnfoquePage extends ConsumerWidget {
                     ],
                   ),
                   if (state.sessionsCompleted > 0)
-                    Row(
-                      children: [
-                        const Icon(Icons.bolt_rounded, color: AppTheme.colorWarning, size: 18),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${state.sessionsCompleted} sesiones',
-                          style: GoogleFonts.inter(fontSize: 13, color: AppTheme.colorWarning),
-                        ),
-                      ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppTheme.colorWarning.withAlpha(28),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.bolt_rounded,
+                              color: AppTheme.colorWarning, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${state.sessionsCompleted}',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.colorWarning,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            state.sessionsCompleted == 1
+                                ? 'sesión'
+                                : 'sesiones',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.colorWarning,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               ),
@@ -110,43 +135,67 @@ class EnfoquePage extends ConsumerWidget {
             const SizedBox(height: 12),
 
             // ── Task dropdown ────────────────────────────────────────────
+            // Mismo lenguaje visual que TaskCard: barra-acento 3pt a la
+            // izquierda con el color de la prioridad de la tarea linkeada.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GestureDetector(
-                onTap: () => _showTaskPicker(context, todayTasks, state.linkedTaskId, notifier),
+                onTap: () => _showTaskPicker(
+                    context, todayTasks, state.linkedTaskId, notifier),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: context.surfaceCard,
                     borderRadius: AppTheme.r12,
                     border: Border.all(color: context.dividerColor),
                   ),
-                  child: Row(
+                  child: Stack(
                     children: [
-                      Icon(Icons.task_alt_rounded, size: 16, color: context.textTertiary),
-                      const SizedBox(width: 8),
-                      if (linkedTask != null) ...[
-                        Container(
-                          width: 8,
-                          height: 8,
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 3,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _priorityColor(linkedTask.priority),
+                            color: linkedTask != null
+                                ? _priorityColor(linkedTask.priority)
+                                : context.dividerColor,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              bottomLeft: Radius.circular(12),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Expanded(
-                        child: Text(
-                          linkedTask?.title ?? 'Seleccionar tarea (opcional)',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: linkedTask != null ? context.textPrimary : context.textTertiary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Icon(Icons.expand_more_rounded, size: 18, color: context.textTertiary),
+                      Padding(
+                        padding:
+                            const EdgeInsets.fromLTRB(14, 10, 12, 10),
+                        child: Row(
+                          children: [
+                            Icon(Icons.task_alt_rounded,
+                                size: 16, color: context.textTertiary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                linkedTask?.title ??
+                                    'Seleccionar tarea (opcional)',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: linkedTask != null
+                                      ? FontWeight.w500
+                                      : FontWeight.w400,
+                                  color: linkedTask != null
+                                      ? context.textPrimary
+                                      : context.textTertiary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Icon(Icons.expand_more_rounded,
+                                size: 18, color: context.textTertiary),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -193,18 +242,29 @@ class EnfoquePage extends ConsumerWidget {
             const Spacer(),
 
             // ── Controls ─────────────────────────────────────────────────
+            // Stop y Play comparten silueta circular para verse como un par:
+            // Stop = secundario (60×60, border + danger sobre tinted-bg).
+            // Play  = primario (72×72, fill + sombra).
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (state.status != TimerStatus.idle)
-                  IconButton(
-                    onPressed: notifier.stop,
-                    icon: const Icon(Icons.stop_rounded),
-                    color: AppTheme.colorDanger,
-                    iconSize: 32,
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppTheme.colorDangerLight,
-                      padding: const EdgeInsets.all(16),
+                  GestureDetector(
+                    onTap: notifier.stop,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.colorDanger.withAlpha(30),
+                        border: Border.all(
+                            color: AppTheme.colorDanger, width: 2),
+                      ),
+                      child: const Icon(
+                        Icons.stop_rounded,
+                        color: AppTheme.colorDanger,
+                        size: 28,
+                      ),
                     ),
                   ),
                 const SizedBox(width: 20),
@@ -250,56 +310,75 @@ class EnfoquePage extends ConsumerWidget {
   ) {
     showModalBottomSheet(
       context: context,
+      // isScrollControlled + ConstrainedBox → la sheet puede ocupar
+      // hasta el 75% del alto y la lista interna scrollea. Antes la
+      // Column overflowea, los items quedaban fuera del modal y por
+      // eso "se trababa" la selección.
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        decoration: BoxDecoration(
-          color: context.surfaceSheet,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          boxShadow: AppTheme.shadowLg,
+      builder: (sheetCtx) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(sheetCtx).size.height * 0.75,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: context.dividerColor,
-                  borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          decoration: BoxDecoration(
+            color: sheetCtx.surfaceSheet,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: AppTheme.shadowLg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: sheetCtx.dividerColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
-            ),
-            Text(
-              'Tarea a enfocar',
-              style: GoogleFonts.fraunces(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: context.textPrimary,
+              Text(
+                'Tarea a enfocar',
+                style: GoogleFonts.fraunces(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: sheetCtx.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            // No task option
-            _TaskOption(
-              title: 'Sin tarea específica',
-              isSelected: currentId == null,
-              onTap: () {
-                notifier.setLinkedTask(null);
-                Navigator.pop(context);
-              },
-            ),
-            ...tasks.map((t) => _TaskOption(
-              title: t.title,
-              priority: t.priority,
-              isSelected: t.id == currentId,
-              onTap: () {
-                notifier.setLinkedTask(t.id);
-                Navigator.pop(context);
-              },
-            )),
-          ],
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _TaskOption(
+                      title: 'Sin tarea específica',
+                      isSelected: currentId == null,
+                      onTap: () {
+                        notifier.setLinkedTask(null);
+                        Navigator.pop(sheetCtx);
+                      },
+                    ),
+                    ...tasks.map((t) => _TaskOption(
+                          title: t.title,
+                          priority: t.priority,
+                          isSelected: t.id == currentId,
+                          onTap: () {
+                            notifier.setLinkedTask(t.id);
+                            Navigator.pop(sheetCtx);
+                          },
+                        )),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -503,43 +582,65 @@ class _TaskOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mismo lenguaje visual que TaskCard de Hoy: Stack + barra-acento 3pt
+    // a la izquierda, color por prioridad. Cuando no hay tarea (priority==null)
+    // la barra usa el dividerColor para mantener la silueta.
+    final accent = priority == null
+        ? context.dividerColor
+        : _priorityColor(priority!);
+    final bg = isSelected
+        ? context.colorPrimary.withValues(alpha: 0.10)
+        : context.surfaceCard;
+    final borderColor = isSelected ? context.colorPrimary : context.dividerColor;
+    final textColor = isSelected ? context.colorPrimary : context.textPrimary;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.colorPrimaryLight : Colors.transparent,
+          color: bg,
           borderRadius: AppTheme.r12,
-          border: Border.all(
-            color: isSelected ? AppTheme.colorPrimary : context.dividerColor,
-          ),
+          border: Border.all(color: borderColor),
         ),
-        child: Row(
+        child: Stack(
           children: [
-            if (priority != null) ...[
-              Container(
-                width: 8,
-                height: 8,
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 3,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _priorityColor(priority!),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: isSelected ? AppTheme.colorPrimary : context.textPrimary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: accent,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
                 ),
               ),
             ),
-            if (isSelected)
-              const Icon(Icons.check_rounded, color: AppTheme.colorPrimary, size: 18),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: textColor,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(Icons.check_rounded,
+                        color: context.colorPrimary, size: 18),
+                ],
+              ),
+            ),
           ],
         ),
       ),

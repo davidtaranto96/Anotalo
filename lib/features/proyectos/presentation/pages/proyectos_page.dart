@@ -45,10 +45,13 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
             actions: [
               TextButton.icon(
                 onPressed: () => AddProjectBottomSheet.show(context),
-                icon: const Icon(Icons.add_rounded, size: 18, color: AppTheme.colorPrimary),
+                icon: Icon(Icons.add_rounded,
+                    size: 18, color: context.colorPrimary),
                 label: Text('Nuevo',
                     style: GoogleFonts.inter(
-                        color: AppTheme.colorPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                        color: context.colorPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13)),
               ),
             ],
           ),
@@ -89,6 +92,7 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
 
                     return _ProjectSection(
                       label: label,
+                      status: status,
                       projects: filtered,
                       expanded: _expanded[status] ?? true,
                       onToggle: () => setState(() =>
@@ -116,6 +120,7 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
 
 class _ProjectSection extends ConsumerWidget {
   final String label;
+  final ProjectStatus status;
   final List<Project> projects;
   final bool expanded;
   final VoidCallback onToggle;
@@ -123,14 +128,25 @@ class _ProjectSection extends ConsumerWidget {
 
   const _ProjectSection({
     required this.label,
+    required this.status,
     required this.projects,
     required this.expanded,
     required this.onToggle,
     required this.onTap,
   });
 
+  /// Color semántico por estado, replicando el patrón "dot 8pt" de
+  /// PrioritySection en Hoy.
+  Color _statusColor() => switch (status) {
+        ProjectStatus.active    => AppTheme.colorSuccess,
+        ProjectStatus.paused    => AppTheme.colorWarning,
+        ProjectStatus.completed => AppTheme.colorPrimary,
+        ProjectStatus.archived  => AppTheme.neutral400,
+      };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dotColor = _statusColor();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -140,13 +156,30 @@ class _ProjectSection extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Row(
               children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: dotColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  '$label · ${projects.length}',
+                  label,
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: context.textTertiary,
+                    color: dotColor,
                     letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${projects.length}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: context.textTertiary,
                   ),
                 ),
                 const Spacer(),

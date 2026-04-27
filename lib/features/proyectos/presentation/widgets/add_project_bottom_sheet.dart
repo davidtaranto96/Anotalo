@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../../core/theme/app_theme.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../domain/models/project.dart';
 import '../providers/project_provider.dart';
 
@@ -90,7 +91,7 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
       child: Container(
         padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + bottom),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceSheet,
+          color: context.surfaceSheet,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: AppTheme.shadowLg,
         ),
@@ -101,34 +102,44 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: AppTheme.divider,
+                    color: context.dividerColor,
                     borderRadius: AppTheme.rFull,
                   ),
                 ),
               ),
               Text('Nuevo proyecto',
-                  style: GoogleFonts.fraunces(fontSize: 20, fontWeight: FontWeight.w600, color: AppTheme.textPrimary)),
+                  style: GoogleFonts.fraunces(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: context.textPrimary)),
               const SizedBox(height: 20),
               TextField(
                 controller: _titleController,
                 autofocus: true,
-                style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
-                decoration: const InputDecoration(hintText: 'Nombre del proyecto'),
+                style: GoogleFonts.inter(
+                    color: context.textPrimary, fontSize: 15),
+                decoration:
+                    const InputDecoration(hintText: 'Nombre del proyecto'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descController,
-                style: GoogleFonts.inter(color: AppTheme.textPrimary, fontSize: 15),
-                decoration: const InputDecoration(hintText: 'Descripción (opcional)'),
+                style: GoogleFonts.inter(
+                    color: context.textPrimary, fontSize: 15),
+                decoration: const InputDecoration(
+                    hintText: 'Descripción (opcional)'),
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
 
               // Category selector
-              Text('Categoría', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+              Text('Categoría',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: context.textSecondary)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -140,12 +151,17 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                     onTap: () => setState(() => _category = cat),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: selected ? AppTheme.colorPrimaryLight : AppTheme.surfaceInput,
-                        borderRadius: BorderRadius.circular(20),
+                        color: selected
+                            ? context.colorPrimary.withValues(alpha: 0.12)
+                            : context.surfaceInput,
+                        borderRadius: AppTheme.r12,
                         border: Border.all(
-                          color: selected ? AppTheme.colorPrimary : AppTheme.divider,
+                          color: selected
+                              ? context.colorPrimary
+                              : context.dividerColor,
                           width: selected ? 1.5 : 1,
                         ),
                       ),
@@ -153,8 +169,12 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                         '$emoji $label',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                          color: selected ? AppTheme.colorPrimary : AppTheme.textSecondary,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: selected
+                              ? context.colorPrimary
+                              : context.textSecondary,
                         ),
                       ),
                     ),
@@ -164,14 +184,17 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
               const SizedBox(height: 16),
 
               // Target date picker
-              Text('Fecha límite (opcional)', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+              Text('Fecha límite (opcional)',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: context.textSecondary)),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _pickDate,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceInput,
+                    color: context.surfaceInput,
                     borderRadius: AppTheme.r12,
                   ),
                   child: Row(
@@ -179,23 +202,30 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                       Icon(
                         Icons.calendar_today_outlined,
                         size: 18,
-                        color: _targetDate != null ? AppTheme.colorPrimary : AppTheme.textTertiary,
+                        color: _targetDate != null
+                            ? context.colorPrimary
+                            : context.textTertiary,
                       ),
                       const SizedBox(width: 10),
                       Text(
                         _targetDate != null
-                            ? DateFormat('d MMM yyyy', 'es').format(_targetDate!)
+                            ? DateFormat('d MMM yyyy', 'es')
+                                .format(_targetDate!)
                             : 'Seleccionar fecha',
                         style: GoogleFonts.inter(
                           fontSize: 15,
-                          color: _targetDate != null ? AppTheme.textPrimary : AppTheme.textTertiary,
+                          color: _targetDate != null
+                              ? context.textPrimary
+                              : context.textTertiary,
                         ),
                       ),
                       const Spacer(),
                       if (_targetDate != null)
                         GestureDetector(
-                          onTap: () => setState(() => _targetDate = null),
-                          child: const Icon(Icons.close, size: 18, color: AppTheme.textTertiary),
+                          onTap: () =>
+                              setState(() => _targetDate = null),
+                          child: Icon(Icons.close,
+                              size: 18, color: context.textTertiary),
                         ),
                     ],
                   ),
@@ -203,22 +233,28 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              Text('Color', style: GoogleFonts.inter(fontSize: 13, color: AppTheme.textSecondary)),
+              Text('Color',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: context.textSecondary)),
               const SizedBox(height: 8),
               Row(
                 children: _colors.map((c) {
-                  final color = Color(int.parse(c.replaceFirst('#', 'FF'), radix: 16));
+                  final color =
+                      Color(int.parse(c.replaceFirst('#', 'FF'), radix: 16));
                   return GestureDetector(
                     onTap: () => setState(() => _color = c),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(right: 10),
-                      width: 32, height: 32,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: color,
                         border: Border.all(
-                          color: _color == c ? AppTheme.textPrimary : Colors.transparent,
+                          color: _color == c
+                              ? context.textPrimary
+                              : Colors.transparent,
                           width: 2,
                         ),
                       ),
@@ -232,7 +268,9 @@ class _State extends ConsumerState<AddProjectBottomSheet> {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                 ),
-                child: Text('Crear proyecto', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                child: Text('Crear proyecto',
+                    style:
+                        GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
