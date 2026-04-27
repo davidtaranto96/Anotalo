@@ -107,9 +107,34 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.9.0',
+    version: '1.10.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Coherencia visual: Proyectos y Enfoque al estilo Apunto',
+    items: [
+      _ChangelogItem(_mj, Icons.folder_rounded,
+          'Proyectos rediseñados: cards con barra-acento de 3pt y radio chico — misma firma visual que las tareas en Hoy. Avatar circular con la inicial del proyecto en el color elegido.'),
+      _ChangelogItem(_mj, Icons.label_important_rounded,
+          'Tags de categoría con color: Profesional / Personal / Salud / Estudio / Viaje cada uno con su tinte. Antes era un chip neutro genérico.'),
+      _ChangelogItem(_mj, Icons.circle_rounded,
+          'Headers de Proyectos con dot de color por estado (verde activo, amarillo pausado, naranja completado, gris archivado) — más rápido de scanear.'),
+      _ChangelogItem(_mj, Icons.task_alt_rounded,
+          'Las tareas dentro de un proyecto ahora se ven igual que las de Hoy: barra-acento de prioridad + checkbox del color del área. Antes eran rows planos sin jerarquía.'),
+      _ChangelogItem(_fx, Icons.bug_report_rounded,
+          'Fix Enfoque: el selector de tareas ya no se traba — antes la lista overflowea fuera del modal y no podías tocar las opciones.'),
+      _ChangelogItem(_mj, Icons.timer_rounded,
+          'Enfoque rediseñado: tarea linkeada con barra-acento por prioridad, modos de timer con bordes redondeados (no más capsules), botón Stop circular emparejado con el Play.'),
+      _ChangelogItem(_mj, Icons.bolt_rounded,
+          'Pill compacto de "X sesiones" en el header de Enfoque — antes era texto suelto que rompía la línea.'),
+      _ChangelogItem(_mj, Icons.dark_mode_rounded,
+          'Dark mode arreglado en Proyectos y Enfoque: las sheets y selectores ahora usan los tokens de tema en vez de colores hardcoded.'),
+      _ChangelogItem(_mj, Icons.compress_rounded,
+          'Metas primordiales en Calendario más compactas — checkbox 18×18, font 13, padding chico. Misma densidad que las tareas para que la vista no se rompa al expandir.'),
+    ],
+  ),
+  _Release(
+    version: '1.9.0',
+    date: 'Abril 2026',
     title: 'Calendario unificado: Semana y Mes en una sola pestaña',
     items: [
       _ChangelogItem(_mj, Icons.merge_type_rounded,
