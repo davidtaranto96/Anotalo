@@ -52,54 +52,53 @@ class TaskCard extends StatelessWidget {
         : 0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
       child: Slidable(
         key: ValueKey(task.id),
-        // Completadas: solo deshacer (izquierda). Pendientes: completar (derecha)
-        startActionPane: isDone
-            ? ActionPane(
-                motion: const DrawerMotion(),
-                extentRatio: 0.3,
-                children: [
-                  SlidableAction(
-                    onPressed: (_) {
-                      FeedbackService.instance.tick();
-                      onUncomplete?.call();
-                    },
-                    backgroundColor: AppTheme.colorPrimary,
-                    foregroundColor: Colors.white,
-                    icon: Icons.undo_rounded,
-                    label: 'Deshacer',
-                    borderRadius:
-                        const BorderRadius.horizontal(left: Radius.circular(12)),
-                  ),
-                ],
-              )
-            : ActionPane(
-                motion: const DrawerMotion(),
-                extentRatio: 0.3,
-                children: [
-                  SlidableAction(
-                    onPressed: (_) {
-                      FeedbackService.instance.success();
-                      onComplete();
-                    },
-                    backgroundColor: AppTheme.colorSuccess,
-                    foregroundColor: Colors.white,
-                    icon: Icons.check_rounded,
-                    label: 'Completar',
-                    borderRadius:
-                        const BorderRadius.horizontal(left: Radius.circular(12)),
-                  ),
-                ],
+        // Completadas: solo deshacer (izquierda). Pendientes: completar.
+        // Slide más del 50% del ancho → dispara la acción
+        // automáticamente (DismissiblePane).
+        startActionPane: ActionPane(
+          motion: const DrawerMotion(),
+          extentRatio: 0.22,
+          dismissible: DismissiblePane(
+            dismissThreshold: 0.5,
+            closeOnCancel: true,
+            onDismissed: () {
+              FeedbackService.instance.success();
+              if (isDone && onUncomplete != null) {
+                onUncomplete!();
+              } else if (!isDone) {
+                onComplete();
+              }
+            },
+          ),
+          children: [
+            CustomSlidableAction(
+              onPressed: (_) {
+                FeedbackService.instance.success();
+                if (isDone && onUncomplete != null) {
+                  onUncomplete!();
+                } else if (!isDone) {
+                  onComplete();
+                }
+              },
+              backgroundColor:
+                  isDone ? AppTheme.colorPrimary : AppTheme.colorSuccess,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.zero,
+              child: Icon(
+                isDone ? Icons.undo_rounded : Icons.check_rounded,
+                size: 28,
               ),
+            ),
+          ],
+        ),
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
-          // 0.66 = espacio para 3 acciones (editar/diferir/borrar) sin
-          // que se vean apretadas.
-          extentRatio: 0.66,
+          extentRatio: 0.54,
           children: [
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: isDone
                   ? null
                   : (_) {
@@ -110,12 +109,10 @@ class TaskCard extends StatelessWidget {
                   ? AppTheme.colorPrimary.withAlpha(120)
                   : AppTheme.colorPrimary,
               foregroundColor: Colors.white,
-              icon: Icons.edit_rounded,
-              label: 'Editar',
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(12)),
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.edit_rounded, size: 26),
             ),
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: isDone
                   ? null
                   : (_) {
@@ -126,20 +123,18 @@ class TaskCard extends StatelessWidget {
                   ? AppTheme.colorWarning.withAlpha(120)
                   : AppTheme.colorWarning,
               foregroundColor: Colors.white,
-              icon: Icons.schedule_rounded,
-              label: 'Diferir',
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.schedule_rounded, size: 26),
             ),
-            SlidableAction(
+            CustomSlidableAction(
               onPressed: (_) {
                 FeedbackService.instance.danger();
                 onDelete();
               },
               backgroundColor: AppTheme.colorDanger,
               foregroundColor: Colors.white,
-              icon: Icons.delete_rounded,
-              label: 'Borrar',
-              borderRadius:
-                  const BorderRadius.horizontal(right: Radius.circular(12)),
+              padding: EdgeInsets.zero,
+              child: const Icon(Icons.delete_rounded, size: 26),
             ),
           ],
         ),
@@ -189,9 +184,9 @@ class TaskCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-              // Main row
+              // Main row — padding reducido (era 10/12/12/0 → ahora 10/10/10/0)
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 12, 12, 0),
+                padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -332,46 +327,9 @@ class TaskCard extends StatelessWidget {
                 ),
               ),
 
-              // Action buttons (only when not done)
-              if (!isDone)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-                  child: Row(
-                    children: [
-                      _ActionButton(
-                        label: '✓ Completar',
-                        color: AppTheme.colorSuccess,
-                        bgColor: AppTheme.colorSuccessLight,
-                        onTap: () {
-                          FeedbackService.instance.success();
-                          onComplete();
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      _ActionButton(
-                        label: '→ Diferir',
-                        color: context.textSecondary,
-                        bgColor: context.neutral100,
-                        onTap: () {
-                          FeedbackService.instance.tick();
-                          onDefer();
-                        },
-                      ),
-                      const SizedBox(width: 6),
-                      _ActionButton(
-                        label: '✕',
-                        color: AppTheme.colorDanger,
-                        bgColor: AppTheme.colorDangerLight,
-                        onTap: () {
-                          FeedbackService.instance.danger();
-                          onDelete();
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-              if (isDone) const SizedBox(height: 12),
+              // Sin action buttons inline: todo se hace por swipe.
+              // Margen inferior para no pegar el contenido al borde.
+              const SizedBox(height: 10),
                   ],
                 ),
               ),
@@ -391,14 +349,14 @@ class TaskCard extends StatelessWidget {
   };
 
   /// Crecimiento del título por antigüedad (rollover). Si la prefs
-  /// `growOldTasks` está apagado, devolvemos siempre el base 15.
+  /// `growOldTasks` está apagado, devolvemos siempre el base 14.
   ///
-  /// Curva suave: día 0 = 15, día 1 = 15.6, día 3 = 16.8, día 7 = 19,
-  /// día 14 = 21, cap a 22 para que no explote el layout.
+  /// Curva más suave para que no explote el layout:
+  /// día 0 = 14, día 1 = 14.4, día 3 = 15.2, día 7 = 16.8, cap a 18.
   double _scaledFontSize(int rolloverDays, BuildContext context) {
-    if (!TaskCardPrefs.growOldTasks || rolloverDays <= 0) return 15;
-    final extra = (rolloverDays * 0.6).clamp(0.0, 7.0);
-    return 15 + extra;
+    if (!TaskCardPrefs.growOldTasks || rolloverDays <= 0) return 14;
+    final extra = (rolloverDays * 0.4).clamp(0.0, 4.0);
+    return 14 + extra;
   }
 
   FontWeight _scaledFontWeight(int rolloverDays) {
@@ -436,38 +394,3 @@ class TaskCardPrefs extends ChangeNotifier {
   }
 }
 
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final Color color;
-  final Color bgColor;
-  final VoidCallback onTap;
-
-  const _ActionButton({
-    required this.label,
-    required this.color,
-    required this.bgColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
-        ),
-      ),
-    );
-  }
-}
