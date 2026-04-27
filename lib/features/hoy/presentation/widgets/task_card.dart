@@ -231,80 +231,99 @@ class TaskCard extends StatelessWidget {
                           // boundary). Vuelvo a Text estático y dejo
                           // que el usuario complete via swipe o el
                           // botón "✓ Completar" del action bar.
+                          // Título + indicador de rollover en línea
+                          // (a la derecha) para que la card no crezca
+                          // verticalmente en tareas viejas.
                           ListenableBuilder(
                             listenable: TaskCardPrefs.instance,
-                            builder: (ctx, _) => Text(
-                              task.title,
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    _scaledFontSize(rolloverDays, context),
-                                fontWeight: _scaledFontWeight(rolloverDays),
-                                color: isDone
-                                    ? context.textTertiary
-                                    : context.textPrimary,
-                                decoration: isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                height: 1.25,
-                              ),
+                            builder: (ctx, _) => Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    task.title,
+                                    style: GoogleFonts.inter(
+                                      fontSize: _scaledFontSize(
+                                          rolloverDays, context),
+                                      fontWeight:
+                                          _scaledFontWeight(rolloverDays),
+                                      color: isDone
+                                          ? context.textTertiary
+                                          : context.textPrimary,
+                                      decoration: isDone
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ),
+                                if (isRolledOver) ...[
+                                  const SizedBox(width: 6),
+                                  Tooltip(
+                                    message: rolloverDays == 1
+                                        ? 'De ayer'
+                                        : 'Hace $rolloverDays días',
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.colorWarning
+                                            .withAlpha(28),
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.history_rounded,
+                                            size: 11,
+                                            color: AppTheme.colorWarning,
+                                          ),
+                                          if (rolloverDays > 1) ...[
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              '$rolloverDays',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    AppTheme.colorWarning,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                          // Meta row compacta: "de ayer" + chip de área
-                          // en una sola línea para no malgastar vertical.
-                          // El chip de área se omite si el usuario está
-                          // filtrando justamente por esa área (redundante).
+                          // Chip de área (solo si la tarea tiene área y
+                          // no estamos filtrando por ella).
                           Builder(builder: (_) {
                             final area = task.area == null
                                 ? null
                                 : getTaskArea(task.area);
                             final showAreaChip = area != null &&
                                 task.area != currentFilterAreaId;
-                            if (!isRolledOver && !showAreaChip) {
+                            if (!showAreaChip) {
                               return const SizedBox.shrink();
                             }
                             return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Wrap(
-                                spacing: 10,
-                                runSpacing: 4,
-                                crossAxisAlignment: WrapCrossAlignment.center,
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (isRolledOver)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.history_rounded,
-                                          size: 11,
-                                          color: AppTheme.colorWarning,
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          rolloverDays == 1
-                                              ? 'de ayer'
-                                              : 'hace $rolloverDays días',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w500,
-                                            color: AppTheme.colorWarning,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  if (showAreaChip)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(area.emoji,
-                                            style: const TextStyle(fontSize: 10)),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          area.label,
-                                          style: GoogleFonts.inter(
-                                              fontSize: 10, color: area.color),
-                                        ),
-                                      ],
-                                    ),
+                                  Text(area.emoji,
+                                      style: const TextStyle(fontSize: 10)),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    area.label,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 10, color: area.color),
+                                  ),
                                 ],
                               ),
                             );

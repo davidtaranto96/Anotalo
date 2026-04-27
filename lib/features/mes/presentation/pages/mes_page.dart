@@ -14,6 +14,7 @@ import '../../../hoy/presentation/widgets/add_task_bottom_sheet.dart';
 import '../providers/month_provider.dart';
 import '../widgets/day_tasks_inline.dart';
 import '../widgets/week_strip.dart';
+import '../widgets/weekly_goals_inline.dart';
 import '../widgets/weekly_goals_sheet.dart';
 import 'monthly_review_page.dart';
 
@@ -58,11 +59,13 @@ class _MesPageState extends ConsumerState<MesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          DateFormat("MMMM 'de' yyyy", 'es')
-                              .format(_focused)
-                              .replaceFirstMapped(
-                                  RegExp(r'^[a-zñáéíóú]'),
-                                  (m) => m.group(0)!.toUpperCase()),
+                          _format == CalendarFormat.week
+                              ? 'Semana ${_weekNumber(_focused)}'
+                              : DateFormat("MMMM 'de' yyyy", 'es')
+                                  .format(_focused)
+                                  .replaceFirstMapped(
+                                      RegExp(r'^[a-zñáéíóú]'),
+                                      (m) => m.group(0)!.toUpperCase()),
                           style: GoogleFonts.fraunces(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -72,7 +75,9 @@ class _MesPageState extends ConsumerState<MesPage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Vista mensual',
+                          _format == CalendarFormat.week
+                              ? _weekRangeLabel(_focused)
+                              : 'Vista mensual',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             color: context.textSecondary,
@@ -142,10 +147,12 @@ class _MesPageState extends ConsumerState<MesPage> {
                   },
                 ),
               ),
-              // Navegación entre semanas (flechas) + atajo a metas.
+              // Flechas izq/der compactas (sin label central — el rango
+              // ya está en el header).
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 2),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.chevron_left_rounded),
@@ -157,18 +164,6 @@ class _MesPageState extends ConsumerState<MesPage> {
                               _focused.subtract(const Duration(days: 7));
                         });
                       },
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          _weekRangeLabel(_focused),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: context.textSecondary,
-                          ),
-                        ),
-                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right_rounded),
@@ -183,35 +178,8 @@ class _MesPageState extends ConsumerState<MesPage> {
                   ],
                 ),
               ),
-              // Botón "Lo primordial de la semana" — atajo visible al
-              // bottom sheet de metas.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      FeedbackService.instance.tick();
-                      WeeklyGoalsSheet.show(
-                          context, _weekStartFor(_focused));
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                          color: AppTheme.colorDanger.withAlpha(80)),
-                      foregroundColor: AppTheme.colorDanger,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                    icon: const Icon(Icons.star_rounded, size: 16),
-                    label: Text(
-                      'Lo primordial de la semana',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // Bloque "Lo primordial" inline — directo, sin sheet.
+              WeeklyGoalsInline(weekStart: _weekStartFor(_focused)),
             ] else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -388,6 +356,18 @@ class _MesPageState extends ConsumerState<MesPage> {
       'ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'
     ];
     return '${start.day} ${months[start.month - 1]} – ${end.day} ${months[end.month - 1]}';
+  }
+
+  /// Número ISO 8601 de la semana del año (1..53). Lunes inicia la
+  /// semana — coincide con `weekday == 1`.
+  int _weekNumber(DateTime d) {
+    // Algoritmo ISO: agarrar el jueves de la semana actual y contar
+    // las semanas desde el primer jueves del año.
+    final thursday = d.add(Duration(days: 4 - (d.weekday)));
+    final firstThursday = DateTime(thursday.year, 1, 1)
+        .add(Duration(days: (4 - DateTime(thursday.year, 1, 1).weekday) % 7));
+    final diff = thursday.difference(firstThursday).inDays;
+    return (diff ~/ 7) + 1;
   }
 }
 

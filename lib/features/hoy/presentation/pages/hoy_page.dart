@@ -142,26 +142,22 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Título + iconos en una sola fila: así la pregunta
-                    // queda pegada arriba al status bar y los iconos
-                    // flotan a la derecha a su altura.
+                    // Título + iconos centrados en la misma fila para
+                    // que queden alineados ópticamente.
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              '¿Qué vas a lograr hoy?',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.fraunces(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                                color: context.textPrimary,
-                                letterSpacing: -0.3,
-                                height: 1.15,
-                              ),
+                          child: Text(
+                            '¿Qué vas a lograr hoy?',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.fraunces(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: context.textPrimary,
+                              letterSpacing: -0.3,
+                              height: 1.15,
                             ),
                           ),
                         ),
