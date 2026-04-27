@@ -1,8 +1,10 @@
-# Anotalo — App de Productividad Personal (Flutter)
+# Apunto — App de Productividad Personal (Flutter)
 
 App Android de productividad personal inspirada en GTD + Pomodoro. Paleta terracota/crema cálida, diseño light-mode-first basado en la estética de Claude.
 
-**Versión actual: 1.7.0** | **Build: debug APK** | **Target: Android 21+**
+**Versión actual: 1.12.0** | **Target: Android 21+**
+
+> El repo se llama "Anotalo" por razones históricas — la app pública es **Apunto**.
 
 ---
 

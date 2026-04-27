@@ -70,7 +70,6 @@ class HabitCard extends ConsumerWidget {
         duration: const Duration(milliseconds: 220),
         curve: Curves.easeOut,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           // When completed: tint card with the habit's own color instead of
           // a generic light-green that clashed with dark mode.
@@ -78,12 +77,9 @@ class HabitCard extends ConsumerWidget {
               ? Color.lerp(context.surfaceCard, habitColor, 0.22)
               : context.surfaceCard,
           borderRadius: AppTheme.r16,
-          border: Border.all(
-            color: isCompleted
-                ? habitColor.withAlpha(140)
-                : context.dividerColor,
-            width: isCompleted ? 1.5 : 1,
-          ),
+          // Border consistente con TaskCard/ProjectCard: 1pt fijo, color
+          // del hábito con alpha suave.
+          border: Border.all(color: habitColor.withAlpha(60)),
           boxShadow: isCompleted
               ? [
                   BoxShadow(
@@ -94,10 +90,31 @@ class HabitCard extends ConsumerWidget {
                 ]
               : AppTheme.shadowSm,
         ),
-        child: Row(
+        // Stack + barra-acento 3pt — misma firma visual que TaskCard.
+        child: Stack(
           children: [
-            // ── Emoji badge ─────────────────────────────────────────────
-            Container(
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: habitColor.withValues(
+                      alpha: isCompleted ? 1.0 : 0.85),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(13, 12, 14, 12),
+              child: Row(
+                children: [
+                  // ── Emoji badge ─────────────────────────────────────────────
+                  Container(
               width: 44,
               height: 44,
               alignment: Alignment.center,
@@ -238,6 +255,9 @@ class HabitCard extends ConsumerWidget {
                     ? const Icon(Icons.check_rounded,
                         size: 22, color: Colors.white)
                     : null,
+              ),
+            ),
+                ],
               ),
             ),
           ],

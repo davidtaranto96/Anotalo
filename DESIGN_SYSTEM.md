@@ -1,4 +1,4 @@
-# Anotalo - Design System
+# Apunto - Design System
 ## Inspirado en la experiencia visual de Claude, adaptado a una app de notas y productividad
 
 ---
@@ -690,7 +690,7 @@ FilledButton(
 
 ## Resumen de la sensacion buscada
 
-| Sencillo (dark, finanzas)        | Anotalo (light, Claude-inspired)     |
+| Sencillo (dark, finanzas)        | Apunto (light, Claude-inspired)      |
 |----------------------------------|--------------------------------------|
 | Fondo oscuro #1E1E2C            | Fondo crema calido #F4F3EE          |
 | Violeta #7C6EF7 como primary    | Terracota #C15F3C como primary      |

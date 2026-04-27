@@ -18,6 +18,7 @@ import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
 import 'package:arquitectura_enfoque/core/models/task_area.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_confirm_dialog.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_toast.dart';
+import 'package:arquitectura_enfoque/core/widgets/first_time_tip.dart';
 import 'package:arquitectura_enfoque/features/hoy/domain/models/task.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/task_card.dart';
 import 'package:arquitectura_enfoque/features/enfoque/domain/models/timer_state.dart';
@@ -383,7 +384,10 @@ class SettingsPage extends ConsumerWidget {
                   subtitle: const _Subtitle('Rehace la bienvenida y el setup inicial'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () async {
+                    // Reset también los coach-marks para que el user vuelva
+                    // a verlos al entrar a cada pantalla luego del tour.
                     await OnboardingPrefs.reset();
+                    await FirstTimeTip.resetAll();
                     if (!context.mounted) return;
                     GoRouter.of(context).go('/login');
                   },

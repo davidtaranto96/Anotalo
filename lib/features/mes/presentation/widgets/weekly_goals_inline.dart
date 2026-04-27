@@ -7,7 +7,7 @@ import '../../../../core/logic/weekly_plan_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format_utils.dart';
-import '../../../semana/presentation/providers/semana_provider.dart';
+import '../providers/weekly_plan_provider.dart';
 
 /// Sección de metas primordiales de una semana, embebida en la
 /// pantalla (no es bottom sheet). Reutiliza la lógica del sheet

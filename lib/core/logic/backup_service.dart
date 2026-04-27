@@ -81,7 +81,7 @@ class BackupService {
     final jsonStr = await exportToJson();
     final dir = await getTemporaryDirectory();
     final stamp = _timestamp();
-    final file = File(p.join(dir.path, 'anotalo-backup-$stamp.json'));
+    final file = File(p.join(dir.path, 'apunto-backup-$stamp.json'));
     await file.writeAsString(jsonStr, flush: true);
     return file;
   }
@@ -108,12 +108,13 @@ class BackupService {
 
     final jsonStr = await exportToJson();
     final stamp = _timestamp();
-    final file = File(p.join(downloads.path, 'anotalo-backup-$stamp.json'));
+    final file = File(p.join(downloads.path, 'apunto-backup-$stamp.json'));
     await file.writeAsString(jsonStr, flush: true);
     return file;
   }
 
-  /// On Android: finds the most recent `anotalo-backup-*.json` in Downloads.
+  /// On Android: finds the most recent `apunto-backup-*.json` (or legacy
+  /// `anotalo-backup-*.json` from versiones previas) en Downloads.
   /// Returns null if none or on non-Android platforms.
   Future<File?> findLatestBackupInDownloads() async {
     if (!Platform.isAndroid) return null;
@@ -127,7 +128,13 @@ class BackupService {
     await for (final entry in downloads.list(followLinks: false)) {
       if (entry is! File) continue;
       final name = p.basename(entry.path);
-      if (name.startsWith('anotalo-backup-') && name.endsWith('.json')) {
+      // Acepta tanto el nuevo prefijo "apunto-backup-" como el legacy
+      // "anotalo-backup-" para no romper backups antiguos.
+      final isApunto =
+          name.startsWith('apunto-backup-') && name.endsWith('.json');
+      final isLegacy =
+          name.startsWith('anotalo-backup-') && name.endsWith('.json');
+      if (isApunto || isLegacy) {
         matches.add(entry);
       }
     }

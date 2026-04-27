@@ -339,7 +339,7 @@ class _NoteCard extends StatelessWidget {
     this.isProcessed = false,
   });
 
-  Color get _borderColor => switch (note.type) {
+  Color get _accentColor => switch (note.type) {
     QuickNoteType.idea     => const Color(0xFFC4963A),
     QuickNoteType.nota     => const Color(0xFF5B7E9E),
     QuickNoteType.tarea    => const Color(0xFF5B8A5E),
@@ -349,89 +349,106 @@ class _NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = _accentColor;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: isProcessed ? context.neutral50 : context.surfaceCard,
-        borderRadius: AppTheme.r16,
-        border: Border.all(color: context.dividerColor),
+        borderRadius: AppTheme.r12,
+        // Border tintado con el color del tipo de nota — misma firma
+        // visual que TaskCard/ProjectCard (alpha 60).
+        border: Border.all(
+            color: isProcessed
+                ? context.dividerColor
+                : accent.withAlpha(60)),
         boxShadow: isProcessed ? null : AppTheme.shadowSm,
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Container(
-              width: 4,
+      // Stack + barra-acento 3pt — pattern unificado de la app.
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 3,
               decoration: BoxDecoration(
-                color: _borderColor,
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            note.content,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: isProcessed ? context.textTertiary : context.textPrimary,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: onDelete,
-                          child: Icon(Icons.close_rounded, size: 18, color: context.textTertiary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _TypeBadge(type: note.type),
-                        const SizedBox(width: 8),
-                        Text(
-                          DateFormat('d MMM, HH:mm', 'es').format(note.createdAt),
-                          style: GoogleFonts.inter(fontSize: 11, color: context.textTertiary),
-                        ),
-                        const Spacer(),
-                        if (!isProcessed)
-                          GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              onProcess();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.colorPrimaryLight,
-                                borderRadius: AppTheme.r8,
-                              ),
-                              child: Text(
-                                'Procesar',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.colorPrimary,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                color: accent.withValues(alpha: isProcessed ? 0.30 : 0.85),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(13, 12, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        note.content,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: isProcessed
+                              ? context.textTertiary
+                              : context.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: onDelete,
+                      child: Icon(Icons.close_rounded,
+                          size: 18, color: context.textTertiary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _TypeBadge(type: note.type),
+                    const SizedBox(width: 8),
+                    Text(
+                      DateFormat('d MMM, HH:mm', 'es').format(note.createdAt),
+                      style: GoogleFonts.inter(
+                          fontSize: 11, color: context.textTertiary),
+                    ),
+                    const Spacer(),
+                    if (!isProcessed)
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          onProcess();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: context.colorPrimary
+                                .withValues(alpha: 0.14),
+                            borderRadius: AppTheme.r8,
+                          ),
+                          child: Text(
+                            'Procesar',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: context.colorPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

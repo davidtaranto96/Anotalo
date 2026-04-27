@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_utils.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../../domain/models/task.dart';
 import '../providers/task_provider.dart';
 import '../../../habitos/domain/models/habit.dart';
@@ -134,7 +135,13 @@ class _HoyPageState extends ConsumerState<HoyPage> {
 
     final userPrefs = ref.watch(userPrefsProvider);
 
-    return AnimatedContainer(
+    return FirstTimeTip(
+      tipKey: 'coach.hoy',
+      title: 'Deslizá tus tareas',
+      body:
+          'Derecha = completar (con un swipe largo se confirma sola). Izquierda = editar, posponer o borrar.',
+      icon: Icons.swipe_rounded,
+      child: AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
       color: tintedBg,
@@ -543,7 +550,8 @@ class _HoyPageState extends ConsumerState<HoyPage> {
         ],
       ),
     ), // Scaffold
-    ); // AnimatedContainer
+    ), // AnimatedContainer
+    ); // FirstTimeTip
   }
 
   Future<void> _onDeferTask(dynamic taskService, String taskId) async {

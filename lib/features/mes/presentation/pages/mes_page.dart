@@ -8,6 +8,7 @@ import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format_utils.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../../../hoy/domain/models/task.dart';
 import '../../../hoy/presentation/providers/task_provider.dart';
 import '../../../hoy/presentation/widgets/add_task_bottom_sheet.dart';
@@ -42,7 +43,13 @@ class _MesPageState extends ConsumerState<MesPage> {
     final tasksByDay = ref.watch(tasksByDayProvider);
     final taskService = ref.read(taskServiceProvider);
 
-    return Scaffold(
+    return FirstTimeTip(
+      tipKey: 'coach.calendario',
+      title: 'Calendario flexible',
+      body:
+          'Tocá un día para ver sus tareas abajo. Deslizá ↑ para colapsar a 1 semana, ↓ para volver a la vista mes.',
+      icon: Icons.calendar_view_month_rounded,
+      child: Scaffold(
       backgroundColor: context.surfaceBase,
       body: SafeArea(
         bottom: false,
@@ -351,7 +358,8 @@ class _MesPageState extends ConsumerState<MesPage> {
           ],
         ),
       ),
-    );
+    ), // Scaffold
+    ); // FirstTimeTip
   }
 
   static Widget _bar(Color c) => Container(

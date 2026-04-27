@@ -107,9 +107,26 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.11.0',
+    version: '1.12.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Coach-marks, hábitos e inbox al estilo Apunto',
+    items: [
+      _ChangelogItem(_nf, Icons.lightbulb_outline_rounded,
+          'Coach-marks la primera vez que entrás a cada pantalla — Hoy, Calendario, Proyectos y Enfoque te muestran cómo se manejan en una pista corta y se cierran solos al tocarla.'),
+      _ChangelogItem(_mj, Icons.replay_circle_filled_rounded,
+          '"Ver tour otra vez" en Configuración resetea también los coach-marks — útil cuando le pasás la app a alguien.'),
+      _ChangelogItem(_mj, Icons.loop_rounded,
+          'Tarjetas de hábitos con barra-acento de 3pt como las tareas — coherencia total entre todas las cards de la app.'),
+      _ChangelogItem(_mj, Icons.inbox_rounded,
+          'Notas del Inbox con barra-acento por tipo (idea / nota / tarea / proyecto) — más fácil de scanear y respeta dark mode.'),
+      _ChangelogItem(_fx, Icons.cleaning_services_rounded,
+          'Limpieza interna: pantalla "Semana" vieja borrada (la reemplazó "Calendario" en 1.9.0).'),
+    ],
+  ),
+  _Release(
+    version: '1.11.0',
+    date: 'Abril 2026',
     title: 'Recordatorios reales, saludo personal y onboarding ampliado',
     items: [
       _ChangelogItem(_nf, Icons.notifications_active_rounded,

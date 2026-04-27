@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_utils.dart';
 import '../../../../core/logic/user_prefs.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../providers/timer_provider.dart';
 import '../../domain/models/timer_state.dart';
 import '../../../hoy/domain/models/task.dart';
@@ -61,7 +62,13 @@ class EnfoquePage extends ConsumerWidget {
       } catch (_) {}
     }
 
-    return Scaffold(
+    return FirstTimeTip(
+      tipKey: 'coach.enfoque',
+      title: 'Sesiones de enfoque',
+      body:
+          'Elegí un modo de timer (Pomodoro 25, profundo 90, etc), opcionalmente vinculá una tarea, y tocá Play. Al terminar te avisa.',
+      icon: Icons.timer_rounded,
+      child: Scaffold(
       backgroundColor: context.surfaceBase,
       body: SafeArea(
         child: Column(
@@ -299,7 +306,8 @@ class EnfoquePage extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ), // Scaffold
+    ); // FirstTimeTip
   }
 
   void _showTaskPicker(

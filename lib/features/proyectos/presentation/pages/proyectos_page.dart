@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../../domain/models/project.dart';
 import '../providers/project_provider.dart';
 import '../widgets/project_card.dart';
@@ -28,7 +29,13 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
   Widget build(BuildContext context) {
     final projectsAsync = ref.watch(allProjectsIncludingArchivedProvider);
 
-    return Scaffold(
+    return FirstTimeTip(
+      tipKey: 'coach.proyectos',
+      title: 'Tus proyectos en marcha',
+      body:
+          'Tocá un proyecto para ver tareas y notas. Mantené apretado uno activo para reordenarlo.',
+      icon: Icons.folder_rounded,
+      child: Scaffold(
       backgroundColor: context.surfaceBase,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -114,7 +121,8 @@ class _ProyectosPageState extends ConsumerState<ProyectosPage> {
           const SliverToBoxAdapter(child: SizedBox(height: 140)),
         ],
       ),
-    );
+    ), // Scaffold
+    ); // FirstTimeTip
   }
 }
 
