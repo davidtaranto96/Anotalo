@@ -13,6 +13,7 @@ import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/providers/backup_provider.dart';
 import 'package:arquitectura_enfoque/core/providers/theme_provider.dart';
+import 'package:arquitectura_enfoque/core/logic/auth_service.dart';
 import 'package:arquitectura_enfoque/core/logic/notification_service.dart';
 import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
 import 'package:arquitectura_enfoque/core/models/task_area.dart';
@@ -60,6 +61,13 @@ class SettingsPage extends ConsumerWidget {
           const _SectionLabel('PERFIL'),
           const SizedBox(height: 12),
           const _Card(child: _NameTile()),
+
+          const SizedBox(height: 32),
+
+          // ── Cuenta ──
+          const _SectionLabel('CUENTA'),
+          const SizedBox(height: 12),
+          const _Card(child: _AccountTile()),
 
           const SizedBox(height: 32),
 
@@ -948,6 +956,97 @@ class _NameTile extends ConsumerWidget {
       trailing: Icon(Icons.edit_rounded,
           size: 18, color: theme.textTheme.bodyMedium?.color),
       onTap: () => _editName(context, ref, name),
+    );
+  }
+}
+
+// ─── Account Tile ─────────────────────────────────────────────────────────────
+
+/// Muestra el usuario logueado (avatar + nombre + email) y un botón
+/// "Cerrar sesión" que vuelve al LoginPage. Si no hay user, ofrece
+/// loguear con Google directamente desde Settings.
+class _AccountTile extends ConsumerWidget {
+  const _AccountTile();
+
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final ok = await showAnotaloConfirm(
+      context: context,
+      title: 'Cerrar sesión',
+      body:
+          'Tus datos quedan en este dispositivo. Podés volver a entrar con la misma cuenta cuando quieras.',
+      confirmLabel: 'Cerrar sesión',
+      danger: true,
+      icon: Icons.logout_rounded,
+    );
+    if (!ok) return;
+    await AuthService.instance.signOut();
+    if (!context.mounted) return;
+    GoRouter.of(context).go('/login');
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final userAsync = ref.watch(authStateProvider);
+    final user = userAsync.valueOrNull;
+
+    if (user == null) {
+      // Sesión local — ofrecer iniciar sesión.
+      return ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+        leading: const _IconBadge(
+          icon: Icons.login_rounded,
+          color: AppTheme.colorPrimary,
+        ),
+        title: const _Title('Iniciar sesión con Google'),
+        subtitle: const _Subtitle('Sin sesión — tus datos están solo en este teléfono'),
+        trailing: Icon(Icons.chevron_right_rounded,
+            color: theme.textTheme.bodyMedium?.color),
+        onTap: () => GoRouter.of(context).go('/login'),
+      );
+    }
+
+    final photo = user.photoURL;
+    final name = user.displayName ?? user.email ?? 'Usuario';
+    final email = user.email ?? '';
+
+    return Column(
+      children: [
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+          leading: photo != null
+              ? CircleAvatar(
+                  radius: 18,
+                  backgroundImage: NetworkImage(photo),
+                  backgroundColor: theme.dividerColor,
+                )
+              : const _IconBadge(
+                  icon: Icons.person_rounded,
+                  color: AppTheme.colorPrimary,
+                ),
+          title: _Title(name),
+          subtitle: email.isNotEmpty ? _Subtitle(email) : null,
+        ),
+        Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: const Icon(Icons.logout_rounded,
+              size: 20, color: AppTheme.colorDanger),
+          title: Text(
+            'Cerrar sesión',
+            style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.colorDanger),
+          ),
+          onTap: () => _confirmLogout(context, ref),
+        ),
+      ],
     );
   }
 }

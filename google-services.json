@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "216765195339",
+    "project_id": "apunto-f21e2",
+    "storage_bucket": "apunto-f21e2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216765195339:android:25e692d92b2d487dc0d9ce",
+        "android_client_info": {
+          "package_name": "com.davidtaranto.arquitectura_enfoque"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "216765195339-dluabghdkfjep7ibfaqvng2ig9ou2q87.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.davidtaranto.arquitectura_enfoque",
+            "certificate_hash": "964f80994d55265cf23bd2a45328f376a904d385"
+          }
+        },
+        {
+          "client_id": "216765195339-1b4guatsl6l2b9ugasa8bflgaf6lo823.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9C-E9ivZbO8J2arrAQj_ilh7orYbnRFk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "216765195339-1b4guatsl6l2b9ugasa8bflgaf6lo823.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -15,7 +15,7 @@ import '../../../hoy/presentation/providers/task_provider.dart';
 /// - Cada tarea es un `LongPressDraggable<Task>` para mover de día
 ///
 /// `extraSliversBefore` permite insertar slivers arriba del header
-/// del día para que TODO sea un único scrollable continuo (lo usa
+/// del día para que todo sea un único scrollable continuo (lo usa
 /// modo week en MesPage para meter el bloque "Lo primordial" arriba).
 class DayTasksInline extends ConsumerStatefulWidget {
   const DayTasksInline({

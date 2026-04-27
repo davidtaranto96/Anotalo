@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,6 +60,15 @@ void main() async {
     await TaskCardPrefs.instance.load().timeout(const Duration(seconds: 1));
   } catch (e) {
     debugPrint('TaskCardPrefs load skipped: $e');
+  }
+
+  // Inicializar Firebase con timeout defensivo. Si falla (sin red, JSON
+  // mal configurado, etc.) no bloqueamos el arranque — la app sigue
+  // funcionando offline-first; sólo el login con Google quedaría caído.
+  try {
+    await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+  } catch (e) {
+    debugPrint('Firebase init skipped: $e');
   }
 
   // Run the app first — notifications init is deferred so a hung plugin call

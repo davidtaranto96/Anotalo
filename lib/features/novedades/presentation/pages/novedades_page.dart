@@ -107,9 +107,24 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.12.0',
+    version: '1.13.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Login con Google y sesión real',
+    items: [
+      _ChangelogItem(_nf, Icons.login_rounded,
+          'Inicio de sesión con Google funcionando — Firebase Auth bajo el capot. El botón "Continuar con Google" ya no es decorativo.'),
+      _ChangelogItem(_nf, Icons.account_circle_rounded,
+          'Sección "Cuenta" nueva en Configuración: avatar, nombre, email y botón "Cerrar sesión".'),
+      _ChangelogItem(_mj, Icons.cloud_off_rounded,
+          'Tus datos siguen siendo locales — el login es identificación. Si más adelante sumamos sync a la nube, va a estar atado a tu cuenta.'),
+      _ChangelogItem(_mj, Icons.shield_rounded,
+          'Cerrar sesión deja todo en tu teléfono y te lleva al login. Podés volver con la misma cuenta cuando quieras.'),
+    ],
+  ),
+  _Release(
+    version: '1.12.0',
+    date: 'Abril 2026',
     title: 'Coach-marks, hábitos e inbox al estilo Apunto',
     items: [
       _ChangelogItem(_nf, Icons.lightbulb_outline_rounded,

@@ -194,7 +194,7 @@ class _MesPageState extends ConsumerState<MesPage> {
               ),
               // (Flechas movidas al header arriba; "Lo primordial"
               // ahora va embebido como sliver dentro de DayTasksInline
-              // — abajo — para que TODO el contenido sea un único
+              // — abajo — para que todo el contenido sea un único
               // scroll continuo.)
             ] else
             Padding(
@@ -305,7 +305,7 @@ class _MesPageState extends ConsumerState<MesPage> {
 
             // ── Tareas del día + (en modo week) Lo primordial ────────
             // En modo week pasamos el bloque "Lo primordial" como
-            // sliver extra arriba del header del día, así TODO es un
+            // sliver extra arriba del header del día, así todo es un
             // único scroll continuo (cuando se expande Lo primordial,
             // las tareas siguen scrolleables debajo sin cortes).
             Expanded(

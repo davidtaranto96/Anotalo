@@ -3,20 +3,61 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
+import '../../../../core/logic/auth_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/anotalo_toast.dart';
 import '../../domain/onboarding_prefs.dart';
 
 /// Pantalla de inicio. Tres caminos:
-///   1. Continuar con Google      (placeholder: muestra toast "próximamente")
-///   2. Continuar con email       (placeholder)
-///   3. Usar sin cuenta           (funcional: marca local-only y sigue
-///                                 al onboarding)
+///   1. Continuar con Google      (Firebase Auth + google_sign_in)
+///   2. Continuar con email       (placeholder local-only)
+///   3. Usar sin cuenta           (marca local-only y sigue al onboarding)
 ///
 /// Diseño: "A" brand mark serif italic con glow terracota detrás, luego
 /// bajada corta y los tres botones en orden de valor de conversión.
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  bool _signingIn = false;
+
+  Future<void> _signInWithGoogle() async {
+    if (_signingIn) return;
+    FeedbackService.instance.tick();
+    setState(() => _signingIn = true);
+    try {
+      final user = await AuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+      if (user == null) {
+        // El usuario canceló el diálogo — silencio, no toast.
+        setState(() => _signingIn = false);
+        return;
+      }
+      // Persistir email + marcar onboarding como ruta a seguir.
+      if (user.email != null) {
+        await OnboardingPrefs.saveEmail(user.email!);
+      }
+      if (!mounted) return;
+      showAnotaloToast(
+        context,
+        '¡Hola ${user.displayName ?? user.email ?? ''}!',
+        tone: ToastTone.success,
+      );
+      context.go('/onboarding');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _signingIn = false);
+      showAnotaloToast(
+        context,
+        'No se pudo iniciar sesión: ${e.toString().split(':').last.trim()}',
+        tone: ToastTone.warn,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,14 +142,8 @@ class LoginPage extends StatelessWidget {
               const Spacer(flex: 2),
               // CTAs en orden de valor
               _GoogleButton(
-                onTap: () {
-                  FeedbackService.instance.tick();
-                  showAnotaloToast(
-                    context,
-                    'Google Sign-In: disponible pronto',
-                    tone: ToastTone.info,
-                  );
-                },
+                loading: _signingIn,
+                onTap: _signInWithGoogle,
               ),
               const SizedBox(height: 10),
               _EmailButton(
@@ -148,13 +183,14 @@ class LoginPage extends StatelessWidget {
 }
 
 class _GoogleButton extends StatelessWidget {
-  const _GoogleButton({required this.onTap});
+  const _GoogleButton({required this.onTap, this.loading = false});
   final VoidCallback onTap;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: loading ? null : onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         height: 52,
@@ -167,33 +203,54 @@ class _GoogleButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // G monogram simple (sin depender de asset)
-            Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFF5F3EF),
-              ),
-              child: Text(
-                'G',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF4285F4),
+            if (loading) ...[
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Color(0xFF4285F4)),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Continuar con Google',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1A1A1A),
+              const SizedBox(width: 12),
+              Text(
+                'Conectando...',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1A1A1A),
+                ),
               ),
-            ),
+            ] else ...[
+              // G monogram simple (sin depender de asset)
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFF5F3EF),
+                ),
+                child: Text(
+                  'G',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF4285F4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Continuar con Google',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1A1A1A),
+                ),
+              ),
+            ],
           ],
         ),
       ),
