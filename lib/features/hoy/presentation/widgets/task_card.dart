@@ -258,17 +258,17 @@ class TaskCard extends StatelessWidget {
                                   ),
                                 ),
                                 if (isRolledOver) ...[
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 8),
                                   Tooltip(
                                     message: rolloverDays == 1
                                         ? 'De ayer'
                                         : 'Hace $rolloverDays días',
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 5, vertical: 2),
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: AppTheme.colorWarning
-                                            .withAlpha(28),
+                                            .withAlpha(32),
                                         borderRadius:
                                             BorderRadius.circular(999),
                                       ),
@@ -277,15 +277,15 @@ class TaskCard extends StatelessWidget {
                                         children: [
                                           const Icon(
                                             Icons.history_rounded,
-                                            size: 11,
+                                            size: 14,
                                             color: AppTheme.colorWarning,
                                           ),
                                           if (rolloverDays > 1) ...[
-                                            const SizedBox(width: 2),
+                                            const SizedBox(width: 3),
                                             Text(
                                               '$rolloverDays',
                                               style: GoogleFonts.inter(
-                                                fontSize: 10,
+                                                fontSize: 11,
                                                 fontWeight: FontWeight.w700,
                                                 color:
                                                     AppTheme.colorWarning,

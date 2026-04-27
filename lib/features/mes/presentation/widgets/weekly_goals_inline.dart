@@ -25,6 +25,9 @@ class WeeklyGoalsInline extends ConsumerStatefulWidget {
 
 class _WeeklyGoalsInlineState extends ConsumerState<WeeklyGoalsInline> {
   final _controller = TextEditingController();
+  // Default colapsado para que no ocupe espacio. El user expande
+  // cuando quiere editar/ver las metas.
+  bool _expanded = false;
 
   @override
   void dispose() {
@@ -73,7 +76,6 @@ class _WeeklyGoalsInlineState extends ConsumerState<WeeklyGoalsInline> {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: context.surfaceCard,
         borderRadius: BorderRadius.circular(14),
@@ -82,116 +84,170 @@ class _WeeklyGoalsInlineState extends ConsumerState<WeeklyGoalsInline> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con ícono + título + counter
-          Row(
-            children: [
-              const Icon(Icons.star_rounded,
-                  color: AppTheme.colorDanger, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Lo primordial',
-                  style: GoogleFonts.fraunces(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.colorDanger,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ),
-              if (goals.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.colorDanger.withAlpha(30),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '$doneCount/${goals.length}',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+          // Header tappeable para colapsar/expandir.
+          InkWell(
+            onTap: () {
+              FeedbackService.instance.tick();
+              setState(() => _expanded = !_expanded);
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.star_rounded,
+                      color: AppTheme.colorDanger, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Lo primordial',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: AppTheme.colorDanger,
+                      letterSpacing: -0.2,
                     ),
                   ),
-                ),
-            ],
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.colorDanger.withAlpha(30),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      goals.isEmpty
+                          ? 'agregar'
+                          : '$doneCount/${goals.length}',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.colorDanger,
+                      ),
+                    ),
+                  ),
+                  // Hint con la primera meta cuando está colapsado, para
+                  // dar contexto sin abrir.
+                  if (!_expanded && goals.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '→ ${WeeklyPlanService.goalText(goals.first)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: context.textSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.textSecondary, size: 20),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
-          // Lista de metas (sin scroll, ocupa lo que necesite)
-          if (goals.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Anotá lo que SÍ o SÍ querés cerrar esta semana',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  color: context.textTertiary,
-                ),
-              ),
-            )
-          else
-            for (var i = 0; i < goals.length; i++)
-              _GoalRow(
-                key: ValueKey('goal-$_weekStartId-$i'),
-                isDone: WeeklyPlanService.isGoalDone(goals[i]),
-                text: WeeklyPlanService.goalText(goals[i]),
-                onToggle: () => _toggleGoal(goals, i),
-                onDelete: () => _removeGoal(goals, i),
-              ),
-          const SizedBox(height: 6),
-          // Input para agregar
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  style: GoogleFonts.inter(
-                      fontSize: 13.5, color: context.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Agregar meta...',
-                    hintStyle: GoogleFonts.inter(
-                        fontSize: 13.5, color: context.textTertiary),
-                    filled: true,
-                    fillColor: context.surfaceBase,
-                    isDense: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide:
-                          BorderSide(color: context.dividerColor),
+          // Contenido expandido — animado para que no aparezca de golpe.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: !_expanded
+                ? const SizedBox(width: double.infinity, height: 0)
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (goals.isEmpty)
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'Anotá lo que SÍ o SÍ querés cerrar esta semana',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                                color: context.textTertiary,
+                              ),
+                            ),
+                          )
+                        else
+                          for (var i = 0; i < goals.length; i++)
+                            _GoalRow(
+                              key: ValueKey('goal-$_weekStartId-$i'),
+                              isDone:
+                                  WeeklyPlanService.isGoalDone(goals[i]),
+                              text: WeeklyPlanService.goalText(goals[i]),
+                              onToggle: () => _toggleGoal(goals, i),
+                              onDelete: () => _removeGoal(goals, i),
+                            ),
+                        const SizedBox(height: 6),
+                        // Input agregar
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _controller,
+                                style: GoogleFonts.inter(
+                                    fontSize: 13.5,
+                                    color: context.textPrimary),
+                                decoration: InputDecoration(
+                                  hintText: 'Agregar meta...',
+                                  hintStyle: GoogleFonts.inter(
+                                      fontSize: 13.5,
+                                      color: context.textTertiary),
+                                  filled: true,
+                                  fillColor: context.surfaceBase,
+                                  isDense: true,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: context.dividerColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(
+                                        color: context.dividerColor),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: AppTheme.colorDanger,
+                                        width: 1.5),
+                                  ),
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 8),
+                                ),
+                                onSubmitted: (_) => _addGoal(goals),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            SizedBox(
+                              width: 38,
+                              height: 38,
+                              child: FilledButton(
+                                onPressed: () => _addGoal(goals),
+                                style: FilledButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  backgroundColor: AppTheme.colorDanger,
+                                ),
+                                child: const Icon(Icons.add_rounded,
+                                    size: 18),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide:
-                          BorderSide(color: context.dividerColor),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(
-                          color: AppTheme.colorDanger, width: 1.5),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 8),
                   ),
-                  onSubmitted: (_) => _addGoal(goals),
-                ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 38,
-                height: 38,
-                child: FilledButton(
-                  onPressed: () => _addGoal(goals),
-                  style: FilledButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    backgroundColor: AppTheme.colorDanger,
-                  ),
-                  child: const Icon(Icons.add_rounded, size: 18),
-                ),
-              ),
-            ],
           ),
         ],
       ),
