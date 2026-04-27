@@ -36,8 +36,11 @@ class NotificationService {
     }
 
     try {
+      // Apunto usa `launcher_icon` (no `ic_launcher`) — es el nombre que
+      // setea flutter_launcher_icons en pubspec.yaml. Apuntar a un asset
+      // que no existe hace fallar el init y silencia TODAS las notifs.
       const initSettings = InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
       );
       await _plugin.initialize(initSettings);
 

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/logic/auth_service.dart';
+import '../../../../core/logic/drive_backup_service.dart';
+import '../../../../core/providers/backup_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/anotalo_toast.dart';
 import '../../domain/onboarding_prefs.dart';
@@ -15,14 +19,14 @@ import '../../domain/onboarding_prefs.dart';
 ///
 /// Diseño: "A" brand mark serif italic con glow terracota detrás, luego
 /// bajada corta y los tres botones en orden de valor de conversión.
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   bool _signingIn = false;
 
   Future<void> _signInWithGoogle() async {
@@ -37,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _signingIn = false);
         return;
       }
-      // Persistir email + marcar onboarding como ruta a seguir.
+      // Persistir email — quedará disponible para la cuenta.
       if (user.email != null) {
         await OnboardingPrefs.saveEmail(user.email!);
       }
@@ -47,7 +51,20 @@ class _LoginPageState extends State<LoginPage> {
         '¡Hola ${user.displayName ?? user.email ?? ''}!',
         tone: ToastTone.success,
       );
-      context.go('/onboarding');
+
+      // Si hay un backup en su Drive, ofrecer restaurar antes del
+      // onboarding. Caso típico: cel nuevo / reinstalación. Si no hay
+      // backup o el user dice "no", seguimos al onboarding normal.
+      final restored = await _maybeRestoreFromDrive();
+      if (!mounted) return;
+      if (restored) {
+        // Marcar onboarding como completado — el user ya tiene datos.
+        await OnboardingPrefs.markCompleted();
+        if (!mounted) return;
+        context.go('/');
+      } else {
+        context.go('/onboarding');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _signingIn = false);
@@ -57,6 +74,78 @@ class _LoginPageState extends State<LoginPage> {
         tone: ToastTone.warn,
       );
     }
+  }
+
+  /// Chequea Drive por un backup. Si lo encuentra, ofrece restaurarlo.
+  /// Devuelve `true` si el restore se ejecutó (para saltar el onboarding).
+  Future<bool> _maybeRestoreFromDrive() async {
+    try {
+      final backup = ref.read(backupServiceProvider);
+      final drive = DriveBackupService.instance(backup);
+      final lastTime = await drive.getLastBackupTime();
+      if (lastTime == null) return false;
+      if (!mounted) return false;
+
+      final ageLabel = _humanizeAge(lastTime);
+      final shouldRestore = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            'Encontramos una copia tuya',
+            style: GoogleFonts.fraunces(
+                fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            'En tu Google Drive hay un backup de Apunto $ageLabel. '
+            '¿Querés restaurarlo ahora? Si decís que no, podés hacerlo '
+            'después desde Configuración.',
+            style: GoogleFonts.inter(fontSize: 14, height: 1.45),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Empezar de cero'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Restaurar'),
+            ),
+          ],
+        ),
+      );
+      if (shouldRestore != true) return false;
+      if (!mounted) return false;
+
+      // Mostrar loader inline mientras descarga e importa.
+      showAnotaloToast(context, 'Restaurando tus datos...',
+          tone: ToastTone.info);
+      final json = await drive.downloadBackupJson();
+      if (json == null) {
+        if (!mounted) return false;
+        showAnotaloToast(context, 'No se pudo bajar el backup',
+            tone: ToastTone.warn);
+        return false;
+      }
+      await backup.importFromJson(json);
+      if (!mounted) return false;
+      showAnotaloToast(context, '¡Listo! Datos restaurados',
+          tone: ToastTone.success);
+      return true;
+    } catch (e) {
+      if (!mounted) return false;
+      showAnotaloToast(context, 'No se pudo restaurar: $e',
+          tone: ToastTone.warn);
+      return false;
+    }
+  }
+
+  String _humanizeAge(DateTime when) {
+    final diff = DateTime.now().difference(when);
+    if (diff.inMinutes < 60) return 'de hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'de hace ${diff.inHours} h';
+    if (diff.inDays < 7) return 'de hace ${diff.inDays} d';
+    return 'del ${DateFormat('d MMM yyyy', 'es').format(when)}';
   }
 
   @override
