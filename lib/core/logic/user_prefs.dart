@@ -11,12 +11,20 @@ class UserPrefs {
   static const _kDefaultTimerMode = 'pref_default_timer_mode';
   static const _kShowQuotes = 'pref_show_quotes';
   static const _kShowHabitsInHoy = 'pref_show_habits_in_hoy';
+  static const _kUserName = 'pref_user_name';
+  static const _kRemindBeforeMin = 'pref_remind_before_min';
 
   final TaskPriority defaultPriority;
   final String? defaultArea;
   final TimerMode defaultTimerMode;
   final bool showQuotes;
   final bool showHabitsInHoy;
+  /// Nombre del usuario (capturado en onboarding) para el saludo de Hoy.
+  /// Vacío = sin saludo personalizado.
+  final String userName;
+  /// Minutos de antelación para los recordatorios de tareas (0/5/10/15).
+  /// 0 = al horario exacto.
+  final int remindBeforeMinutes;
 
   const UserPrefs({
     required this.defaultPriority,
@@ -24,6 +32,8 @@ class UserPrefs {
     required this.defaultTimerMode,
     required this.showQuotes,
     required this.showHabitsInHoy,
+    required this.userName,
+    required this.remindBeforeMinutes,
   });
 
   factory UserPrefs.defaults() => const UserPrefs(
@@ -32,6 +42,8 @@ class UserPrefs {
     defaultTimerMode: TimerMode.pomodoro25,
     showQuotes: true,
     showHabitsInHoy: true,
+    userName: '',
+    remindBeforeMinutes: 0,
   );
 
   UserPrefs copyWith({
@@ -40,12 +52,16 @@ class UserPrefs {
     TimerMode? defaultTimerMode,
     bool? showQuotes,
     bool? showHabitsInHoy,
+    String? userName,
+    int? remindBeforeMinutes,
   }) => UserPrefs(
     defaultPriority: defaultPriority ?? this.defaultPriority,
     defaultArea: defaultArea == _sentinel ? this.defaultArea : defaultArea as String?,
     defaultTimerMode: defaultTimerMode ?? this.defaultTimerMode,
     showQuotes: showQuotes ?? this.showQuotes,
     showHabitsInHoy: showHabitsInHoy ?? this.showHabitsInHoy,
+    userName: userName ?? this.userName,
+    remindBeforeMinutes: remindBeforeMinutes ?? this.remindBeforeMinutes,
   );
 }
 
@@ -66,7 +82,29 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
       defaultTimerMode: _modeFromDb(p.getString(UserPrefs._kDefaultTimerMode)),
       showQuotes: p.getBool(UserPrefs._kShowQuotes) ?? true,
       showHabitsInHoy: p.getBool(UserPrefs._kShowHabitsInHoy) ?? true,
+      userName: p.getString(UserPrefs._kUserName) ?? '',
+      remindBeforeMinutes: p.getInt(UserPrefs._kRemindBeforeMin) ?? 0,
     );
+  }
+
+  Future<void> setUserName(String value) async {
+    final p = await SharedPreferences.getInstance();
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      await p.remove(UserPrefs._kUserName);
+    } else {
+      await p.setString(UserPrefs._kUserName, trimmed);
+    }
+    state = state.copyWith(userName: trimmed);
+  }
+
+  Future<void> setRemindBeforeMinutes(int minutes) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(UserPrefs._kRemindBeforeMin, minutes);
+    // El TaskService lee la pref desde SharedPreferences en cada
+    // schedule, así que no hace falta reagendar nada manualmente —
+    // las próximas notifs ya van a usar el nuevo valor.
+    state = state.copyWith(remindBeforeMinutes: minutes);
   }
 
   Future<void> setDefaultPriority(TaskPriority value) async {

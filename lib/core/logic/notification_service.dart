@@ -114,6 +114,97 @@ class NotificationService {
     } catch (_) {}
   }
 
+  // ───────────────────── Recordatorios de tareas ─────────────────────
+  // Cada tarea programada genera una notificación one-shot al horario
+  // exacto (o N minutos antes). Notif id derivada del id de la tarea
+  // por hashCode + offset, estable y reproducible.
+  static const String _taskChannelId = 'anotalo_task_reminder';
+  static const int _taskNotifOffset = 100000;
+  static const String prefRemindBeforeMin = 'pref_remind_before_min';
+
+  int _taskNotifId(String taskId) =>
+      _taskNotifOffset + (taskId.hashCode & 0x7FFFFFFF) % 900000;
+
+  /// Programa un recordatorio one-shot para `dayId` (yyyy-mm-dd) +
+  /// `time` ("HH:mm"). Si el horario ya pasó, no programa nada (la notif
+  /// se generaría en el pasado y dispararía inmediatamente). Cancela
+  /// cualquier notif previa de esta tarea antes de reagendar.
+  Future<void> scheduleTaskReminder({
+    required String taskId,
+    required String taskTitle,
+    required String dayId,
+    required String time,
+    int advanceMinutes = 0,
+  }) async {
+    if (!_initialized) return;
+    final notifId = _taskNotifId(taskId);
+    try {
+      await _plugin.cancel(notifId);
+
+      final dParts = dayId.split('-');
+      final tParts = time.split(':');
+      if (dParts.length != 3 || tParts.length != 2) return;
+      final y = int.tryParse(dParts[0]);
+      final mo = int.tryParse(dParts[1]);
+      final d = int.tryParse(dParts[2]);
+      final h = int.tryParse(tParts[0]);
+      final mi = int.tryParse(tParts[1]);
+      if (y == null || mo == null || d == null || h == null || mi == null) {
+        return;
+      }
+
+      var scheduled = tz.TZDateTime(tz.local, y, mo, d, h, mi)
+          .subtract(Duration(minutes: advanceMinutes));
+      final now = tz.TZDateTime.now(tz.local);
+      if (scheduled.isBefore(now)) return; // horario ya pasó
+
+      const details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          _taskChannelId,
+          'Recordatorios de tareas',
+          channelDescription: 'Aviso al horario de cada tarea programada',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      );
+
+      final body = advanceMinutes == 0
+          ? 'Es ahora — $time'
+          : 'En $advanceMinutes min — $time';
+
+      await _plugin.zonedSchedule(
+        notifId,
+        taskTitle,
+        body,
+        scheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('scheduleTaskReminder failed: $e');
+    }
+  }
+
+  /// Cancela el recordatorio de una tarea (al completar / borrar / quitar
+  /// el reminder). Idempotente.
+  Future<void> cancelTaskReminder(String taskId) async {
+    try {
+      await _plugin.cancel(_taskNotifId(taskId));
+    } catch (_) {}
+  }
+
+  /// Lee la preferencia "avisar N minutos antes" (0 = al horario exacto).
+  static Future<int> getRemindBeforeMinutes() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      return p.getInt(prefRemindBeforeMin) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   /// Recordatorio diario por hábito. `notificationId` debe ser estable por
   /// hábito (por ejemplo `habitId.hashCode`). Llamalo nuevamente con la
   /// misma id para reprogramar/reagendar.

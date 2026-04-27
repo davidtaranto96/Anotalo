@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arquitectura_enfoque/core/theme/app_theme.dart';
@@ -54,6 +55,13 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [
+          // ── Perfil ──
+          const _SectionLabel('PERFIL'),
+          const SizedBox(height: 12),
+          _Card(child: const _NameTile()),
+
+          const SizedBox(height: 32),
+
           // ── Apariencia ──
           const _SectionLabel('APARIENCIA'),
           const SizedBox(height: 12),
@@ -349,9 +357,19 @@ class SettingsPage extends ConsumerWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.info_outline_rounded, color: theme.textTheme.bodyMedium?.color),
                   title: const _Title('Versión'),
-                  trailing: Text(
-                    '1.9.0',
-                    style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
+                  // Versión dinámica desde pubspec.yaml — nunca más
+                  // queda desincronizada al subir un release.
+                  trailing: FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (_, snap) {
+                      final v = snap.data?.version ?? '...';
+                      return Text(
+                        v,
+                        style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: theme.textTheme.bodyMedium?.color),
+                      );
+                    },
                   ),
                 ),
                 Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
@@ -863,8 +881,161 @@ class _ReminderTileState extends State<_ReminderTile> {
               onTap: _pickTime,
             ),
           ],
+          // Avisar N minutos antes (aplica a TODAS las tareas con
+          // horario). Convive en la misma card que el recordatorio
+          // nocturno porque ambas son configs de notificaciones.
+          Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+          const _RemindBeforeTile(),
         ],
       ),
+    );
+  }
+}
+
+// ─── Name Tile ────────────────────────────────────────────────────────────────
+
+class _NameTile extends ConsumerWidget {
+  const _NameTile();
+
+  Future<void> _editName(BuildContext context, WidgetRef ref, String current) async {
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Tu nombre',
+            style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Tu nombre (opcional)'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (result != null) {
+      await ref.read(userPrefsProvider.notifier).setUserName(result);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final name = ref.watch(userPrefsProvider.select((p) => p.userName));
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+      leading: const _IconBadge(
+        icon: Icons.person_rounded,
+        color: AppTheme.colorPrimary,
+      ),
+      title: const _Title('Tu nombre'),
+      subtitle: _Subtitle(
+          name.isEmpty ? 'Sin definir — toca para editar' : name),
+      trailing: Icon(Icons.edit_rounded,
+          size: 18, color: theme.textTheme.bodyMedium?.color),
+      onTap: () => _editName(context, ref, name),
+    );
+  }
+}
+
+// ─── Remind Before Tile ───────────────────────────────────────────────────────
+
+class _RemindBeforeTile extends ConsumerWidget {
+  const _RemindBeforeTile();
+
+  static const _options = [0, 5, 15, 30];
+
+  String _label(int m) => m == 0 ? 'Al horario exacto' : '$m min antes';
+
+  Future<void> _pick(BuildContext context, WidgetRef ref, int current) async {
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: BoxDecoration(
+          color: ctx.surfaceSheet,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: ctx.dividerColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Text('Avisar antes',
+                style: GoogleFonts.fraunces(
+                    fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            for (final m in _options)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  m == current
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_off_rounded,
+                  color: m == current
+                      ? AppTheme.colorPrimary
+                      : ctx.textTertiary,
+                ),
+                title: Text(_label(m),
+                    style: GoogleFonts.inter(
+                        fontSize: 14, fontWeight: FontWeight.w500)),
+                onTap: () => Navigator.pop(ctx, m),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) {
+      await ref.read(userPrefsProvider.notifier).setRemindBeforeMinutes(picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final mins =
+        ref.watch(userPrefsProvider.select((p) => p.remindBeforeMinutes));
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: const Icon(Icons.alarm_rounded, size: 20),
+      title: Text(
+        'Avisar antes',
+        style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface),
+      ),
+      subtitle: const _Subtitle('Aplica a tareas con horario asignado'),
+      trailing: Text(
+        _label(mins),
+        style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.colorPrimary),
+      ),
+      onTap: () => _pick(context, ref, mins),
     );
   }
 }

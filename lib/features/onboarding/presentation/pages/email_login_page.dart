@@ -141,7 +141,7 @@ class _EmailLoginPageState extends State<EmailLoginPage> {
                 Text(
                   _step == 0
                       ? 'Te sirve para identificar tu cuenta localmente. Nada viaja al servidor.'
-                      : 'Se guarda encriptada en el dispositivo. Podés cambiarla después.',
+                      : 'Esta clave es solo simbólica por ahora — todavía no estamos guardándola. La pedimos para reservar el flujo cuando activemos cuentas reales.',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: context.textSecondary,

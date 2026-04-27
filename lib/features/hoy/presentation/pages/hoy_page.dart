@@ -64,6 +64,16 @@ class _HoyPageState extends ConsumerState<HoyPage> {
     _rotateQuote();
   }
 
+  /// Saludo personalizado en el header de Hoy — usa la hora del día
+  /// para variar entre "Buen día / Buenas tardes / Buenas noches".
+  String _greeting(String name) {
+    final h = DateTime.now().hour;
+    final period = h < 12
+        ? 'Buen día'
+        : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
+    return '$period, $name';
+  }
+
   @override
   Widget build(BuildContext context) {
     // Rotate the motivational quote every time the user navigates back to
@@ -142,6 +152,20 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Saludo personalizado — sólo si el user puso nombre en
+                    // el onboarding o en Settings. Cambia con la hora del día.
+                    if (userPrefs.userName.isNotEmpty) ...[
+                      Text(
+                        _greeting(userPrefs.userName),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.textTertiary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
                     // Título + iconos centrados en la misma fila para
                     // que queden alineados ópticamente.
                     Row(

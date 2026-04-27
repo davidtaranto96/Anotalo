@@ -3,12 +3,35 @@ import 'package:uuid/uuid.dart';
 import '../database/app_database.dart';
 import '../utils/json_utils.dart';
 import '../../features/hoy/domain/models/task.dart';
+import 'notification_service.dart';
 
 class TaskService {
   final AppDatabase _db;
   TaskService(this._db);
 
   static const _uuid = Uuid();
+  // Singleton — el plugin se inicializa una sola vez en main.
+  final NotificationService _notif = NotificationService();
+
+  /// Programa la notif de una tarea si tiene `reminder` y `dayId`.
+  /// Lee el "avisar N min antes" de prefs en cada llamado para que el
+  /// toggle de Settings tome efecto inmediato.
+  Future<void> _syncTaskReminder(Task task) async {
+    final reminder = task.reminder;
+    final dayId = task.dayId;
+    if (reminder == null || reminder.isEmpty || dayId == null) {
+      await _notif.cancelTaskReminder(task.id);
+      return;
+    }
+    final advance = await NotificationService.getRemindBeforeMinutes();
+    await _notif.scheduleTaskReminder(
+      taskId: task.id,
+      taskTitle: task.title,
+      dayId: dayId,
+      time: reminder,
+      advanceMinutes: advance,
+    );
+  }
 
   Task _fromRow(TasksTableData row) => Task(
     id: row.id,
@@ -122,8 +145,9 @@ class TaskService {
   }
 
   Future<void> addTask(Task task) async {
+    final id = task.id.isEmpty ? _uuid.v4() : task.id;
     await _db.into(_db.tasksTable).insert(TasksTableCompanion.insert(
-      id: task.id.isEmpty ? _uuid.v4() : task.id,
+      id: id,
       title: task.title,
       description: Value(task.description),
       priority: Value(task.priority.value),
@@ -140,6 +164,18 @@ class TaskService {
       createdAt: task.createdAt,
       completedAt: Value(task.completedAt),
     ));
+    // Notif al agregar (si tiene reminder + dayId).
+    await _syncTaskReminder(task.id == id
+        ? task
+        : Task(
+            id: id,
+            title: task.title,
+            priority: task.priority,
+            status: task.status,
+            reminder: task.reminder,
+            dayId: task.dayId,
+            createdAt: task.createdAt,
+          ));
   }
 
   Future<void> completeTask(String id) async {
@@ -148,6 +184,7 @@ class TaskService {
       status: const Value('done'),
       completedAt: Value(DateTime.now()),
     ));
+    await _notif.cancelTaskReminder(id);
   }
 
   Future<void> uncompleteTask(String id) async {
@@ -156,6 +193,9 @@ class TaskService {
       status: Value('pending'),
       completedAt: Value(null),
     ));
+    // Reagenda si la tarea tenía reminder y todavía está en el futuro.
+    final task = await _findById(id);
+    if (task != null) await _syncTaskReminder(task);
   }
 
   Future<void> deferTask(String id, String newDayId) async {
@@ -165,6 +205,9 @@ class TaskService {
       deferredTo: Value(newDayId),
       dayId: Value(newDayId),
     ));
+    // El día cambió: la notif vieja no es válida — reagendamos con el nuevo dayId.
+    final task = await _findById(id);
+    if (task != null) await _syncTaskReminder(task);
   }
 
   Future<void> delegateTask(String id, String delegateTo) async {
@@ -173,11 +216,19 @@ class TaskService {
       status: const Value('delegated'),
       delegatedTo: Value(delegateTo),
     ));
+    await _notif.cancelTaskReminder(id);
   }
 
   Future<void> deleteTask(String id) async {
     await (_db.update(_db.tasksTable)..where((t) => t.id.equals(id)))
         .write(const TasksTableCompanion(status: Value('deleted')));
+    await _notif.cancelTaskReminder(id);
+  }
+
+  Future<Task?> _findById(String id) async {
+    final row = await (_db.select(_db.tasksTable)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    return row == null ? null : _fromRow(row);
   }
 
   Future<void> updatePriority(String id, TaskPriority priority) async {
@@ -213,6 +264,10 @@ class TaskService {
           estimatedMinutes == null ? const Value.absent() : Value(estimatedMinutes),
       dayId: dayId == null ? const Value.absent() : Value(dayId),
     ));
+    // Re-sync notif: si limpiaron el reminder, cancela; si lo cambiaron,
+    // reagenda al nuevo horario.
+    final updated = await _findById(id);
+    if (updated != null) await _syncTaskReminder(updated);
   }
 
   Future<int> countCompletedToday(String dayId) async {

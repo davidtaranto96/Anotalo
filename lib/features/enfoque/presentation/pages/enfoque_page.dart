@@ -76,7 +76,7 @@ class EnfoquePage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '🎯 Enfoque',
+                        'Enfoque',
                         style: GoogleFonts.fraunces(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,

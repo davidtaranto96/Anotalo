@@ -7,7 +7,6 @@ import 'package:arquitectura_enfoque/features/onboarding/domain/onboarding_prefs
 import 'package:arquitectura_enfoque/features/onboarding/presentation/pages/email_login_page.dart';
 import 'package:arquitectura_enfoque/features/onboarding/presentation/pages/login_page.dart';
 import 'package:arquitectura_enfoque/features/onboarding/presentation/pages/onboarding_page.dart';
-import 'package:arquitectura_enfoque/features/revision/presentation/pages/revision_page.dart';
 import 'package:arquitectura_enfoque/features/revision/presentation/pages/daily_review_page.dart';
 import 'package:arquitectura_enfoque/features/revision/presentation/pages/review_history_page.dart';
 import 'package:arquitectura_enfoque/features/settings/presentation/pages/settings_page.dart';
@@ -52,7 +51,6 @@ final appRouter = GoRouter(
 
     // El resto usa shared-axis X 300ms — match del spec (animations.md §4).
     _axisRoute(path: '/inbox', builder: (_, __) => const InboxPage()),
-    _axisRoute(path: '/revision', builder: (_, __) => const RevisionPage()),
     _axisRoute(
         path: '/review',
         builder: (_, state) =>

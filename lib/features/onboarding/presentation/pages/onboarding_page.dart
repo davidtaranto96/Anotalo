@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/logic/notification_service.dart';
+import '../../../../core/logic/user_prefs.dart';
 import '../../../../core/models/task_area.dart';
 import '../../../../core/providers/accent_provider.dart';
 import '../../../../core/theme/accent.dart';
@@ -13,6 +14,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/anotalo_toast.dart';
 import '../../../habitos/domain/models/habit.dart';
 import '../../../habitos/presentation/providers/habit_provider.dart';
+import '../../../proyectos/domain/models/project.dart';
+import '../../../proyectos/presentation/providers/project_provider.dart';
 import '../../domain/onboarding_prefs.dart';
 
 /// Tour de 4 pasos que corre tras el login local.
@@ -33,12 +36,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _page = PageController();
   int _step = 0;
 
+  // Nombre del usuario — input en el step 1 ("Bienvenida"). Vacío =
+  // sin saludo personalizado. Se persiste a UserPrefs en `_finish`.
+  final _nameController = TextEditingController();
+
   final Set<String> _selectedAreas = {'trabajo', 'personal'};
   final Set<String> _selectedHabits = {'agua', 'leer'};
   // Hora elegida por hábito; null si el usuario no quiso recordatorio.
   final Map<String, int> _reminderHour = {};
 
-  static const int _total = 4;
+  // Proyectos opcionales — el user puede tipear hasta 3 nombres en el
+  // step nuevo. Vacíos se ignoran. Cada uno se crea con status active +
+  // categoría personal + color aleatorio del set definido.
+  final List<TextEditingController> _projectControllers =
+      List.generate(3, (_) => TextEditingController());
+  static const List<String> _projectColors = [
+    '#5B8A5E', '#C4963A', '#5B7E9E', '#7B5EA7'
+  ];
+
+  static const int _total = 5;
 
   /// Horas preset del recordatorio (spec del handoff).
   static const List<int> _reminderOptions = [7, 8, 12, 18, 20, 21, 22, 23];
@@ -65,7 +81,40 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _finish() async {
-    // 1. Crear hábitos seleccionados + programar recordatorios.
+    // 1. Persistir nombre + área default (la primera seleccionada).
+    final prefsNotifier = ref.read(userPrefsProvider.notifier);
+    final name = _nameController.text.trim();
+    if (name.isNotEmpty) {
+      await prefsNotifier.setUserName(name);
+    }
+    if (_selectedAreas.isNotEmpty) {
+      // La primera área marcada queda como default — al crear una
+      // tarea nueva, esa área aparece preseleccionada.
+      await prefsNotifier.setDefaultArea(_selectedAreas.first);
+    }
+
+    // 2. Crear proyectos opcionales tipeados en el step de proyectos.
+    try {
+      final projectService = ref.read(projectServiceProvider);
+      var colorIndex = 0;
+      for (final ctrl in _projectControllers) {
+        final title = ctrl.text.trim();
+        if (title.isEmpty) continue;
+        await projectService.addProject(Project(
+          id: const Uuid().v4(),
+          title: title,
+          category: ProjectCategory.personal,
+          status: ProjectStatus.active,
+          color: _projectColors[colorIndex % _projectColors.length],
+          createdAt: DateTime.now(),
+        ));
+        colorIndex++;
+      }
+    } catch (e) {
+      debugPrint('Onboarding: no se pudieron crear proyectos: $e');
+    }
+
+    // 3. Crear hábitos seleccionados + programar recordatorios.
     try {
       final service = ref.read(habitServiceProvider);
       for (final id in _selectedHabits) {
@@ -97,10 +146,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       debugPrint('Onboarding: no se pudieron crear hábitos: $e');
     }
 
-    // 2. Marcar done y redirigir.
+    // 4. Marcar done y redirigir.
     await OnboardingPrefs.markCompleted();
     if (!mounted) return;
-    showAnotaloToast(context, '¡Listo! Arrancá a anotar', tone: ToastTone.success);
+    final greetSuffix = name.isNotEmpty ? ', $name' : '';
+    showAnotaloToast(context, '¡Listo$greetSuffix! Arrancá a anotar',
+        tone: ToastTone.success);
     context.go('/');
   }
 
@@ -114,6 +165,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   void dispose() {
     _page.dispose();
+    _nameController.dispose();
+    for (final c in _projectControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -154,7 +209,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 physics: const BouncingScrollPhysics(),
                 onPageChanged: (i) => setState(() => _step = i),
                 children: [
-                  _StepWelcome(),
+                  _StepWelcome(nameController: _nameController),
                   _StepAreas(
                     selected: _selectedAreas,
                     onToggle: (id) => setState(() {
@@ -166,6 +221,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       FeedbackService.instance.toggle();
                     }),
                   ),
+                  _StepProjects(controllers: _projectControllers),
                   const _StepAccent(),
                   _StepHabits(
                     seeds: _habitSeeds,
@@ -249,15 +305,18 @@ class _ProgressDot extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════
 
 class _StepWelcome extends StatelessWidget {
+  const _StepWelcome({required this.nameController});
+  final TextEditingController nameController;
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Spacer(flex: 2),
+          const SizedBox(height: 32),
           Text(
             'Bienvenido a\nApunto',
             style: GoogleFonts.fraunces(
@@ -277,10 +336,56 @@ class _StepWelcome extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          // Campo de nombre — opcional. Si lo completan, Hoy te saluda
+          // por nombre; si lo dejan vacío, fallback al copy genérico.
+          Text(
+            '¿Cómo te llamás?',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: context.textSecondary,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: nameController,
+            textCapitalization: TextCapitalization.words,
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              color: context.textPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Tu nombre (opcional)',
+              hintStyle: GoogleFonts.inter(
+                fontSize: 15,
+                color: context.textTertiary,
+              ),
+              filled: true,
+              fillColor: context.surfaceCard,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.dividerColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: context.dividerColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: primary, width: 1.5),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           _FeatureChip(
             icon: Icons.today_rounded,
-            title: 'Hoy · Semana',
+            title: 'Hoy · Calendario',
             body: 'Priorizá el día y planificá la semana.',
             color: primary,
           ),
@@ -298,7 +403,7 @@ class _StepWelcome extends StatelessWidget {
             body: 'Timer Pomodoro y sesiones profundas.',
             color: Color(0xFFC44B4B),
           ),
-          const Spacer(flex: 3),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -844,6 +949,103 @@ class _HourChip extends StatelessWidget {
             color: active ? Colors.white : context.textSecondary,
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP — Proyectos opcionales
+// ═══════════════════════════════════════════════════════════════
+
+class _StepProjects extends StatelessWidget {
+  const _StepProjects({required this.controllers});
+  final List<TextEditingController> controllers;
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Text(
+            '¿Qué proyectos\ntenés en marcha?',
+            style: GoogleFonts.fraunces(
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
+              color: context.textPrimary,
+              letterSpacing: -0.4,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Anotá hasta 3 — opcional. Después podés sumar más, asignarles tareas y trackear progreso.',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: context.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          for (var i = 0; i < controllers.length; i++) ...[
+            TextField(
+              controller: controllers[i],
+              textCapitalization: TextCapitalization.sentences,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: context.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                hintText: i == 0
+                    ? 'Ej: Tesis, mudanza, aprender alemán...'
+                    : 'Otro proyecto (opcional)',
+                hintStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: context.textTertiary,
+                ),
+                prefixIcon: Icon(
+                  Icons.folder_outlined,
+                  size: 18,
+                  color: context.textTertiary,
+                ),
+                filled: true,
+                fillColor: context.surfaceCard,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: context.dividerColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: context.dividerColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: primary, width: 1.5),
+                ),
+              ),
+            ),
+            if (i != controllers.length - 1) const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            'No te preocupes por categorías o colores ahora — los podés ajustar después en Proyectos.',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontStyle: FontStyle.italic,
+              color: context.textTertiary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }

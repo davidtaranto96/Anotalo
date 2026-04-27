@@ -107,9 +107,34 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.10.0',
+    version: '1.11.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Recordatorios reales, saludo personal y onboarding ampliado',
+    items: [
+      _ChangelogItem(_nf, Icons.notifications_active_rounded,
+          'Recordatorios de tareas funcionando: si le ponés horario a una tarea, ahora SÍ te avisa con notificación al horario exacto. Antes el chip era decorativo.'),
+      _ChangelogItem(_nf, Icons.alarm_rounded,
+          'Toggle "Avisar antes" en Configuración → Notificaciones. Elegí entre "Al horario exacto", "5 / 15 / 30 min antes" para todas las tareas.'),
+      _ChangelogItem(_nf, Icons.person_rounded,
+          'Onboarding pide tu nombre — el header de Hoy ahora te saluda con "Buen día / tardes / noches, [nombre]" según la hora.'),
+      _ChangelogItem(_nf, Icons.folder_special_rounded,
+          'Nuevo paso en el onboarding: anotá hasta 3 proyectos en marcha al arrancar. Quedan listos para sumarles tareas.'),
+      _ChangelogItem(_mj, Icons.tune_rounded,
+          'Sección "Perfil" nueva en Configuración para editar tu nombre cuando quieras.'),
+      _ChangelogItem(_mj, Icons.update_rounded,
+          'La versión en Configuración se lee dinámicamente — nunca más queda desactualizada.'),
+      _ChangelogItem(_mj, Icons.label_outline_rounded,
+          'Sin emojis decorativos en los títulos de Proyectos y Enfoque para que combinen con el resto.'),
+      _ChangelogItem(_mj, Icons.cleaning_services_rounded,
+          'Áreas elegidas en el onboarding ahora se persisten — la primera queda como categoría default.'),
+      _ChangelogItem(_fx, Icons.bug_report_rounded,
+          'Limpieza interna: pantalla de revisión vieja borrada (era código muerto que rompía dark mode).'),
+    ],
+  ),
+  _Release(
+    version: '1.10.0',
+    date: 'Abril 2026',
     title: 'Coherencia visual: Proyectos y Enfoque al estilo Apunto',
     items: [
       _ChangelogItem(_mj, Icons.folder_rounded,
