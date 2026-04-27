@@ -12,7 +12,6 @@ import '../../../hoy/presentation/providers/task_provider.dart';
 import '../../domain/models/project.dart';
 import '../../domain/models/project_note.dart';
 import '../providers/project_provider.dart';
-import '../../../../../core/utils/format_utils.dart';
 
 class ProjectDetailSheet extends ConsumerStatefulWidget {
   final Project project;
@@ -375,7 +374,13 @@ class _ProjectDetailSheetState extends ConsumerState<ProjectDetailSheet> {
                             priority: _addTaskPriority,
                             status: TaskStatus.pending,
                             parentProjectId: widget.project.id,
-                            dayId: todayId(),
+                            // Sin dayId: tareas creadas dentro de un
+                            // proyecto quedan "sin programar" hasta que
+                            // el usuario les ponga fecha de vencimiento.
+                            // No aparecen en Hoy/Semana/Mes — solo en
+                            // este proyecto y en la sección "Proyectos
+                            // activos" de Hoy.
+                            dayId: null,
                             createdAt: DateTime.now(),
                           );
                           await taskService.addTask(task);

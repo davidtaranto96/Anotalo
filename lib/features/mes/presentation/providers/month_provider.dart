@@ -25,7 +25,12 @@ final tasksByDayProvider = StreamProvider<Map<String, List<Task>>>((ref) {
   return service.watchTasksInRange(fromId, toId).map((tasks) {
     final map = <String, List<Task>>{};
     for (final t in tasks) {
-      map.putIfAbsent(t.dayId, () => []).add(t);
+      // Tareas sin dayId (proyectos sin programar) no aparecen en el
+      // mes — viven sólo dentro del proyecto hasta que se les asigne
+      // fecha.
+      final d = t.dayId;
+      if (d == null) continue;
+      map.putIfAbsent(d, () => []).add(t);
     }
     return map;
   });

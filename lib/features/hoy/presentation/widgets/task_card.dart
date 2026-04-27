@@ -40,12 +40,15 @@ class TaskCard extends StatelessWidget {
     final accentBarColor = (area?.color ?? priorityColor)
         .withValues(alpha: isDone ? 0.30 : 0.85);
     // Rollover: task whose dayId is older than today and still pending.
+    // Las tareas con dayId == null (de proyectos sin programar) no
+    // hacen rollover porque nunca tuvieron un día.
     final today = todayId();
-    final isRolledOver = !isDone && task.dayId.compareTo(today) < 0;
+    final taskDayId = task.dayId;
+    final isRolledOver = !isDone &&
+        taskDayId != null &&
+        taskDayId.compareTo(today) < 0;
     final rolloverDays = isRolledOver
-        ? DateTime.now()
-            .difference(idToDate(task.dayId))
-            .inDays
+        ? DateTime.now().difference(idToDate(taskDayId)).inDays
         : 0;
 
     return Padding(

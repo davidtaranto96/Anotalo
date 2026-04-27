@@ -14,7 +14,10 @@ class TasksTable extends Table {
   TextColumn get reminder        => text().nullable()();
   TextColumn get parentProjectId => text().nullable()();
   TextColumn get subtaskIds      => text().nullable()();
-  TextColumn get dayId           => text()();
+  // Nullable: las tareas que pertenecen a un proyecto pueden estar
+  // "sin programar" hasta que el usuario les ponga fecha. Las tareas
+  // sueltas siempre tienen dayId (se asigna a today por default).
+  TextColumn get dayId           => text().nullable()();
   IntColumn  get estimatedMinutes => integer().nullable()();
   // Orden manual del usuario dentro de la lista de Hoy/área (drag).
   IntColumn  get sortOrder       => integer().withDefault(const Constant(0))();

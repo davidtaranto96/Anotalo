@@ -352,13 +352,48 @@ class _SemanaPageState extends ConsumerState<SemanaPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (pending.isNotEmpty) ...[
-                  _sectionHeader('PENDIENTES', pending.length, AppTheme.colorPrimary, context),
-                  for (final task in pending) _TaskCard(
-                    task: task,
-                    priorityColor: _priorityColor(task.priority),
-                    onComplete: () => taskService.completeTask(task.id),
-                    onDelete: () => taskService.deleteTask(task.id),
-                    onDefer: () => _deferTask(task.id),
+                  _sectionHeader(
+                      'PENDIENTES',
+                      pending.length,
+                      AppTheme.colorPrimary,
+                      context,
+                      hint: pending.length > 1
+                          ? 'Mantené ↕ para reordenar'
+                          : null),
+                  // Long-press en una tarea pendiente = drag para
+                  // reordenar verticalmente. Persiste sort_order.
+                  ReorderableListView(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    buildDefaultDragHandles: false,
+                    proxyDecorator: (child, _, __) => Material(
+                      color: Colors.transparent,
+                      child: child,
+                    ),
+                    onReorder: (oldIndex, newIndex) async {
+                      HapticFeedback.selectionClick();
+                      final adjustedNew =
+                          newIndex > oldIndex ? newIndex - 1 : newIndex;
+                      final updated = List<Task>.from(pending);
+                      final moved = updated.removeAt(oldIndex);
+                      updated.insert(adjustedNew, moved);
+                      await taskService.reorderTasks(
+                          updated.map((t) => t.id).toList());
+                    },
+                    children: [
+                      for (final task in pending)
+                        ReorderableDelayedDragStartListener(
+                          key: ValueKey('semana-task-${task.id}'),
+                          index: pending.indexOf(task),
+                          child: _TaskCard(
+                            task: task,
+                            priorityColor: _priorityColor(task.priority),
+                            onComplete: () => taskService.completeTask(task.id),
+                            onDelete: () => taskService.deleteTask(task.id),
+                            onDefer: () => _deferTask(task.id),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
                 if (completed.isNotEmpty) ...[
@@ -564,7 +599,8 @@ class _SemanaPageState extends ConsumerState<SemanaPage> {
     );
   }
 
-  Widget _sectionHeader(String label, int count, Color color, BuildContext context) {
+  Widget _sectionHeader(String label, int count, Color color,
+      BuildContext context, {String? hint}) {
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 8),
       child: Row(
@@ -590,6 +626,17 @@ class _SemanaPageState extends ConsumerState<SemanaPage> {
               style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: color),
             ),
           ),
+          if (hint != null) ...[
+            const Spacer(),
+            Text(
+              hint,
+              style: GoogleFonts.inter(
+                fontSize: 9.5,
+                color: context.textTertiary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );

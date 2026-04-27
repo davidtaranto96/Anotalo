@@ -149,9 +149,9 @@ class $TasksTableTable extends TasksTable
   late final GeneratedColumn<String> dayId = GeneratedColumn<String>(
     'day_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _estimatedMinutesMeta = const VerificationMeta(
     'estimatedMinutes',
@@ -327,8 +327,6 @@ class $TasksTableTable extends TasksTable
         _dayIdMeta,
         dayId.isAcceptableOrUnknown(data['day_id']!, _dayIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_dayIdMeta);
     }
     if (data.containsKey('estimated_minutes')) {
       context.handle(
@@ -426,7 +424,7 @@ class $TasksTableTable extends TasksTable
       dayId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}day_id'],
-      )!,
+      ),
       estimatedMinutes: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}estimated_minutes'],
@@ -466,7 +464,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
   final String? reminder;
   final String? parentProjectId;
   final String? subtaskIds;
-  final String dayId;
+  final String? dayId;
   final int? estimatedMinutes;
   final int sortOrder;
   final DateTime createdAt;
@@ -485,7 +483,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     this.reminder,
     this.parentProjectId,
     this.subtaskIds,
-    required this.dayId,
+    this.dayId,
     this.estimatedMinutes,
     required this.sortOrder,
     required this.createdAt,
@@ -525,7 +523,9 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     if (!nullToAbsent || subtaskIds != null) {
       map['subtask_ids'] = Variable<String>(subtaskIds);
     }
-    map['day_id'] = Variable<String>(dayId);
+    if (!nullToAbsent || dayId != null) {
+      map['day_id'] = Variable<String>(dayId);
+    }
     if (!nullToAbsent || estimatedMinutes != null) {
       map['estimated_minutes'] = Variable<int>(estimatedMinutes);
     }
@@ -568,7 +568,9 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       subtaskIds: subtaskIds == null && nullToAbsent
           ? const Value.absent()
           : Value(subtaskIds),
-      dayId: Value(dayId),
+      dayId: dayId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dayId),
       estimatedMinutes: estimatedMinutes == null && nullToAbsent
           ? const Value.absent()
           : Value(estimatedMinutes),
@@ -599,7 +601,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       reminder: serializer.fromJson<String?>(json['reminder']),
       parentProjectId: serializer.fromJson<String?>(json['parentProjectId']),
       subtaskIds: serializer.fromJson<String?>(json['subtaskIds']),
-      dayId: serializer.fromJson<String>(json['dayId']),
+      dayId: serializer.fromJson<String?>(json['dayId']),
       estimatedMinutes: serializer.fromJson<int?>(json['estimatedMinutes']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -623,7 +625,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
       'reminder': serializer.toJson<String?>(reminder),
       'parentProjectId': serializer.toJson<String?>(parentProjectId),
       'subtaskIds': serializer.toJson<String?>(subtaskIds),
-      'dayId': serializer.toJson<String>(dayId),
+      'dayId': serializer.toJson<String?>(dayId),
       'estimatedMinutes': serializer.toJson<int?>(estimatedMinutes),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -645,7 +647,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
     Value<String?> reminder = const Value.absent(),
     Value<String?> parentProjectId = const Value.absent(),
     Value<String?> subtaskIds = const Value.absent(),
-    String? dayId,
+    Value<String?> dayId = const Value.absent(),
     Value<int?> estimatedMinutes = const Value.absent(),
     int? sortOrder,
     DateTime? createdAt,
@@ -668,7 +670,7 @@ class TasksTableData extends DataClass implements Insertable<TasksTableData> {
         ? parentProjectId.value
         : this.parentProjectId,
     subtaskIds: subtaskIds.present ? subtaskIds.value : this.subtaskIds,
-    dayId: dayId ?? this.dayId,
+    dayId: dayId.present ? dayId.value : this.dayId,
     estimatedMinutes: estimatedMinutes.present
         ? estimatedMinutes.value
         : this.estimatedMinutes,
@@ -799,7 +801,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
   final Value<String?> reminder;
   final Value<String?> parentProjectId;
   final Value<String?> subtaskIds;
-  final Value<String> dayId;
+  final Value<String?> dayId;
   final Value<int?> estimatedMinutes;
   final Value<int> sortOrder;
   final Value<DateTime> createdAt;
@@ -840,7 +842,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     this.reminder = const Value.absent(),
     this.parentProjectId = const Value.absent(),
     this.subtaskIds = const Value.absent(),
-    required String dayId,
+    this.dayId = const Value.absent(),
     this.estimatedMinutes = const Value.absent(),
     this.sortOrder = const Value.absent(),
     required DateTime createdAt,
@@ -848,7 +850,6 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title),
-       dayId = Value(dayId),
        createdAt = Value(createdAt);
   static Insertable<TasksTableData> custom({
     Expression<String>? id,
@@ -908,7 +909,7 @@ class TasksTableCompanion extends UpdateCompanion<TasksTableData> {
     Value<String?>? reminder,
     Value<String?>? parentProjectId,
     Value<String?>? subtaskIds,
-    Value<String>? dayId,
+    Value<String?>? dayId,
     Value<int?>? estimatedMinutes,
     Value<int>? sortOrder,
     Value<DateTime>? createdAt,
@@ -6559,7 +6560,7 @@ typedef $$TasksTableTableCreateCompanionBuilder =
       Value<String?> reminder,
       Value<String?> parentProjectId,
       Value<String?> subtaskIds,
-      required String dayId,
+      Value<String?> dayId,
       Value<int?> estimatedMinutes,
       Value<int> sortOrder,
       required DateTime createdAt,
@@ -6581,7 +6582,7 @@ typedef $$TasksTableTableUpdateCompanionBuilder =
       Value<String?> reminder,
       Value<String?> parentProjectId,
       Value<String?> subtaskIds,
-      Value<String> dayId,
+      Value<String?> dayId,
       Value<int?> estimatedMinutes,
       Value<int> sortOrder,
       Value<DateTime> createdAt,
@@ -6913,7 +6914,7 @@ class $$TasksTableTableTableManager
                 Value<String?> reminder = const Value.absent(),
                 Value<String?> parentProjectId = const Value.absent(),
                 Value<String?> subtaskIds = const Value.absent(),
-                Value<String> dayId = const Value.absent(),
+                Value<String?> dayId = const Value.absent(),
                 Value<int?> estimatedMinutes = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -6955,7 +6956,7 @@ class $$TasksTableTableTableManager
                 Value<String?> reminder = const Value.absent(),
                 Value<String?> parentProjectId = const Value.absent(),
                 Value<String?> subtaskIds = const Value.absent(),
-                required String dayId,
+                Value<String?> dayId = const Value.absent(),
                 Value<int?> estimatedMinutes = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 required DateTime createdAt,

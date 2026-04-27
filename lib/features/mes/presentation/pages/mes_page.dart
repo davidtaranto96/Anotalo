@@ -8,17 +8,20 @@ import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format_utils.dart';
-import '../../../../core/logic/task_service.dart';
 import '../../../hoy/domain/models/task.dart';
 import '../../../hoy/presentation/providers/task_provider.dart';
+import '../../../hoy/presentation/widgets/add_task_bottom_sheet.dart';
 import '../providers/month_provider.dart';
-import '../widgets/day_tasks_sheet.dart';
+import '../widgets/day_tasks_inline.dart';
 import 'monthly_review_page.dart';
 
-/// Vista mensual. Calendario completo donde cada día muestra dots por
-/// prioridad de las tareas asignadas. Tap en un día → bottom sheet con
-/// las tareas de ese día agrupadas por área. Drag-and-drop de una tarea
-/// (long-press en el sheet) sobre otra celda → reasigna `dayId`.
+/// Vista mensual estilo Samsung Calendar:
+/// - Calendario completo (mes) que **colapsa a 1 semana** con swipe-up
+/// - Cada día muestra **barras horizontales** por prioridad de tareas
+///   (rojo=primordial, ámbar=importante, naranja=puede esperar)
+/// - Tap en un día → tareas pendientes de ese día en una **sección inline**
+///   abajo del calendario (no bottom sheet flotante)
+/// - Long-press en una tarea → drag para mover a otro día
 class MesPage extends ConsumerStatefulWidget {
   const MesPage({super.key});
 
@@ -28,7 +31,8 @@ class MesPage extends ConsumerStatefulWidget {
 
 class _MesPageState extends ConsumerState<MesPage> {
   DateTime _focused = DateTime.now();
-  DateTime? _selected;
+  DateTime _selected = DateTime.now();
+  CalendarFormat _format = CalendarFormat.month;
 
   @override
   Widget build(BuildContext context) {
@@ -38,211 +42,241 @@ class _MesPageState extends ConsumerState<MesPage> {
     return Scaffold(
       backgroundColor: context.surfaceBase,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            DateFormat("MMMM 'de' yyyy", 'es')
-                                .format(_focused)
-                                .replaceFirstMapped(
-                                    RegExp(r'^[a-zñáéíóú]'),
-                                    (m) => m.group(0)!.toUpperCase()),
-                            style: GoogleFonts.fraunces(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w600,
-                              color: context.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
+        bottom: false,
+        child: Column(
+          children: [
+            // ── Header ────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 12, 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat("MMMM 'de' yyyy", 'es')
+                              .format(_focused)
+                              .replaceFirstMapped(
+                                  RegExp(r'^[a-zñáéíóú]'),
+                                  (m) => m.group(0)!.toUpperCase()),
+                          style: GoogleFonts.fraunces(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            color: context.textPrimary,
+                            letterSpacing: -0.3,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Vista mensual',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: context.textSecondary,
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Vista mensual',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: context.textSecondary,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    // Valoración del mes: pantalla de métricas.
-                    IconButton(
-                      tooltip: 'Valoración del mes',
-                      onPressed: () {
-                        FeedbackService.instance.tick();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                MonthlyReviewPage(month: _focused),
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.bar_chart_rounded,
-                          color: context.textSecondary),
-                    ),
-                    // Botón de "Hoy" — vuelve al día actual
-                    IconButton(
-                      tooltip: 'Hoy',
-                      onPressed: () {
-                        FeedbackService.instance.tick();
-                        setState(() {
-                          _focused = DateTime.now();
-                          _selected = null;
-                        });
-                        ref.read(visibleMonthProvider.notifier).state =
-                            DateTime(_focused.year, _focused.month, 1);
-                      },
-                      icon: Icon(Icons.today_rounded,
-                          color: context.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: TableCalendar<Task>(
-                  locale: 'es_ES',
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2035, 12, 31),
-                  focusedDay: _focused,
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  // Mostramos 6 filas siempre para que el grid no salte.
-                  rowHeight: 56,
-                  daysOfWeekHeight: 28,
-                  selectedDayPredicate: (d) =>
-                      _selected != null && isSameDay(_selected, d),
-                  onPageChanged: (focused) {
-                    setState(() => _focused = focused);
-                    ref.read(visibleMonthProvider.notifier).state =
-                        DateTime(focused.year, focused.month, 1);
-                  },
-                  eventLoader: (day) {
-                    return tasksByDay.valueOrNull?[dateToId(day)] ??
-                        const [];
-                  },
-                  onDaySelected: (selected, focused) {
-                    FeedbackService.instance.tick();
-                    setState(() {
-                      _selected = selected;
-                      _focused = focused;
-                    });
-                    final tasks =
-                        tasksByDay.valueOrNull?[dateToId(selected)] ??
-                            const <Task>[];
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => DayTasksSheet(
-                        day: selected,
-                        tasks: tasks,
-                        onComplete: taskService.completeTask,
-                        onUncomplete: taskService.uncompleteTask,
-                        onDelete: taskService.deleteTask,
-                      ),
-                    );
-                  },
-                  // Drop target para drag-and-drop entre celdas.
-                  calendarBuilders: CalendarBuilders<Task>(
-                    defaultBuilder: (ctx, day, focusedDay) =>
-                        _DayCell(day: day, isToday: false, taskService: taskService),
-                    todayBuilder: (ctx, day, focusedDay) =>
-                        _DayCell(day: day, isToday: true, taskService: taskService),
-                    selectedBuilder: (ctx, day, focusedDay) =>
-                        _DayCell(day: day, isToday: false, isSelected: true, taskService: taskService),
-                    outsideBuilder: (ctx, day, focusedDay) =>
-                        _DayCell(day: day, isToday: false, isOutside: true, taskService: taskService),
-                    markerBuilder: (ctx, day, events) {
-                      if (events.isEmpty) return const SizedBox.shrink();
-                      // Hasta 4 dots: rojo (primordial), amarillo
-                      // (importante), naranja (puede esperar), gris (sec).
-                      final hasP = events.any(
-                          (e) => e.priority == TaskPriority.primordial);
-                      final hasI = events.any(
-                          (e) => e.priority == TaskPriority.importante);
-                      final hasE = events.any((e) =>
-                          e.priority == TaskPriority.puedeEsperar ||
-                          e.priority == TaskPriority.secundaria);
-                      return Positioned(
-                        bottom: 4,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (hasP) _dot(AppTheme.colorDanger),
-                            if (hasI) _dot(AppTheme.colorWarning),
-                            if (hasE) _dot(AppTheme.colorPrimary),
-                          ],
+                  ),
+                  IconButton(
+                    tooltip: 'Valoración del mes',
+                    onPressed: () {
+                      FeedbackService.instance.tick();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              MonthlyReviewPage(month: _focused),
                         ),
                       );
                     },
+                    icon: Icon(Icons.bar_chart_rounded,
+                        color: context.textSecondary),
                   ),
-                  calendarStyle: CalendarStyle(
-                    outsideDaysVisible: true,
-                    cellPadding: EdgeInsets.zero,
-                    cellMargin: const EdgeInsets.all(2),
-                    weekendTextStyle:
-                        TextStyle(color: context.textPrimary),
-                    defaultTextStyle: TextStyle(color: context.textPrimary),
-                    outsideTextStyle:
-                        TextStyle(color: context.textTertiary),
+                  IconButton(
+                    tooltip: 'Hoy',
+                    onPressed: () {
+                      FeedbackService.instance.tick();
+                      setState(() {
+                        _focused = DateTime.now();
+                        _selected = DateTime.now();
+                      });
+                      ref.read(visibleMonthProvider.notifier).state =
+                          DateTime(_focused.year, _focused.month, 1);
+                    },
+                    icon: Icon(Icons.today_rounded,
+                        color: context.textSecondary),
                   ),
-                  headerVisible: false,
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: context.textTertiary,
-                      letterSpacing: 0.6,
-                    ),
-                    weekendStyle: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.colorPrimary,
-                      letterSpacing: 0.6,
+                ],
+              ),
+            ),
+
+            // ── Calendar ─────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: TableCalendar<Task>(
+                locale: 'es_ES',
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2035, 12, 31),
+                focusedDay: _focused,
+                startingDayOfWeek: StartingDayOfWeek.monday,
+                calendarFormat: _format,
+                rowHeight: 48,
+                daysOfWeekHeight: 24,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: 'Semana',
+                  CalendarFormat.week: 'Mes',
+                },
+                // Gesto vertical: swipe-up colapsa a semana, swipe-down
+                // expande a mes. Como Samsung Calendar.
+                availableGestures: AvailableGestures.all,
+                onFormatChanged: (f) {
+                  FeedbackService.instance.tick();
+                  setState(() => _format = f);
+                },
+                selectedDayPredicate: (d) => isSameDay(_selected, d),
+                onPageChanged: (focused) {
+                  setState(() => _focused = focused);
+                  ref.read(visibleMonthProvider.notifier).state =
+                      DateTime(focused.year, focused.month, 1);
+                },
+                eventLoader: (day) =>
+                    tasksByDay.valueOrNull?[dateToId(day)] ?? const [],
+                onDaySelected: (selected, focused) {
+                  FeedbackService.instance.tick();
+                  setState(() {
+                    _selected = selected;
+                    _focused = focused;
+                  });
+                },
+                calendarBuilders: CalendarBuilders<Task>(
+                  defaultBuilder: (ctx, day, _) =>
+                      _DayCell(day: day, taskService: taskService),
+                  todayBuilder: (ctx, day, _) =>
+                      _DayCell(day: day, isToday: true, taskService: taskService),
+                  selectedBuilder: (ctx, day, _) => _DayCell(
+                      day: day, isSelected: true, taskService: taskService),
+                  outsideBuilder: (ctx, day, _) => _DayCell(
+                      day: day, isOutside: true, taskService: taskService),
+                  // Markers como BARRAS horizontales por prioridad
+                  // (estilo Samsung) — hasta 3 barras visibles.
+                  markerBuilder: (ctx, day, events) {
+                    if (events.isEmpty) return const SizedBox.shrink();
+                    final hasP = events.any(
+                        (e) => e.priority == TaskPriority.primordial);
+                    final hasI = events.any(
+                        (e) => e.priority == TaskPriority.importante);
+                    final hasE = events.any((e) =>
+                        e.priority == TaskPriority.puedeEsperar ||
+                        e.priority == TaskPriority.secundaria);
+                    return Positioned(
+                      left: 6,
+                      right: 6,
+                      bottom: 4,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (hasP) _bar(AppTheme.colorDanger),
+                          if (hasI) _bar(AppTheme.colorWarning),
+                          if (hasE) _bar(AppTheme.colorPrimary),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                calendarStyle: CalendarStyle(
+                  outsideDaysVisible: true,
+                  cellPadding: EdgeInsets.zero,
+                  cellMargin: const EdgeInsets.all(2),
+                  defaultTextStyle: GoogleFonts.inter(
+                      fontSize: 13, color: context.textPrimary),
+                  weekendTextStyle: GoogleFonts.inter(
+                      fontSize: 13, color: context.textPrimary),
+                  outsideTextStyle: GoogleFonts.inter(
+                      fontSize: 13, color: context.textTertiary),
+                ),
+                headerVisible: false,
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekdayStyle: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: context.textTertiary,
+                    letterSpacing: 0.8,
+                  ),
+                  weekendStyle: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.colorPrimary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+            Divider(height: 1, color: context.dividerColor),
+
+            // ── Tareas del día seleccionado (inline) ──────────────────
+            Expanded(
+              child: DayTasksInline(
+                day: _selected,
+                tasks: tasksByDay.valueOrNull?[dateToId(_selected)] ??
+                    const [],
+                onComplete: taskService.completeTask,
+                onUncomplete: taskService.uncompleteTask,
+                onDelete: taskService.deleteTask,
+              ),
+            ),
+
+            // ── Botón fijo "+ Nueva tarea para este día" ─────────────
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      FeedbackService.instance.tick();
+                      AddTaskBottomSheet.show(
+                        context,
+                        prefillDayId: dateToId(_selected),
+                      );
+                    },
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text(
+                      'Nueva tarea para este día',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: _MonthSummary(tasksByDay: tasksByDay.valueOrNull ?? {}),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 140)),
           ],
         ),
       ),
     );
   }
 
-  static Widget _dot(Color c) => Container(
-        width: 5,
-        height: 5,
-        margin: const EdgeInsets.symmetric(horizontal: 1),
-        decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+  static Widget _bar(Color c) => Container(
+        height: 3,
+        margin: const EdgeInsets.only(top: 1),
+        decoration: BoxDecoration(
+          color: c,
+          borderRadius: BorderRadius.circular(2),
+        ),
       );
 }
 
-/// Celda de día con DragTarget — al soltar una tarea sobre la celda
+/// Celda del calendario con DragTarget — soltar una tarea de otro día
 /// reasigna su `dayId`.
 class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
-    required this.isToday,
+    this.isToday = false,
     this.isSelected = false,
     this.isOutside = false,
     required this.taskService,
@@ -252,7 +286,7 @@ class _DayCell extends StatelessWidget {
   final bool isToday;
   final bool isSelected;
   final bool isOutside;
-  final TaskService taskService;
+  final dynamic taskService;
 
   @override
   Widget build(BuildContext context) {
@@ -269,24 +303,24 @@ class _DayCell extends StatelessWidget {
             : context.textPrimary;
         BoxBorder? border;
         if (hovering) {
-          bg = AppTheme.colorPrimary.withAlpha(40);
+          bg = AppTheme.colorPrimary.withAlpha(50);
           border = Border.all(color: AppTheme.colorPrimary, width: 2);
         } else if (isSelected) {
-          bg = AppTheme.colorPrimary.withAlpha(60);
+          bg = AppTheme.colorPrimary.withAlpha(50);
           border = Border.all(color: AppTheme.colorPrimary, width: 1.5);
-        } else if (isToday) {
-          bg = AppTheme.colorPrimary.withAlpha(28);
-          border = Border.all(color: AppTheme.colorPrimary.withAlpha(120));
         }
-        if (isToday) textColor = AppTheme.colorPrimary;
+        if (isToday) {
+          textColor = AppTheme.colorPrimary;
+        }
         return Container(
-          margin: const EdgeInsets.all(2),
+          margin: const EdgeInsets.all(1),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(6),
             border: border,
           ),
-          alignment: Alignment.center,
+          alignment: Alignment.topCenter,
+          padding: const EdgeInsets.only(top: 6),
           child: Text(
             '${day.day}',
             style: GoogleFonts.inter(
@@ -299,101 +333,6 @@ class _DayCell extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _MonthSummary extends StatelessWidget {
-  const _MonthSummary({required this.tasksByDay});
-  final Map<String, List<Task>> tasksByDay;
-
-  @override
-  Widget build(BuildContext context) {
-    var total = 0, done = 0, primordial = 0;
-    for (final list in tasksByDay.values) {
-      for (final t in list) {
-        total++;
-        if (t.status == TaskStatus.done) done++;
-        if (t.priority == TaskPriority.primordial) primordial++;
-      }
-    }
-    final pct = total == 0 ? 0 : ((done / total) * 100).round();
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.surfaceCard,
-        borderRadius: AppTheme.r16,
-        border: Border.all(color: context.dividerColor),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StatCol(
-              label: 'COMPLETADAS',
-              value: '$done/$total',
-              sub: '$pct%',
-              color: AppTheme.colorSuccess,
-            ),
-          ),
-          Container(width: 1, height: 36, color: context.dividerColor),
-          Expanded(
-            child: _StatCol(
-              label: 'PRIMORDIAL',
-              value: '$primordial',
-              sub: 'tareas',
-              color: AppTheme.colorDanger,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCol extends StatelessWidget {
-  const _StatCol({
-    required this.label,
-    required this.value,
-    required this.sub,
-    required this.color,
-  });
-  final String label;
-  final String value;
-  final String sub;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: color,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.fraunces(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: context.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          sub,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            color: context.textTertiary,
-          ),
-        ),
-      ],
     );
   }
 }

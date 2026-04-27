@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -56,6 +56,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(habitsTable, habitsTable.sortOrder);
         await m.addColumn(projectsTable, projectsTable.sortOrder);
         await m.addColumn(tasksTable, tasksTable.sortOrder);
+      }
+      if (from < 4) {
+        // dayId pasa a nullable: las tareas de proyecto pueden estar
+        // "sin programar". SQLite no permite cambiar nullability con
+        // ALTER COLUMN, así que recreamos la tabla.
+        await m.alterTable(TableMigration(tasksTable));
       }
     },
     beforeOpen: (details) async {

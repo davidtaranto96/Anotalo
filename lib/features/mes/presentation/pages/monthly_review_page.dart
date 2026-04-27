@@ -614,7 +614,10 @@ class _BestDayTile extends StatelessWidget {
     }
     final perDay = <String, int>{};
     for (final t in done) {
-      perDay[t.dayId] = (perDay[t.dayId] ?? 0) + 1;
+      // Tareas sin dayId no cuentan para "mejor día".
+      final d = t.dayId;
+      if (d == null) continue;
+      perDay[d] = (perDay[d] ?? 0) + 1;
     }
     final sorted = perDay.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));

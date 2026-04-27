@@ -52,7 +52,10 @@ class Task extends Equatable {
   final String? reminder;
   final String? parentProjectId;
   final List<String> subtaskIds;
-  final String dayId;
+  /// Día asignado a la tarea (yyyy-mm-dd). `null` = "sin programar"
+  /// — pasa con tareas creadas dentro de un proyecto que el usuario
+  /// no asignó a ningún día específico todavía.
+  final String? dayId;
   final int? estimatedMinutes;
   final DateTime createdAt;
   final DateTime? completedAt;
@@ -71,7 +74,7 @@ class Task extends Equatable {
     this.reminder,
     this.parentProjectId,
     this.subtaskIds = const [],
-    required this.dayId,
+    this.dayId,
     this.estimatedMinutes,
     required this.createdAt,
     this.completedAt,
@@ -91,6 +94,7 @@ class Task extends Equatable {
     String? parentProjectId,
     List<String>? subtaskIds,
     String? dayId,
+    bool clearDayId = false,
     int? estimatedMinutes,
     DateTime? completedAt,
   }) => Task(
@@ -107,7 +111,7 @@ class Task extends Equatable {
     reminder: reminder ?? this.reminder,
     parentProjectId: parentProjectId ?? this.parentProjectId,
     subtaskIds: subtaskIds ?? this.subtaskIds,
-    dayId: dayId ?? this.dayId,
+    dayId: clearDayId ? null : (dayId ?? this.dayId),
     estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
     createdAt: createdAt,
     completedAt: completedAt ?? this.completedAt,

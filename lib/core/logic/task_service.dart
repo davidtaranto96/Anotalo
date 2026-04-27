@@ -133,7 +133,7 @@ class TaskService {
       reminder: Value(task.reminder),
       parentProjectId: Value(task.parentProjectId),
       subtaskIds: Value(encodeStringList(task.subtaskIds)),
-      dayId: task.dayId,
+      dayId: Value(task.dayId),
       estimatedMinutes: Value(task.estimatedMinutes),
       createdAt: task.createdAt,
       completedAt: Value(task.completedAt),
