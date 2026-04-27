@@ -95,8 +95,26 @@ class TaskCard extends StatelessWidget {
               ),
         endActionPane: ActionPane(
           motion: const DrawerMotion(),
-          extentRatio: 0.5,
+          // 0.66 = espacio para 3 acciones (editar/diferir/borrar) sin
+          // que se vean apretadas.
+          extentRatio: 0.66,
           children: [
+            SlidableAction(
+              onPressed: isDone
+                  ? null
+                  : (_) {
+                      FeedbackService.instance.tick();
+                      AddTaskBottomSheet.show(context, existing: task);
+                    },
+              backgroundColor: isDone
+                  ? AppTheme.colorPrimary.withAlpha(120)
+                  : AppTheme.colorPrimary,
+              foregroundColor: Colors.white,
+              icon: Icons.edit_rounded,
+              label: 'Editar',
+              borderRadius:
+                  const BorderRadius.horizontal(left: Radius.circular(12)),
+            ),
             SlidableAction(
               onPressed: isDone
                   ? null
@@ -110,8 +128,6 @@ class TaskCard extends StatelessWidget {
               foregroundColor: Colors.white,
               icon: Icons.schedule_rounded,
               label: 'Diferir',
-              borderRadius:
-                  const BorderRadius.horizontal(left: Radius.circular(12)),
             ),
             SlidableAction(
               onPressed: (_) {
@@ -127,18 +143,19 @@ class TaskCard extends StatelessWidget {
             ),
           ],
         ),
+        // El long-press del card NO abre el editor — eso interfería con
+        // el long-press del ReorderableListView (drag-to-reorder). El
+        // editor ahora se accede con swipe-left → "Editar". Se mantiene
+        // el shortcut "long-press = deshacer completación" sólo cuando
+        // la tarea ya está done (porque ahí no hay reorder de
+        // completadas).
         child: GestureDetector(
-          // Long press:
-          //   - Pendientes → abrir editor con los datos de la tarea.
-          //   - Completadas → deshacer (mantener el shortcut histórico).
-          onLongPress: () {
-            FeedbackService.instance.warn();
-            if (isDone && onUncomplete != null) {
-              onUncomplete!();
-            } else if (!isDone) {
-              AddTaskBottomSheet.show(context, existing: task);
-            }
-          },
+          onLongPress: isDone && onUncomplete != null
+              ? () {
+                  FeedbackService.instance.warn();
+                  onUncomplete!();
+                }
+              : null,
           child: Container(
           decoration: BoxDecoration(
             color: isDone ? context.neutral50 : context.surfaceCard,
