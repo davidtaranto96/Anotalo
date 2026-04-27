@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
 
 /// Servicio de autenticación con Google + Firebase.
 ///
@@ -10,15 +11,28 @@ import 'package:google_sign_in/google_sign_in.dart';
 /// - Exponer el usuario actual como `Stream<User?>` para que el router
 ///   reaccione a logout.
 /// - Wrapear errores conocidos con mensajes en español para el UI.
+/// - Exponer el `GoogleSignIn` con el scope de `drive.appdata` para que
+///   el `DriveBackupService` pueda subir/bajar el JSON al espacio
+///   privado del usuario en su propio Google Drive.
 ///
 /// Mantiene los datos LOCALES intactos: el login es informativo / habilita
-/// futura sincronización a Firestore. La DB Drift no toca el `uid`.
+/// el backup en Drive del usuario. La DB Drift no toca el `uid`.
 class AuthService {
   AuthService._();
   static final AuthService instance = AuthService._();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _google = GoogleSignIn();
+  // appDataFolder = espacio privado del user en su Drive, invisible en
+  // la UI de drive.google.com. Cada app sólo ve sus propios archivos.
+  final GoogleSignIn _google = GoogleSignIn(
+    scopes: <String>[
+      'email',
+      drive.DriveApi.driveAppdataScope,
+    ],
+  );
+
+  GoogleSignIn get googleSignIn => _google;
+  GoogleSignInAccount? get googleAccount => _google.currentUser;
 
   User? get currentUser => _auth.currentUser;
 

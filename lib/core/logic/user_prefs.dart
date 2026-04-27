@@ -13,6 +13,7 @@ class UserPrefs {
   static const _kShowHabitsInHoy = 'pref_show_habits_in_hoy';
   static const _kUserName = 'pref_user_name';
   static const _kRemindBeforeMin = 'pref_remind_before_min';
+  static const _kAutoBackupDrive = 'pref_auto_backup_drive';
 
   final TaskPriority defaultPriority;
   final String? defaultArea;
@@ -25,6 +26,9 @@ class UserPrefs {
   /// Minutos de antelación para los recordatorios de tareas (0/5/10/15).
   /// 0 = al horario exacto.
   final int remindBeforeMinutes;
+  /// Cuando está ON, la app sube un backup al Drive del usuario en cada
+  /// pausa (background). Default OFF.
+  final bool autoBackupToDrive;
 
   const UserPrefs({
     required this.defaultPriority,
@@ -34,6 +38,7 @@ class UserPrefs {
     required this.showHabitsInHoy,
     required this.userName,
     required this.remindBeforeMinutes,
+    required this.autoBackupToDrive,
   });
 
   factory UserPrefs.defaults() => const UserPrefs(
@@ -44,6 +49,7 @@ class UserPrefs {
     showHabitsInHoy: true,
     userName: '',
     remindBeforeMinutes: 0,
+    autoBackupToDrive: false,
   );
 
   UserPrefs copyWith({
@@ -54,6 +60,7 @@ class UserPrefs {
     bool? showHabitsInHoy,
     String? userName,
     int? remindBeforeMinutes,
+    bool? autoBackupToDrive,
   }) => UserPrefs(
     defaultPriority: defaultPriority ?? this.defaultPriority,
     defaultArea: defaultArea == _sentinel ? this.defaultArea : defaultArea as String?,
@@ -62,6 +69,7 @@ class UserPrefs {
     showHabitsInHoy: showHabitsInHoy ?? this.showHabitsInHoy,
     userName: userName ?? this.userName,
     remindBeforeMinutes: remindBeforeMinutes ?? this.remindBeforeMinutes,
+    autoBackupToDrive: autoBackupToDrive ?? this.autoBackupToDrive,
   );
 }
 
@@ -84,7 +92,14 @@ class UserPrefsNotifier extends StateNotifier<UserPrefs> {
       showHabitsInHoy: p.getBool(UserPrefs._kShowHabitsInHoy) ?? true,
       userName: p.getString(UserPrefs._kUserName) ?? '',
       remindBeforeMinutes: p.getInt(UserPrefs._kRemindBeforeMin) ?? 0,
+      autoBackupToDrive: p.getBool(UserPrefs._kAutoBackupDrive) ?? false,
     );
+  }
+
+  Future<void> setAutoBackupToDrive(bool value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool(UserPrefs._kAutoBackupDrive, value);
+    state = state.copyWith(autoBackupToDrive: value);
   }
 
   Future<void> setUserName(String value) async {

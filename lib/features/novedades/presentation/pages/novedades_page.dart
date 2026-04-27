@@ -107,9 +107,26 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.13.0',
+    version: '1.14.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Backup en tu Google Drive — privado y automático',
+    items: [
+      _ChangelogItem(_nf, Icons.cloud_sync_rounded,
+          'Backup automático en tu Google Drive: cada vez que pasás a segundo plano, tus datos se suben encriptados al espacio privado de tu Drive. Activá el toggle en Configuración → Backup en la nube.'),
+      _ChangelogItem(_nf, Icons.cloud_upload_rounded,
+          'Subir backup ahora: botón manual para forzar una copia inmediata después de un cambio importante.'),
+      _ChangelogItem(_nf, Icons.cloud_download_rounded,
+          'Restaurar desde Drive: cambiás de cel, te logueás y recuperás todo. La acción reemplaza los datos locales con la copia en la nube.'),
+      _ChangelogItem(_mj, Icons.lock_rounded,
+          'Privacidad: el backup vive en una carpeta invisible del TU Drive (no en servidores nuestros). Solo Apunto la ve. Cero costo extra — usa los 15 GB que ya tenés.'),
+      _ChangelogItem(_mj, Icons.history_rounded,
+          'Última copia visible en Configuración: "Hace 2 h", "Hace 3 d", etc — para que sepas qué tan al día estás.'),
+    ],
+  ),
+  _Release(
+    version: '1.13.0',
+    date: 'Abril 2026',
     title: 'Login con Google y sesión real',
     items: [
       _ChangelogItem(_nf, Icons.login_rounded,

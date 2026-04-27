@@ -6,6 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:arquitectura_enfoque/core/feedback/feedback_service.dart';
+import 'package:arquitectura_enfoque/core/logic/auth_service.dart';
+import 'package:arquitectura_enfoque/core/logic/drive_backup_service.dart';
+import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
+import 'package:arquitectura_enfoque/core/providers/backup_provider.dart';
 import 'package:arquitectura_enfoque/core/providers/shell_providers.dart';
 import 'package:arquitectura_enfoque/core/theme/anotalo_tokens.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
@@ -29,7 +33,8 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   late final PageController _pageController;
   int _currentPage = 0;
 
@@ -49,12 +54,29 @@ class _AppShellState extends ConsumerState<AppShell> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Auto-backup al pasar a background. Sólo dispara si el toggle
+  /// `autoBackupToDrive` está ON y hay sesión Google activa. Es
+  /// fire-and-forget para no bloquear el lifecycle.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state != AppLifecycleState.paused) return;
+    final auto = ref.read(userPrefsProvider).autoBackupToDrive;
+    if (!auto) return;
+    if (AuthService.instance.currentUser == null) return;
+    final svc = DriveBackupService.instance(ref.read(backupServiceProvider));
+    // ignore: discarded_futures
+    svc.uploadBackup();
   }
 
   void _goToPage(int index) {

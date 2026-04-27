@@ -14,6 +14,7 @@ import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/providers/backup_provider.dart';
 import 'package:arquitectura_enfoque/core/providers/theme_provider.dart';
 import 'package:arquitectura_enfoque/core/logic/auth_service.dart';
+import 'package:arquitectura_enfoque/core/logic/drive_backup_service.dart';
 import 'package:arquitectura_enfoque/core/logic/notification_service.dart';
 import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
 import 'package:arquitectura_enfoque/core/models/task_area.dart';
@@ -122,8 +123,15 @@ class SettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // ── Datos (backup / restore) ──
-          const _SectionLabel('DATOS'),
+          // ── Backup en la nube (Drive) ──
+          const _SectionLabel('BACKUP EN LA NUBE'),
+          const SizedBox(height: 12),
+          const _Card(child: _DriveBackupSection()),
+
+          const SizedBox(height: 32),
+
+          // ── Datos (backup / restore local) ──
+          const _SectionLabel('BACKUP LOCAL'),
           const SizedBox(height: 12),
           _Card(
             child: Column(
@@ -132,11 +140,11 @@ class SettingsPage extends ConsumerWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
                   leading: const _IconBadge(
-                    icon: Icons.cloud_upload_rounded,
+                    icon: Icons.download_rounded,
                     color: AppTheme.colorPrimary,
                   ),
-                  title: const _Title('Hacer backup'),
-                  subtitle: const _Subtitle('Exporta todos tus datos a un archivo JSON'),
+                  title: const _Title('Exportar a archivo'),
+                  subtitle: const _Subtitle('Guarda un JSON en Descargas — útil offline'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () => _doBackup(context, ref),
                 ),
@@ -145,10 +153,10 @@ class SettingsPage extends ConsumerWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
                   leading: const _IconBadge(
-                    icon: Icons.cloud_download_rounded,
+                    icon: Icons.upload_rounded,
                     color: AppTheme.colorDanger,
                   ),
-                  title: const _Title('Restaurar backup'),
+                  title: const _Title('Restaurar desde archivo'),
                   subtitle: const _Subtitle('Reemplaza los datos actuales con los del archivo'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () => _doRestore(context, ref),
@@ -956,6 +964,210 @@ class _NameTile extends ConsumerWidget {
       trailing: Icon(Icons.edit_rounded,
           size: 18, color: theme.textTheme.bodyMedium?.color),
       onTap: () => _editName(context, ref, name),
+    );
+  }
+}
+
+// ─── Drive Backup Section ─────────────────────────────────────────────────────
+
+/// Bloque de UI para backup automático/manual contra el Drive del user.
+/// Si no está logueado, ofrece pasar al login. Si está, muestra:
+/// toggle "Backup automático", última copia, y dos acciones manuales.
+class _DriveBackupSection extends ConsumerStatefulWidget {
+  const _DriveBackupSection();
+
+  @override
+  ConsumerState<_DriveBackupSection> createState() =>
+      _DriveBackupSectionState();
+}
+
+class _DriveBackupSectionState extends ConsumerState<_DriveBackupSection> {
+  bool _busy = false;
+  DateTime? _lastBackupTime;
+  bool _checkedTime = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshLastBackupTime();
+  }
+
+  Future<void> _refreshLastBackupTime() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _checkedTime = true);
+      return;
+    }
+    final svc = DriveBackupService.instance(ref.read(backupServiceProvider));
+    final t = await svc.getLastBackupTime();
+    if (!mounted) return;
+    setState(() {
+      _lastBackupTime = t;
+      _checkedTime = true;
+    });
+  }
+
+  String _humanizeAge(DateTime when) {
+    final diff = DateTime.now().difference(when);
+    if (diff.inMinutes < 1) return 'Hace instantes';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Hace ${diff.inHours} h';
+    if (diff.inDays < 7) return 'Hace ${diff.inDays} d';
+    return DateFormat('d MMM yyyy', 'es').format(when);
+  }
+
+  Future<void> _uploadNow() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final svc = DriveBackupService.instance(ref.read(backupServiceProvider));
+    final ok = await svc.uploadBackup();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      showAnotaloToast(
+        context,
+        'Backup subido a tu Drive',
+        tone: ToastTone.success,
+      );
+      await _refreshLastBackupTime();
+    } else {
+      showAnotaloToast(
+        context,
+        'No se pudo subir el backup. Revisá la conexión.',
+        tone: ToastTone.warn,
+      );
+    }
+  }
+
+  Future<void> _restoreFromCloud() async {
+    if (_busy) return;
+    final ok = await showAnotaloConfirm(
+      context: context,
+      title: 'Restaurar desde Drive',
+      body:
+          'Esto reemplaza TODOS los datos actuales con los de tu última copia en la nube. La acción no se puede deshacer.',
+      confirmLabel: 'Restaurar',
+      danger: true,
+      icon: Icons.cloud_download_rounded,
+    );
+    if (!ok) return;
+    setState(() => _busy = true);
+    try {
+      final backup = ref.read(backupServiceProvider);
+      final drive = DriveBackupService.instance(backup);
+      final json = await drive.downloadBackupJson();
+      if (json == null) {
+        if (!mounted) return;
+        setState(() => _busy = false);
+        showAnotaloToast(context, 'No hay backups en tu Drive todavía',
+            tone: ToastTone.warn);
+        return;
+      }
+      await backup.importFromJson(json);
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showAnotaloToast(context, 'Datos restaurados desde tu Drive',
+          tone: ToastTone.success);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      showAnotaloToast(context, 'Error al restaurar: $e',
+          tone: ToastTone.warn);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final userAsync = ref.watch(authStateProvider);
+    final user = userAsync.valueOrNull;
+
+    if (user == null) {
+      return ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: const _IconBadge(
+          icon: Icons.cloud_off_rounded,
+          color: AppTheme.neutral400,
+        ),
+        title: const _Title('Iniciá sesión para usar el backup en la nube'),
+        subtitle: const _Subtitle(
+            'Tu Drive guarda una copia tuya, invisible y privada.'),
+        trailing: Icon(Icons.chevron_right_rounded,
+            color: theme.textTheme.bodyMedium?.color),
+        onTap: () => GoRouter.of(context).go('/login'),
+      );
+    }
+
+    final auto = ref.watch(userPrefsProvider.select((p) => p.autoBackupToDrive));
+    final ageLine = !_checkedTime
+        ? 'Comprobando...'
+        : _lastBackupTime == null
+            ? 'Todavía sin copias en tu Drive'
+            : 'Última copia: ${_humanizeAge(_lastBackupTime!)}';
+
+    return Column(
+      children: [
+        SwitchListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+          secondary: const _IconBadge(
+            icon: Icons.cloud_sync_rounded,
+            color: AppTheme.colorSuccess,
+          ),
+          title: const _Title('Backup automático'),
+          subtitle: _Subtitle(ageLine),
+          value: auto,
+          activeTrackColor: AppTheme.colorSuccess.withAlpha(80),
+          activeThumbColor: AppTheme.colorSuccess,
+          onChanged: (v) async {
+            await ref.read(userPrefsProvider.notifier).setAutoBackupToDrive(v);
+            if (!mounted) return;
+            if (v) {
+              // Apenas se activa, hacemos un primer backup para
+              // dejar el Drive sincronizado.
+              await _uploadNow();
+            }
+          },
+        ),
+        Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+          leading: const _IconBadge(
+            icon: Icons.cloud_upload_rounded,
+            color: AppTheme.colorPrimary,
+          ),
+          title: const _Title('Subir backup ahora'),
+          subtitle: const _Subtitle('Sobrescribe la copia en tu Drive'),
+          trailing: _busy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(Icons.chevron_right_rounded,
+                  color: theme.textTheme.bodyMedium?.color),
+          onTap: _uploadNow,
+        ),
+        Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+        ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+          leading: const _IconBadge(
+            icon: Icons.cloud_download_rounded,
+            color: AppTheme.colorDanger,
+          ),
+          title: const _Title('Restaurar desde Drive'),
+          subtitle: const _Subtitle('Reemplaza tus datos con la copia en la nube'),
+          trailing: Icon(Icons.chevron_right_rounded,
+              color: theme.textTheme.bodyMedium?.color),
+          onTap: _busy ? null : _restoreFromCloud,
+        ),
+      ],
     );
   }
 }
