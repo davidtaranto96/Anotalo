@@ -13,6 +13,10 @@ import '../../../hoy/presentation/providers/task_provider.dart';
 /// - Pending arriba (lista plana, drag handle ≡ para reordenar)
 /// - Completadas en sección colapsable abajo
 /// - Cada tarea es un `LongPressDraggable<Task>` para mover de día
+///
+/// `extraSliversBefore` permite insertar slivers arriba del header
+/// del día para que TODO sea un único scrollable continuo (lo usa
+/// modo week en MesPage para meter el bloque "Lo primordial" arriba).
 class DayTasksInline extends ConsumerStatefulWidget {
   const DayTasksInline({
     super.key,
@@ -21,6 +25,7 @@ class DayTasksInline extends ConsumerStatefulWidget {
     required this.onComplete,
     required this.onUncomplete,
     required this.onDelete,
+    this.extraSliversBefore = const [],
   });
 
   final DateTime day;
@@ -28,6 +33,7 @@ class DayTasksInline extends ConsumerStatefulWidget {
   final void Function(String id) onComplete;
   final void Function(String id) onUncomplete;
   final void Function(String id) onDelete;
+  final List<Widget> extraSliversBefore;
 
   @override
   ConsumerState<DayTasksInline> createState() => _DayTasksInlineState();
@@ -51,118 +57,110 @@ class _DayTasksInlineState extends ConsumerState<DayTasksInline> {
         .replaceFirstMapped(
             RegExp(r'^[a-zñáéíóú]'), (m) => m.group(0)!.toUpperCase());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
-          child: Row(
-            children: [
-              Expanded(
+    // Único CustomScrollView para todo: extraSliversBefore (e.g. el
+    // bloque "Lo primordial" en modo week) + header del día +
+    // pending reorderable + completed colapsable. Así si el bloque
+    // de arriba se expande, el scroll sigue funcionando como un solo
+    // bloque continuo (en lugar de tener dos scrolls divididos).
+    return CustomScrollView(
+      slivers: [
+        ...widget.extraSliversBefore,
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  dateLabel,
+                  style: GoogleFonts.fraunces(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: context.textPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  widget.tasks.isEmpty
+                      ? 'Día libre'
+                      : '${pending.length} pendiente${pending.length == 1 ? "" : "s"}'
+                          '${completed.isNotEmpty ? " · ${completed.length} ✓" : ""}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: context.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (widget.tasks.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    Icon(Icons.event_available_rounded,
+                        size: 36, color: context.textTertiary),
+                    const SizedBox(height: 8),
                     Text(
-                      dateLabel,
-                      style: GoogleFonts.fraunces(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.tasks.isEmpty
-                          ? 'Día libre'
-                          : '${pending.length} pendiente${pending.length == 1 ? "" : "s"}'
-                              '${completed.isNotEmpty ? " · ${completed.length} ✓" : ""}',
+                      'Sin tareas para este día',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: context.textSecondary,
+                        fontSize: 13,
+                        color: context.textTertiary,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (pending.length > 1)
-                Text(
-                  'Tocá ≡ para reordenar',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    color: context.textTertiary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: widget.tasks.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.event_available_rounded,
-                          size: 36, color: context.textTertiary),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Sin tareas para este día',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: context.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : CustomScrollView(
-                  slivers: [
-                    // ── Pending (reordenable) ──────────────────────
-                    if (pending.isNotEmpty)
-                      SliverReorderableList(
-                        itemCount: pending.length,
-                        itemBuilder: (ctx, i) {
-                          return _PendingTaskRow(
-                            key: ValueKey('day-task-${pending[i].id}'),
-                            task: pending[i],
-                            index: i,
-                            onComplete: widget.onComplete,
-                            onDelete: widget.onDelete,
-                          );
-                        },
-                        onReorder: (oldIndex, newIndex) async {
-                          FeedbackService.instance.tick();
-                          final adjustedNew =
-                              newIndex > oldIndex ? newIndex - 1 : newIndex;
-                          final updated = List<Task>.from(pending);
-                          final moved = updated.removeAt(oldIndex);
-                          updated.insert(adjustedNew, moved);
-                          await ref
-                              .read(taskServiceProvider)
-                              .reorderTasks(updated.map((t) => t.id).toList());
-                        },
-                      ),
+            ),
+          )
+        else ...[
+          if (pending.isNotEmpty)
+            SliverReorderableList(
+              itemCount: pending.length,
+              itemBuilder: (ctx, i) {
+                return _PendingTaskRow(
+                  key: ValueKey('day-task-${pending[i].id}'),
+                  task: pending[i],
+                  index: i,
+                  onComplete: widget.onComplete,
+                  onDelete: widget.onDelete,
+                );
+              },
+              onReorder: (oldIndex, newIndex) async {
+                FeedbackService.instance.tick();
+                final adjustedNew =
+                    newIndex > oldIndex ? newIndex - 1 : newIndex;
+                final updated = List<Task>.from(pending);
+                final moved = updated.removeAt(oldIndex);
+                updated.insert(adjustedNew, moved);
+                await ref
+                    .read(taskServiceProvider)
+                    .reorderTasks(updated.map((t) => t.id).toList());
+              },
+            ),
 
-                    // ── Completed (colapsable) ──────────────────────
-                    if (completed.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _CompletedSection(
-                          tasks: completed,
-                          expanded: _completedExpanded,
-                          onToggle: () {
-                            FeedbackService.instance.tick();
-                            setState(() =>
-                                _completedExpanded = !_completedExpanded);
-                          },
-                          onUncomplete: widget.onUncomplete,
-                          onDelete: widget.onDelete,
-                        ),
-                      ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                  ],
-                ),
-        ),
+          // ── Completed (colapsable) ──────────────────────
+          if (completed.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _CompletedSection(
+                tasks: completed,
+                expanded: _completedExpanded,
+                onToggle: () {
+                  FeedbackService.instance.tick();
+                  setState(() =>
+                      _completedExpanded = !_completedExpanded);
+                },
+                onUncomplete: widget.onUncomplete,
+                onDelete: widget.onDelete,
+              ),
+            ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
       ],
     );
   }

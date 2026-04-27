@@ -58,20 +58,58 @@ class _MesPageState extends ConsumerState<MesPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _format == CalendarFormat.week
-                              ? 'Semana ${_weekNumber(_focused)}'
-                              : DateFormat("MMMM 'de' yyyy", 'es')
-                                  .format(_focused)
-                                  .replaceFirstMapped(
-                                      RegExp(r'^[a-zñáéíóú]'),
-                                      (m) => m.group(0)!.toUpperCase()),
-                          style: GoogleFonts.fraunces(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: context.textPrimary,
-                            letterSpacing: -0.3,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _format == CalendarFormat.week
+                                    ? 'Semana ${_weekNumber(_focused)}'
+                                    : DateFormat("MMMM 'de' yyyy", 'es')
+                                        .format(_focused)
+                                        .replaceFirstMapped(
+                                            RegExp(r'^[a-zñáéíóú]'),
+                                            (m) => m.group(0)!.toUpperCase()),
+                                style: GoogleFonts.fraunces(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.textPrimary,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                            // Flechas para navegar entre semanas — sólo
+                            // visibles en modo week.
+                            if (_format == CalendarFormat.week) ...[
+                              GestureDetector(
+                                onTap: () {
+                                  FeedbackService.instance.tick();
+                                  setState(() {
+                                    _focused = _focused.subtract(
+                                        const Duration(days: 7));
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(Icons.chevron_left_rounded,
+                                      color: context.textSecondary, size: 24),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  FeedbackService.instance.tick();
+                                  setState(() {
+                                    _focused = _focused
+                                        .add(const Duration(days: 7));
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(Icons.chevron_right_rounded,
+                                      color: context.textSecondary, size: 24),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -147,39 +185,10 @@ class _MesPageState extends ConsumerState<MesPage> {
                   },
                 ),
               ),
-              // Flechas izq/der compactas (sin label central — el rango
-              // ya está en el header).
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      color: context.textSecondary,
-                      onPressed: () {
-                        FeedbackService.instance.tick();
-                        setState(() {
-                          _focused =
-                              _focused.subtract(const Duration(days: 7));
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      color: context.textSecondary,
-                      onPressed: () {
-                        FeedbackService.instance.tick();
-                        setState(() {
-                          _focused = _focused.add(const Duration(days: 7));
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              // Bloque "Lo primordial" inline — directo, sin sheet.
-              WeeklyGoalsInline(weekStart: _weekStartFor(_focused)),
+              // (Flechas movidas al header arriba; "Lo primordial"
+              // ahora va embebido como sliver dentro de DayTasksInline
+              // — abajo — para que TODO el contenido sea un único
+              // scroll continuo.)
             ] else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -287,7 +296,11 @@ class _MesPageState extends ConsumerState<MesPage> {
             const SizedBox(height: 4),
             Divider(height: 1, color: context.dividerColor),
 
-            // ── Tareas del día seleccionado (inline) ──────────────────
+            // ── Tareas del día + (en modo week) Lo primordial ────────
+            // En modo week pasamos el bloque "Lo primordial" como
+            // sliver extra arriba del header del día, así TODO es un
+            // único scroll continuo (cuando se expande Lo primordial,
+            // las tareas siguen scrolleables debajo sin cortes).
             Expanded(
               child: DayTasksInline(
                 day: _selected,
@@ -296,6 +309,15 @@ class _MesPageState extends ConsumerState<MesPage> {
                 onComplete: taskService.completeTask,
                 onUncomplete: taskService.uncompleteTask,
                 onDelete: taskService.deleteTask,
+                extraSliversBefore: _format == CalendarFormat.week
+                    ? [
+                        SliverToBoxAdapter(
+                          child: WeeklyGoalsInline(
+                            weekStart: _weekStartFor(_focused),
+                          ),
+                        ),
+                      ]
+                    : const [],
               ),
             ),
 

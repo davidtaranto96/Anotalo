@@ -126,23 +126,7 @@ class _WeeklyGoalsInlineState extends ConsumerState<WeeklyGoalsInline> {
                       ),
                     ),
                   ),
-                  // Hint con la primera meta cuando está colapsado, para
-                  // dar contexto sin abrir.
-                  if (!_expanded && goals.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '→ ${WeeklyPlanService.goalText(goals.first)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: context.textSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ] else
-                    const Spacer(),
+                  const Spacer(),
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),
