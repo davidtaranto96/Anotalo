@@ -69,16 +69,6 @@ class PrioritySection extends ConsumerWidget {
                   color: context.textTertiary,
                 ),
               ),
-              const Spacer(),
-              if (tasks.length > 1)
-                Text(
-                  'Mantené ↕ para reordenar',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    color: context.textTertiary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
             ],
           ),
         ),

@@ -35,10 +35,12 @@ class TaskCard extends StatelessWidget {
     final isDone = task.status == TaskStatus.done;
     final priorityColor = _priorityColor(task.priority);
     final area = task.area == null ? null : getTaskArea(task.area);
-    // Color para la barra-acento vertical del lado izquierdo. Si la tarea
-    // no tiene área, caemos al color de prioridad para no romper el diseño.
-    final accentBarColor = (area?.color ?? priorityColor)
-        .withValues(alpha: isDone ? 0.30 : 0.85);
+    // Cuando la tarea tiene categoría usamos su color como acento principal
+    // (border, barra-acento y checkbox). Si no hay área, caemos al color de
+    // prioridad. Esto hace mucho más visual la pertenencia por categoría.
+    final cardColor = area?.color ?? priorityColor;
+    final accentBarColor =
+        cardColor.withValues(alpha: isDone ? 0.30 : 0.85);
     // Rollover: task whose dayId is older than today and still pending.
     // Las tareas con dayId == null (de proyectos sin programar) no
     // hacen rollover porque nunca tuvieron un día.
@@ -155,7 +157,7 @@ class TaskCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDone ? context.neutral50 : context.surfaceCard,
             borderRadius: AppTheme.r12,
-            border: Border.all(color: isDone ? context.dividerColor : priorityColor.withAlpha(60)),
+            border: Border.all(color: isDone ? context.dividerColor : cardColor.withAlpha(60)),
             boxShadow: isDone ? null : AppTheme.shadowSm,
           ),
           // Stack en lugar de IntrinsicHeight+Row: el LayoutBuilder
@@ -208,8 +210,8 @@ class TaskCard extends StatelessWidget {
                         margin: const EdgeInsets.only(top: 1),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: priorityColor, width: 2),
-                          color: isDone ? priorityColor : Colors.transparent,
+                          border: Border.all(color: cardColor, width: 2),
+                          color: isDone ? cardColor : Colors.transparent,
                         ),
                         child: isDone
                             ? const Icon(Icons.check, size: 13, color: Colors.white)

@@ -75,7 +75,7 @@ class _WeeklyGoalsInlineState extends ConsumerState<WeeklyGoalsInline> {
     final doneCount = goals.where(WeeklyPlanService.isGoalDone).length;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       decoration: BoxDecoration(
         color: context.surfaceCard,
         borderRadius: BorderRadius.circular(14),

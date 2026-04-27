@@ -193,8 +193,8 @@ class _PendingTaskRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final priorityColor = _priorityColor();
     final body = Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: context.surfaceCard,
         borderRadius: BorderRadius.circular(10),
@@ -209,9 +209,9 @@ class _PendingTaskRow extends StatelessWidget {
               cursor: SystemMouseCursors.grab,
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 4, vertical: 4),
+                    horizontal: 2, vertical: 4),
                 child: Icon(Icons.drag_indicator_rounded,
-                    size: 18, color: context.textTertiary),
+                    size: 16, color: context.textTertiary),
               ),
             ),
           ),
@@ -221,29 +221,33 @@ class _PendingTaskRow extends StatelessWidget {
               onComplete(task.id);
             },
             child: Container(
-              width: 22,
-              height: 22,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: priorityColor, width: 2),
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               task.title,
               style: GoogleFonts.inter(
-                fontSize: 13.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: context.textPrimary,
+                height: 1.25,
               ),
             ),
           ),
           IconButton(
             tooltip: 'Borrar',
-            icon: const Icon(Icons.delete_outline_rounded, size: 18),
+            icon: const Icon(Icons.delete_outline_rounded, size: 16),
             color: AppTheme.colorDanger,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            padding: EdgeInsets.zero,
             onPressed: () {
               FeedbackService.instance.danger();
               onDelete(task.id);
