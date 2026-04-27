@@ -1045,76 +1045,106 @@ class _HabitPill extends ConsumerWidget {
     final streak = ref.watch(habitStreakProvider(habit.id)).valueOrNull ?? 0;
     final habitColor = _parseHabitColor(AppTheme.colorAccent);
 
+    // Diseño del pill alineado con TaskCard / ProjectRow:
+    // - borderRadius 12 (no capsule)
+    // - barra-acento vertical 3pt a la izquierda con el color del hábito
+    // - emoji en chip cuadrado + título + chip de status a la derecha
     return GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isCompleted ? habitColor.withAlpha(22) : context.surfaceCard,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isCompleted ? habitColor.withAlpha(100) : context.dividerColor,
+            color: isCompleted
+                ? habitColor.withAlpha(120)
+                : context.dividerColor,
             width: isCompleted ? 1.5 : 1,
           ),
           boxShadow: isCompleted ? null : AppTheme.shadowSm,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (habit.icon != null && habit.icon!.isNotEmpty)
-              Text(habit.icon!, style: const TextStyle(fontSize: 18)),
-            if (habit.icon != null && habit.icon!.isNotEmpty)
-              const SizedBox(width: 6),
-            Text(
-              habit.title,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isCompleted ? habitColor : context.textPrimary,
-                decoration: isCompleted ? TextDecoration.lineThrough : null,
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: IntrinsicHeight(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Barra vertical con el color del hábito (signature
+                // del diseño 1.6 — igual que TaskCard).
+                Container(
+                  width: 3,
+                  color: habitColor.withAlpha(isCompleted ? 200 : 140),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 10, 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (habit.icon != null && habit.icon!.isNotEmpty) ...[
+                        Text(habit.icon!,
+                            style: const TextStyle(fontSize: 16)),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        habit.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted ? habitColor : context.textPrimary,
+                          decoration:
+                              isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      if (isCompleted) ...[
+                        const SizedBox(width: 6),
+                        Icon(Icons.check_circle_rounded,
+                            size: 14, color: habitColor),
+                      ] else if (habit.frequency == HabitFrequency.weekly) ...[
+                        const SizedBox(width: 6),
+                        _StatusChip(
+                          color: habitColor,
+                          text: '$weeklyDone/${habit.targetPerWeek}',
+                        ),
+                      ] else if (streak > 1) ...[
+                        const SizedBox(width: 6),
+                        _StatusChip(
+                          color: habitColor,
+                          text: '🔥$streak',
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-            if (isCompleted) ...[
-              const SizedBox(width: 5),
-              Icon(Icons.check_circle_rounded, size: 14, color: habitColor),
-            ] else if (habit.frequency == HabitFrequency.weekly) ...[
-              // Hábito weekly aún no cumplido: mostrar progreso "X/N".
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: habitColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$weeklyDone/${habit.targetPerWeek}',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: habitColor,
-                  ),
-                ),
-              ),
-            ] else if (streak > 1) ...[
-              const SizedBox(width: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: habitColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '🔥$streak',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: habitColor,
-                  ),
-                ),
-              ),
-            ],
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.color, required this.text});
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );
