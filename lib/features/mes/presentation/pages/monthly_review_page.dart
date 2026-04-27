@@ -96,28 +96,28 @@ class MonthlyReviewPage extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // ── Completado vs pendiente ────────────────────────────
-              _SectionTitle(label: 'TAREAS', color: AppTheme.colorSuccess),
+              const _SectionTitle(label: 'TAREAS', color: AppTheme.colorSuccess),
               const SizedBox(height: 8),
               _CompletionTile(tasks: tasks),
 
               const SizedBox(height: 20),
 
               // ── Por área ───────────────────────────────────────────
-              _SectionTitle(label: 'POR ÁREA', color: AppTheme.colorPrimary),
+              const _SectionTitle(label: 'POR ÁREA', color: AppTheme.colorPrimary),
               const SizedBox(height: 8),
               _ByAreaTile(tasks: tasks, areas: areas),
 
               const SizedBox(height: 20),
 
               // ── Por prioridad ──────────────────────────────────────
-              _SectionTitle(label: 'POR PRIORIDAD', color: AppTheme.colorWarning),
+              const _SectionTitle(label: 'POR PRIORIDAD', color: AppTheme.colorWarning),
               const SizedBox(height: 8),
               _ByPriorityTile(tasks: tasks),
 
               const SizedBox(height: 20),
 
               // ── Hábitos ────────────────────────────────────────────
-              _SectionTitle(label: 'HÁBITOS', color: AppTheme.colorAccent),
+              const _SectionTitle(label: 'HÁBITOS', color: AppTheme.colorAccent),
               const SizedBox(height: 8),
               _HabitsRecapTile(
                 habits: habits,
@@ -128,7 +128,7 @@ class MonthlyReviewPage extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // ── Día más productivo ─────────────────────────────────
-              _SectionTitle(
+              const _SectionTitle(
                   label: 'MEJOR DÍA', color: AppTheme.colorPrimary),
               const SizedBox(height: 8),
               _BestDayTile(tasks: tasks),
@@ -136,7 +136,7 @@ class MonthlyReviewPage extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // ── Pendientes que quedaron ────────────────────────────
-              _SectionTitle(
+              const _SectionTitle(
                   label: 'TE QUEDA HACER', color: AppTheme.colorDanger),
               const SizedBox(height: 8),
               _PendingTile(tasks: tasks),

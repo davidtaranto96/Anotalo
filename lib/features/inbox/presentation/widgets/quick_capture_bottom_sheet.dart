@@ -41,9 +41,9 @@ class _State extends ConsumerState<QuickCaptureBottomSheet> {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + bottom),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.surfaceSheet,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         boxShadow: AppTheme.shadowLg,
       ),
       child: Column(

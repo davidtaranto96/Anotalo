@@ -734,7 +734,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
       padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottom),
       decoration: BoxDecoration(
         color: context.surfaceSheet,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

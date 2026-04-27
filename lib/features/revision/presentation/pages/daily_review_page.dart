@@ -558,7 +558,7 @@ class _StepTareasState extends ConsumerState<_StepTareas> {
               ),
               if (_showCompleted) ...[
                 if (completed.isEmpty)
-                  _EmptyBox(text: 'Aún no completaste nada.'),
+                  const _EmptyBox(text: 'Aún no completaste nada.'),
                 ...completed.map((t) => _TaskRow(
                       task: t,
                       isCompleted: true,
@@ -583,7 +583,7 @@ class _StepTareasState extends ConsumerState<_StepTareas> {
               ),
               if (_showPending) ...[
                 if (pending.isEmpty)
-                  _EmptyBox(text: 'No quedó nada pendiente.'),
+                  const _EmptyBox(text: 'No quedó nada pendiente.'),
                 ...pending.map((t) => _TaskRow(
                       task: t,
                       isCompleted: false,
@@ -1001,7 +1001,7 @@ class _StepHabitos extends ConsumerWidget {
               ),
               const SizedBox(height: 18),
               if (habits.isEmpty)
-                _EmptyBox(text: 'No tenés hábitos activos.'),
+                const _EmptyBox(text: 'No tenés hábitos activos.'),
               ...habits.map((h) {
                 final done = doneIds.contains(h.id);
                 return _HabitRow(

@@ -258,7 +258,7 @@ class _AddAreaButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.add_rounded,
                   size: 20,
                   color: AppTheme.colorPrimary,

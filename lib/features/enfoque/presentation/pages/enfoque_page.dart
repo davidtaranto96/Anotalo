@@ -280,7 +280,7 @@ class EnfoquePage extends ConsumerWidget {
                   child: Container(
                     width: 72,
                     height: 72,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppTheme.colorPrimary,
                       boxShadow: AppTheme.shadowMd,

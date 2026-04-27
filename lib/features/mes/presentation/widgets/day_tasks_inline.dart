@@ -427,7 +427,7 @@ class _DoneTaskRow extends StatelessWidget {
             child: Container(
               width: 22,
               height: 22,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppTheme.colorSuccess,
               ),

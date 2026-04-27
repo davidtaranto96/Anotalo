@@ -59,7 +59,7 @@ class SettingsPage extends ConsumerWidget {
           // ── Perfil ──
           const _SectionLabel('PERFIL'),
           const SizedBox(height: 12),
-          _Card(child: const _NameTile()),
+          const _Card(child: _NameTile()),
 
           const SizedBox(height: 32),
 
