@@ -11,7 +11,6 @@ import 'package:arquitectura_enfoque/core/theme/anotalo_tokens.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/pages/hoy_page.dart';
-import 'package:arquitectura_enfoque/features/semana/presentation/pages/semana_page.dart';
 import 'package:arquitectura_enfoque/features/mes/presentation/pages/mes_page.dart';
 import 'package:arquitectura_enfoque/features/proyectos/presentation/pages/proyectos_page.dart';
 import 'package:arquitectura_enfoque/features/habitos/presentation/pages/habitos_page.dart';
@@ -34,12 +33,13 @@ class _AppShellState extends ConsumerState<AppShell> {
   late final PageController _pageController;
   int _currentPage = 0;
 
-  // Iconos Lucide 1.8pt que matchean el redesign 1.6 — stroke fino,
-  // geometría uniforme. `Icons.*` se mantienen en otras pantallas.
+  // Tabs del shell: Hoy / Calendario (mes+semana fusionados) /
+  // Proyectos / Hábitos / Enfoque. La tab "Semana" fue absorbida por
+  // "Calendario" — el mismo widget muestra mes o semana según el
+  // formato (toggle por swipe vertical).
   static const _tabs = [
     _TabConfig(LucideIcons.calendar,         'Hoy'),
-    _TabConfig(LucideIcons.grid,             'Semana'),
-    _TabConfig(LucideIcons.calendarDays,     'Mes'),
+    _TabConfig(LucideIcons.calendarDays,     'Calendario'),
     _TabConfig(LucideIcons.folder,           'Proyectos'),
     _TabConfig(LucideIcons.repeat,           'Hábitos'),
     _TabConfig(LucideIcons.timer,            'Enfoque'),
@@ -70,20 +70,18 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    // Tabs: 0=Hoy, 1=Semana, 2=Mes, 3=Proyectos, 4=Hábitos, 5=Enfoque
+    // Tabs: 0=Hoy, 1=Calendario, 2=Proyectos, 3=Hábitos, 4=Enfoque
     IconData? fabIcon;
     switch (_currentPage) {
       case 0:
         fabIcon = Icons.add_rounded; // Hoy — nueva tarea
       case 1:
-        fabIcon = null; // Semana — no FAB (se agrega desde el día)
+        fabIcon = null; // Calendario — botón "Nueva tarea" inline propio
       case 2:
-        fabIcon = null; // Mes — sin FAB; usar tap-en-día para crear
-      case 3:
         fabIcon = Icons.create_new_folder_rounded; // Proyectos
-      case 4:
+      case 3:
         fabIcon = Icons.add_rounded; // Hábitos
-      case 5:
+      case 4:
         final timerState = ref.watch(timerNotifierProvider);
         fabIcon = timerState.status == TimerStatus.running
             ? Icons.pause_rounded
@@ -107,7 +105,6 @@ class _AppShellState extends ConsumerState<AppShell> {
         physics: const BouncingScrollPhysics(),
         children: const [
           _KeepAlive(child: HoyPage()),
-          _KeepAlive(child: SemanaPage()),
           _KeepAlive(child: MesPage()),
           _KeepAlive(child: ProyectosPage()),
           _KeepAlive(child: HabitosPage()),
@@ -130,11 +127,11 @@ class _AppShellState extends ConsumerState<AppShell> {
                       context,
                       prefillArea: selectedArea,
                     );
-                  case 3:
+                  case 2:
                     AddProjectBottomSheet.show(context);
-                  case 4:
+                  case 3:
                     AddHabitBottomSheet.show(context);
-                  case 5:
+                  case 4:
                     ref.read(timerNotifierProvider.notifier).toggle();
                   default:
                     break;

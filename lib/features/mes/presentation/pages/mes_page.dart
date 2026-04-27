@@ -13,6 +13,8 @@ import '../../../hoy/presentation/providers/task_provider.dart';
 import '../../../hoy/presentation/widgets/add_task_bottom_sheet.dart';
 import '../providers/month_provider.dart';
 import '../widgets/day_tasks_inline.dart';
+import '../widgets/week_strip.dart';
+import '../widgets/weekly_goals_sheet.dart';
 import 'monthly_review_page.dart';
 
 /// Vista mensual estilo Samsung Calendar:
@@ -112,6 +114,105 @@ class _MesPageState extends ConsumerState<MesPage> {
             ),
 
             // ── Calendar ─────────────────────────────────────────────
+            // Modo week: usamos el WeekStrip estilo Semana (cards con
+            // counts y dot verde) en lugar del TableCalendar. Modo
+            // mes: TableCalendar con barras horizontales por prioridad.
+            if (_format == CalendarFormat.week) ...[
+              GestureDetector(
+                // Swipe-down → expandir a mes
+                onVerticalDragEnd: (d) {
+                  if ((d.primaryVelocity ?? 0) > 200) {
+                    FeedbackService.instance.tick();
+                    setState(() => _format = CalendarFormat.month);
+                  }
+                },
+                child: WeekStrip(
+                  weekStart: _weekStartFor(_focused),
+                  selected: _selected,
+                  tasksByDay: tasksByDay.valueOrNull ?? const {},
+                  onDayTap: (day) {
+                    setState(() {
+                      _selected = day;
+                      _focused = day;
+                    });
+                  },
+                  onTaskDroppedOnDay: (task, target) {
+                    FeedbackService.instance.success();
+                    taskService.moveTaskToDay(task.id, dateToId(target));
+                  },
+                ),
+              ),
+              // Navegación entre semanas (flechas) + atajo a metas.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      color: context.textSecondary,
+                      onPressed: () {
+                        FeedbackService.instance.tick();
+                        setState(() {
+                          _focused =
+                              _focused.subtract(const Duration(days: 7));
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          _weekRangeLabel(_focused),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: context.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      color: context.textSecondary,
+                      onPressed: () {
+                        FeedbackService.instance.tick();
+                        setState(() {
+                          _focused = _focused.add(const Duration(days: 7));
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              // Botón "Lo primordial de la semana" — atajo visible al
+              // bottom sheet de metas.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      FeedbackService.instance.tick();
+                      WeeklyGoalsSheet.show(
+                          context, _weekStartFor(_focused));
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                          color: AppTheme.colorDanger.withAlpha(80)),
+                      foregroundColor: AppTheme.colorDanger,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.star_rounded, size: 16),
+                    label: Text(
+                      'Lo primordial de la semana',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ] else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: TableCalendar<Task>(
@@ -151,12 +252,14 @@ class _MesPageState extends ConsumerState<MesPage> {
                 },
                 calendarBuilders: CalendarBuilders<Task>(
                   defaultBuilder: (ctx, day, _) =>
-                      _DayCell(day: day, taskService: taskService),
-                  todayBuilder: (ctx, day, _) =>
-                      _DayCell(day: day, isToday: true, taskService: taskService),
-                  selectedBuilder: (ctx, day, _) => _DayCell(
-                      day: day, isSelected: true, taskService: taskService),
-                  outsideBuilder: (ctx, day, _) => _DayCell(
+                      _DayCellWithStar(day: day, taskService: taskService),
+                  todayBuilder: (ctx, day, _) => _DayCellWithStar(
+                      day: day, isToday: true, taskService: taskService),
+                  selectedBuilder: (ctx, day, _) => _DayCellWithStar(
+                      day: day,
+                      isSelected: true,
+                      taskService: taskService),
+                  outsideBuilder: (ctx, day, _) => _DayCellWithStar(
                       day: day, isOutside: true, taskService: taskService),
                   // Markers como BARRAS horizontales por prioridad
                   // (estilo Samsung) — hasta 3 barras visibles.
@@ -269,6 +372,85 @@ class _MesPageState extends ConsumerState<MesPage> {
           borderRadius: BorderRadius.circular(2),
         ),
       );
+
+  /// Lunes (00:00) de la semana que contiene `d`. Lunes = weekday 1.
+  DateTime _weekStartFor(DateTime d) {
+    final base = DateTime(d.year, d.month, d.day);
+    return base.subtract(Duration(days: base.weekday - 1));
+  }
+
+  /// Etiqueta "20 abr – 26 abr" para mostrar entre las flechas en
+  /// modo week.
+  String _weekRangeLabel(DateTime d) {
+    final start = _weekStartFor(d);
+    final end = start.add(const Duration(days: 6));
+    final months = [
+      'ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'
+    ];
+    return '${start.day} ${months[start.month - 1]} – ${end.day} ${months[end.month - 1]}';
+  }
+}
+
+/// Wrapper de `_DayCell` que agrega un mini-icono estrella en la
+/// esquina superior izquierda cuando la celda corresponde a un
+/// LUNES. Tap en la estrella → abre el bottom sheet de metas
+/// primordiales de esa semana, sin cambiar el día seleccionado.
+class _DayCellWithStar extends StatelessWidget {
+  const _DayCellWithStar({
+    required this.day,
+    this.isToday = false,
+    this.isSelected = false,
+    this.isOutside = false,
+    required this.taskService,
+  });
+
+  final DateTime day;
+  final bool isToday;
+  final bool isSelected;
+  final bool isOutside;
+  final dynamic taskService;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMonday = day.weekday == 1;
+    final cell = _DayCell(
+      day: day,
+      isToday: isToday,
+      isSelected: isSelected,
+      isOutside: isOutside,
+      taskService: taskService,
+    );
+    if (!isMonday) return cell;
+    final monday = DateTime(day.year, day.month, day.day);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        cell,
+        Positioned(
+          left: 2,
+          top: 2,
+          child: GestureDetector(
+            onTap: () {
+              FeedbackService.instance.tick();
+              WeeklyGoalsSheet.show(context, monday);
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: 14,
+              height: 14,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.colorDanger.withAlpha(30),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.star_rounded,
+                  size: 9, color: AppTheme.colorDanger),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Celda del calendario con DragTarget — soltar una tarea de otro día

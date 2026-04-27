@@ -57,6 +57,8 @@ class Task extends Equatable {
   /// no asignó a ningún día específico todavía.
   final String? dayId;
   final int? estimatedMinutes;
+  /// Orden manual del usuario (drag-and-drop dentro de una sección).
+  final int sortOrder;
   final DateTime createdAt;
   final DateTime? completedAt;
 
@@ -76,6 +78,7 @@ class Task extends Equatable {
     this.subtaskIds = const [],
     this.dayId,
     this.estimatedMinutes,
+    this.sortOrder = 0,
     required this.createdAt,
     this.completedAt,
   });

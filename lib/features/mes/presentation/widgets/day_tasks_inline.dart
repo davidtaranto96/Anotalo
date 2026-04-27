@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
-import '../../../../core/models/task_area.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../hoy/domain/models/task.dart';
+import '../../../hoy/presentation/providers/task_provider.dart';
 
-/// Lista inline (no modal) de tareas del día seleccionado en MesPage.
-///
-/// Cada tarea es un `LongPressDraggable<Task>` — long-press inicia drag
-/// y al soltar sobre otra celda del calendario reasigna su `dayId`.
-/// Tap en el checkbox marca completa/incompleta sin salir.
-class DayTasksInline extends StatelessWidget {
+/// Lista inline de tareas del día seleccionado.
+/// - Pending arriba (lista plana, drag handle ≡ para reordenar)
+/// - Completadas en sección colapsable abajo
+/// - Cada tarea es un `LongPressDraggable<Task>` para mover de día
+class DayTasksInline extends ConsumerStatefulWidget {
   const DayTasksInline({
     super.key,
     required this.day,
@@ -30,18 +30,24 @@ class DayTasksInline extends StatelessWidget {
   final void Function(String id) onDelete;
 
   @override
+  ConsumerState<DayTasksInline> createState() => _DayTasksInlineState();
+}
+
+class _DayTasksInlineState extends ConsumerState<DayTasksInline> {
+  bool _completedExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    // Agrupar por área. Las tareas con prioridad alta primero.
-    final byArea = <String?, List<Task>>{};
-    for (final t in tasks) {
-      byArea.putIfAbsent(t.area, () => []).add(t);
-    }
-    for (final list in byArea.values) {
-      list.sort((a, b) => a.priority.index.compareTo(b.priority.index));
-    }
+    // Ya vienen ordenadas por sortOrder asc desde watchTasksInRange.
+    final pending = widget.tasks
+        .where((t) => t.status != TaskStatus.done)
+        .toList();
+    final completed = widget.tasks
+        .where((t) => t.status == TaskStatus.done)
+        .toList();
 
     final dateLabel = DateFormat("EEEE d 'de' MMMM", 'es')
-        .format(day)
+        .format(widget.day)
         .replaceFirstMapped(
             RegExp(r'^[a-zñáéíóú]'), (m) => m.group(0)!.toUpperCase());
 
@@ -67,9 +73,10 @@ class DayTasksInline extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      tasks.isEmpty
+                      widget.tasks.isEmpty
                           ? 'Día libre'
-                          : '${tasks.length} ${tasks.length == 1 ? "tarea" : "tareas"}',
+                          : '${pending.length} pendiente${pending.length == 1 ? "" : "s"}'
+                              '${completed.isNotEmpty ? " · ${completed.length} ✓" : ""}',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: context.textSecondary,
@@ -78,9 +85,9 @@ class DayTasksInline extends StatelessWidget {
                   ],
                 ),
               ),
-              if (tasks.isNotEmpty)
+              if (pending.length > 1)
                 Text(
-                  'Mantené ↕ para arrastrar',
+                  'Tocá ≡ para reordenar',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     color: context.textTertiary,
@@ -91,7 +98,7 @@ class DayTasksInline extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: tasks.isEmpty
+          child: widget.tasks.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -109,20 +116,50 @@ class DayTasksInline extends StatelessWidget {
                     ],
                   ),
                 )
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  children: [
-                    for (final entry in byArea.entries) ...[
-                      _AreaHeader(areaId: entry.key),
-                      for (final t in entry.value)
-                        _DraggableTaskRow(
-                          task: t,
-                          onComplete: onComplete,
-                          onUncomplete: onUncomplete,
-                          onDelete: onDelete,
+              : CustomScrollView(
+                  slivers: [
+                    // ── Pending (reordenable) ──────────────────────
+                    if (pending.isNotEmpty)
+                      SliverReorderableList(
+                        itemCount: pending.length,
+                        itemBuilder: (ctx, i) {
+                          return _PendingTaskRow(
+                            key: ValueKey('day-task-${pending[i].id}'),
+                            task: pending[i],
+                            index: i,
+                            onComplete: widget.onComplete,
+                            onDelete: widget.onDelete,
+                          );
+                        },
+                        onReorder: (oldIndex, newIndex) async {
+                          FeedbackService.instance.tick();
+                          final adjustedNew =
+                              newIndex > oldIndex ? newIndex - 1 : newIndex;
+                          final updated = List<Task>.from(pending);
+                          final moved = updated.removeAt(oldIndex);
+                          updated.insert(adjustedNew, moved);
+                          await ref
+                              .read(taskServiceProvider)
+                              .reorderTasks(updated.map((t) => t.id).toList());
+                        },
+                      ),
+
+                    // ── Completed (colapsable) ──────────────────────
+                    if (completed.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: _CompletedSection(
+                          tasks: completed,
+                          expanded: _completedExpanded,
+                          onToggle: () {
+                            FeedbackService.instance.tick();
+                            setState(() =>
+                                _completedExpanded = !_completedExpanded);
+                          },
+                          onUncomplete: widget.onUncomplete,
+                          onDelete: widget.onDelete,
                         ),
-                      const SizedBox(height: 8),
-                    ],
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
                   ],
                 ),
         ),
@@ -131,47 +168,20 @@ class DayTasksInline extends StatelessWidget {
   }
 }
 
-class _AreaHeader extends StatelessWidget {
-  const _AreaHeader({required this.areaId});
-  final String? areaId;
-
-  @override
-  Widget build(BuildContext context) {
-    final area = areaId == null ? null : getTaskArea(areaId);
-    final label = area?.label ?? (areaId == null ? 'Sin área' : areaId!);
-    final color = area?.color ?? context.textSecondary;
-    final emoji = area?.emoji ?? '📌';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(
-            label.toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: color,
-              letterSpacing: 0.8,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DraggableTaskRow extends StatelessWidget {
-  const _DraggableTaskRow({
+/// Fila de tarea pendiente: drag handle ≡ a la izquierda para reorder
+/// vertical (mismo día) + cuerpo `LongPressDraggable<Task>` para mover
+/// a otra celda del calendario.
+class _PendingTaskRow extends StatelessWidget {
+  const _PendingTaskRow({
+    super.key,
     required this.task,
+    required this.index,
     required this.onComplete,
-    required this.onUncomplete,
     required this.onDelete,
   });
   final Task task;
+  final int index;
   final void Function(String id) onComplete;
-  final void Function(String id) onUncomplete;
   final void Function(String id) onDelete;
 
   Color _priorityColor() => switch (task.priority) {
@@ -183,11 +193,10 @@ class _DraggableTaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDone = task.status == TaskStatus.done;
     final priorityColor = _priorityColor();
     final body = Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: context.surfaceCard,
         borderRadius: BorderRadius.circular(10),
@@ -195,26 +204,31 @@ class _DraggableTaskRow extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Drag handle visible — sólo este inicia el reorder
+          ReorderableDragStartListener(
+            index: index,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 4, vertical: 4),
+                child: Icon(Icons.drag_indicator_rounded,
+                    size: 18, color: context.textTertiary),
+              ),
+            ),
+          ),
           GestureDetector(
             onTap: () {
               FeedbackService.instance.success();
-              if (isDone) {
-                onUncomplete(task.id);
-              } else {
-                onComplete(task.id);
-              }
+              onComplete(task.id);
             },
             child: Container(
               width: 22,
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDone ? priorityColor : Colors.transparent,
                 border: Border.all(color: priorityColor, width: 2),
               ),
-              child: isDone
-                  ? const Icon(Icons.check, size: 14, color: Colors.white)
-                  : null,
             ),
           ),
           const SizedBox(width: 10),
@@ -224,8 +238,7 @@ class _DraggableTaskRow extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
-                color: isDone ? context.textTertiary : context.textPrimary,
-                decoration: isDone ? TextDecoration.lineThrough : null,
+                color: context.textPrimary,
               ),
             ),
           ),
@@ -242,15 +255,19 @@ class _DraggableTaskRow extends StatelessWidget {
       ),
     );
 
+    // El cuerpo es Draggable para mover-de-día. El drag handle (arriba)
+    // captura el long-press del reorder antes de que llegue acá.
     return LongPressDraggable<Task>(
+      key: ValueKey('drag-${task.id}'),
       data: task,
-      delay: const Duration(milliseconds: 280),
+      delay: const Duration(milliseconds: 320),
       onDragStarted: () => FeedbackService.instance.warn(),
       feedback: Material(
         color: Colors.transparent,
         child: Container(
           width: 240,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: priorityColor,
             borderRadius: BorderRadius.circular(10),
@@ -287,3 +304,158 @@ class _DraggableTaskRow extends StatelessWidget {
     );
   }
 }
+
+/// Sección colapsable de tareas completadas. Header con count y chevron;
+/// tap = toggle.
+class _CompletedSection extends StatelessWidget {
+  const _CompletedSection({
+    required this.tasks,
+    required this.expanded,
+    required this.onToggle,
+    required this.onUncomplete,
+    required this.onDelete,
+  });
+  final List<Task> tasks;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final void Function(String id) onUncomplete;
+  final void Function(String id) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.colorSuccess,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'COMPLETADAS',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.colorSuccess,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppTheme.colorSuccess.withAlpha(30),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${tasks.length}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.colorSuccess,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.textSecondary, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded)
+            for (final t in tasks)
+              _DoneTaskRow(
+                task: t,
+                onUncomplete: onUncomplete,
+                onDelete: onDelete,
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DoneTaskRow extends StatelessWidget {
+  const _DoneTaskRow({
+    required this.task,
+    required this.onUncomplete,
+    required this.onDelete,
+  });
+  final Task task;
+  final void Function(String id) onUncomplete;
+  final void Function(String id) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: context.neutral50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: context.dividerColor),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              FeedbackService.instance.tick();
+              onUncomplete(task.id);
+            },
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.colorSuccess,
+              ),
+              child: const Icon(Icons.check, size: 14, color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              task.title,
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: context.textTertiary,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Borrar',
+            icon: const Icon(Icons.delete_outline_rounded, size: 16),
+            color: AppTheme.colorDanger.withAlpha(180),
+            onPressed: () {
+              FeedbackService.instance.danger();
+              onDelete(task.id);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+

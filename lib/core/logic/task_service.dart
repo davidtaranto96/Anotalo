@@ -25,6 +25,7 @@ class TaskService {
     subtaskIds: decodeStringList(row.subtaskIds),
     dayId: row.dayId,
     estimatedMinutes: row.estimatedMinutes,
+    sortOrder: row.sortOrder,
     createdAt: row.createdAt,
     completedAt: row.completedAt,
   );
@@ -74,6 +75,7 @@ class TaskService {
           t.status.isNotIn(['deleted']))
       ..orderBy([
         (t) => OrderingTerm.asc(t.dayId),
+        (t) => OrderingTerm.asc(t.sortOrder),
         (t) => OrderingTerm.asc(t.priority),
       ]))
       .watch()

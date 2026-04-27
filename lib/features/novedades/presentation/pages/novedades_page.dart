@@ -107,9 +107,30 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.8.1',
+    version: '1.9.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Calendario unificado: Semana y Mes en una sola pestaña',
+    items: [
+      _ChangelogItem(_mj, Icons.merge_type_rounded,
+          'Tabs Semana y Mes fusionadas en una sola "Calendario". Toggle entre vistas con swipe vertical sobre el calendario — al hacer swipe-up se colapsa a 1 semana, swipe-down expande a mes.'),
+      _ChangelogItem(_nf, Icons.view_week_rounded,
+          'Modo semana con cards estilo días separados (LUN/20, MAR/21…), counts X/N y dot verde si todo se completó. Reemplazó las barras horizontales en este formato.'),
+      _ChangelogItem(_nf, Icons.star_rounded,
+          'Mini-estrella en cada lunes del mes — tap para abrir las metas primordiales de esa semana. En modo semana hay un botón "Lo primordial de la semana" más visible.'),
+      _ChangelogItem(_nf, Icons.checklist_rounded,
+          'Metas primordiales de la semana: agregar/marcar/borrar desde un bottom sheet. Se persiste por semana (compartido con la pantalla Semana original que ya no existe).'),
+      _ChangelogItem(_nf, Icons.task_alt_rounded,
+          'Sección "Completadas" colapsable en el día seleccionado del calendario — antes se mezclaban con las pendientes.'),
+      _ChangelogItem(_nf, Icons.drag_indicator_rounded,
+          'Drag handle ≡ visible en cada tarea del día — tap-y-arrastrar para reordenar. El cuerpo de la card sigue arrastrable a otro día con long-press.'),
+      _ChangelogItem(_mj, Icons.swap_horiz_rounded,
+          'Drag-and-drop entre días en modo semana también: soltá una tarea sobre otro día-card y se reasigna.'),
+    ],
+  ),
+  _Release(
+    version: '1.8.1',
+    date: 'Abril 2026',
     title: 'Pulido: gestos, vista mensual y proyectos sin fecha',
     items: [
       _ChangelogItem(_nf, Icons.calendar_view_month_rounded,
