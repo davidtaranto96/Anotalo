@@ -350,7 +350,7 @@ class SettingsPage extends ConsumerWidget {
                   leading: Icon(Icons.info_outline_rounded, color: theme.textTheme.bodyMedium?.color),
                   title: const _Title('Versión'),
                   trailing: Text(
-                    '1.8.0',
+                    '1.8.1',
                     style: GoogleFonts.inter(fontSize: 13, color: theme.textTheme.bodyMedium?.color),
                   ),
                 ),
