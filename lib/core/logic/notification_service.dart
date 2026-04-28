@@ -36,11 +36,12 @@ class NotificationService {
     }
 
     try {
-      // Apunto usa `launcher_icon` (no `ic_launcher`) — es el nombre que
-      // setea flutter_launcher_icons en pubspec.yaml. Apuntar a un asset
-      // que no existe hace fallar el init y silencia TODAS las notifs.
+      // Notification icon dedicado — blanco silueta, alineado a las
+      // guidelines de Android 5+ (todo lo no transparente se enmascara
+      // a blanco en la status bar). Usar el launcher_icon directamente
+      // se ve como un cuadrado blanco en Android 13+.
       const initSettings = InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+        android: AndroidInitializationSettings('@drawable/ic_notification'),
       );
       await _plugin.initialize(initSettings);
 

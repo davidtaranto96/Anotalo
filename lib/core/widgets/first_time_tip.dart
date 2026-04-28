@@ -43,6 +43,7 @@ class FirstTimeTip extends StatefulWidget {
     'coach.proyectos',
     'coach.enfoque',
     'coach.habitos',
+    'coach.inbox',
   ];
 
   static Future<void> resetAll() async {

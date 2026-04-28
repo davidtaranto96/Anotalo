@@ -107,9 +107,26 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.21.0',
+    version: '1.22.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Búsqueda en Configuración + acento en pickers + más detalles',
+    items: [
+      _ChangelogItem(_nf, Icons.search_rounded,
+          'Buscador en Configuración: filtrá secciones por palabra clave (ej: "backup", "sonido", "prioridad"). Útil ahora que hay muchas opciones.'),
+      _ChangelogItem(_mj, Icons.palette_rounded,
+          'TimePicker: el reloj de "elegir hora" ahora respeta tu color de acento — antes salía con los colores Material default (azul/naranja).'),
+      _ChangelogItem(_nf, Icons.notifications_active_rounded,
+          'Icono dedicado de notificaciones — silueta blanca pulida (antes Android lo mostraba como cuadrado blanco al usar el ícono de la app).'),
+      _ChangelogItem(_nf, Icons.swap_horiz_rounded,
+          'Cambio de cuenta de Google: si entrás con otra cuenta distinta a la anterior, te pregunta qué hacer con los datos locales — mantenerlos o restaurar de la nueva cuenta. Antes los pisaba sin preguntar.'),
+      _ChangelogItem(_nf, Icons.lightbulb_outline_rounded,
+          'Coach-mark nuevo en Inbox: la primera vez que entrás te explica cómo capturar y procesar.'),
+    ],
+  ),
+  _Release(
+    version: '1.21.0',
+    date: 'Abril 2026',
     title: 'Configuración reorganizada — 7 grupos en lugar de 15',
     items: [
       _ChangelogItem(_mj, Icons.tune_rounded,

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/utils/format_utils.dart';
 import '../../../../core/widgets/first_time_tip.dart';
+import '../../../../core/widgets/theme_pickers.dart';
 import '../../../mes/presentation/pages/monthly_review_page.dart';
 import '../../domain/models/task.dart';
 import '../providers/task_provider.dart';
@@ -749,7 +750,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
   }
 
   Future<void> _pickReminderTime() async {
-    final picked = await showTimePicker(
+    final picked = await showAccentTimePicker(
       context: context,
       initialTime: _reminderTime ?? TimeOfDay.now(),
     );

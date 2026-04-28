@@ -34,6 +34,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     FeedbackService.instance.tick();
     setState(() => _signingIn = true);
     try {
+      // Capturamos el email guardado de la sesión anterior (si la
+      // hubo) ANTES de loguearnos. Después comparamos con el nuevo
+      // email para detectar cambio de cuenta.
+      final previousEmail = await OnboardingPrefs.getEmail();
+
       final user = await AuthService.instance.signInWithGoogle();
       if (!mounted) return;
       if (user == null) {
@@ -41,7 +46,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         setState(() => _signingIn = false);
         return;
       }
-      // Persistir email — quedará disponible para la cuenta.
+
+      // Cambio de cuenta: si había un email previo distinto del actual,
+      // y el onboarding ya estaba completado (es decir, hay datos
+      // locales del user anterior), preguntamos qué hacer.
+      final isSwitchingAccount = previousEmail != null &&
+          previousEmail.isNotEmpty &&
+          user.email != null &&
+          previousEmail != user.email &&
+          OnboardingPrefs.cachedCompleted;
+
+      if (isSwitchingAccount && mounted) {
+        final keepLocal = await _askAccountSwitch(previousEmail, user.email!);
+        if (!mounted) return;
+        if (keepLocal == null) {
+          // Cancelado — deslogueamos para no quedar a medias.
+          await AuthService.instance.signOut();
+          setState(() => _signingIn = false);
+          return;
+        }
+        if (!keepLocal) {
+          // El user prefiere arrancar limpio con esta cuenta — vamos
+          // a intentar restaurar desde Drive de la cuenta nueva.
+          // (Datos locales se reemplazan si hay backup; sino los
+          // mantenemos pero los va a sobrescribir el primer auto-backup.)
+        }
+      }
+
+      // Persistir email actual.
       if (user.email != null) {
         await OnboardingPrefs.saveEmail(user.email!);
       }
@@ -53,14 +85,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       );
 
       // Si hay un backup en su Drive, ofrecer restaurar antes del
-      // onboarding. Caso típico: cel nuevo / reinstalación. Si no hay
-      // backup o el user dice "no", seguimos al onboarding normal.
+      // onboarding. Caso típico: cel nuevo / reinstalación / cambio
+      // de cuenta. Si no hay backup o el user dice "no", seguimos
+      // al onboarding normal (o directamente a / si ya estaba en
+      // onboarded).
       final restored = await _maybeRestoreFromDrive();
       if (!mounted) return;
       if (restored) {
-        // Marcar onboarding como completado — el user ya tiene datos.
         await OnboardingPrefs.markCompleted();
         if (!mounted) return;
+        context.go('/');
+      } else if (OnboardingPrefs.cachedCompleted) {
+        // Ya estaba onboarded (caso del switch de cuenta sin restore).
         context.go('/');
       } else {
         context.go('/onboarding');
@@ -74,6 +110,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         tone: ToastTone.warn,
       );
     }
+  }
+
+  /// Diálogo cuando el user se loguea con una cuenta distinta a la
+  /// anterior. Devuelve `true` si quiere mantener los datos locales,
+  /// `false` si quiere reemplazar (vamos a buscar backup de la nueva
+  /// cuenta), o `null` si cancela el switch.
+  Future<bool?> _askAccountSwitch(String prevEmail, String newEmail) async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Cuenta diferente',
+            style: GoogleFonts.fraunces(
+                fontSize: 18, fontWeight: FontWeight.w600)),
+        content: Text(
+          'Estabas logueado con $prevEmail y ahora entrás con $newEmail.\n\n'
+          'Tus datos locales (tareas, hábitos, notas) son del usuario anterior. '
+          '¿Qué querés hacer?',
+          style: GoogleFonts.inter(fontSize: 14, height: 1.45),
+        ),
+        actionsOverflowDirection: VerticalDirection.down,
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Mantener datos actuales'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Restaurar de la nueva cuenta'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Chequea Drive por un backup. Si lo encuentra, ofrece restaurarlo.

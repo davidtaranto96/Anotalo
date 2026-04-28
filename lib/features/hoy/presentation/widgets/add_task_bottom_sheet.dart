@@ -8,6 +8,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/models/task_area.dart';
 import '../../../../../core/providers/task_area_provider.dart';
 import '../../../../../core/utils/format_utils.dart';
+import '../../../../../core/widgets/theme_pickers.dart';
 import '../../../../../core/widgets/voice_input_button.dart';
 import '../../../../../core/logic/task_parser.dart';
 import '../../../../../core/logic/user_prefs.dart';
@@ -192,7 +193,7 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
   }
 
   Future<void> _pickReminderTime() async {
-    final picked = await showTimePicker(
+    final picked = await showAccentTimePicker(
       context: context,
       initialTime: _reminderTime ?? TimeOfDay.now(),
     );

@@ -21,6 +21,7 @@ import 'package:arquitectura_enfoque/core/models/task_area.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_confirm_dialog.dart';
 import 'package:arquitectura_enfoque/core/widgets/anotalo_toast.dart';
 import 'package:arquitectura_enfoque/core/widgets/first_time_tip.dart';
+import 'package:arquitectura_enfoque/core/widgets/theme_pickers.dart';
 import 'package:arquitectura_enfoque/features/hoy/domain/models/task.dart';
 import 'package:arquitectura_enfoque/features/hoy/presentation/widgets/task_card.dart';
 import 'package:arquitectura_enfoque/features/enfoque/domain/models/timer_state.dart';
@@ -28,11 +29,35 @@ import 'package:arquitectura_enfoque/features/onboarding/domain/onboarding_prefs
 import 'package:arquitectura_enfoque/features/settings/presentation/widgets/accent_picker.dart';
 import 'package:arquitectura_enfoque/features/settings/presentation/widgets/feedback_section.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Devuelve true si la sección debe mostrarse según el query actual.
+  /// Match es case-insensitive y se hace contra el nombre del header
+  /// y los keywords. Sin query → todo visible.
+  bool _matches(String header, List<String> keywords) {
+    if (_query.isEmpty) return true;
+    final q = _query.toLowerCase();
+    if (header.toLowerCase().contains(q)) return true;
+    return keywords.any((k) => k.toLowerCase().contains(q));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = ref.watch(isDarkModeProvider);
     final prefs = ref.watch(userPrefsProvider);
     final prefsNotifier = ref.read(userPrefsProvider.notifier);
@@ -62,78 +87,138 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
-          // ════════════════════════════════════════════════════════════
-          // 1. CUENTA — perfil + sesión Google
-          // ════════════════════════════════════════════════════════════
-          const _SectionLabel('CUENTA'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
+          // Search bar — filtra por header y keywords. Útil cuando son
+          // muchas opciones; con query vacío todo se muestra normal.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color ?? theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Row(
               children: [
-                const _NameTile(),
-                dividerWidget,
-                const _AccountTile(),
+                Icon(Icons.search_rounded,
+                    size: 18, color: context.textTertiary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: GoogleFonts.inter(
+                        fontSize: 13.5, color: context.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar configuración...',
+                      hintStyle: GoogleFonts.inter(
+                          fontSize: 13.5, color: context.textTertiary),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (v) => setState(() => _query = v.trim()),
+                  ),
+                ),
+                if (_query.isNotEmpty)
+                  IconButton(
+                    tooltip: 'Limpiar',
+                    icon: const Icon(Icons.close_rounded, size: 16),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      setState(() => _query = '');
+                    },
+                  ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 28),
+          // ════════════════════════════════════════════════════════════
+          // 1. CUENTA — perfil + sesión Google
+          // ════════════════════════════════════════════════════════════
+          if (_matches('Cuenta', const [
+            'nombre', 'perfil', 'google', 'login', 'sesión', 'cerrar', 'logout'
+          ])) ...[
+            const _SectionLabel('CUENTA'),
+            const SizedBox(height: 12),
+            _Card(
+              child: Column(
+                children: [
+                  const _NameTile(),
+                  dividerWidget,
+                  const _AccountTile(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 2. APARIENCIA — modo oscuro + acento + sonidos/hápticos
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('APARIENCIA'),
-          const SizedBox(height: 12),
-          _Card(
-            child: SwitchListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-              secondary: Icon(
-                isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                color: isDark ? AppTheme.colorAccent : AppTheme.colorWarning,
+          if (_matches('Apariencia', const [
+            'modo oscuro', 'dark mode', 'tema', 'color', 'acento',
+            'sonido', 'sonidos', 'hápticos', 'vibración', 'vibracion'
+          ])) ...[
+            const _SectionLabel('APARIENCIA'),
+            const SizedBox(height: 12),
+            _Card(
+              child: SwitchListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                secondary: Icon(
+                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  color: isDark ? AppTheme.colorAccent : AppTheme.colorWarning,
+                ),
+                title: const _Title('Modo oscuro'),
+                subtitle: _Subtitle(isDark ? 'Activado' : 'Desactivado'),
+                value: isDark,
+                activeTrackColor: AppTheme.colorPrimary.withAlpha(80),
+                activeThumbColor: AppTheme.colorPrimary,
+                onChanged: (_) =>
+                    ref.read(isDarkModeProvider.notifier).toggle(),
               ),
-              title: const _Title('Modo oscuro'),
-              subtitle: _Subtitle(isDark ? 'Activado' : 'Desactivado'),
-              value: isDark,
-              activeTrackColor: AppTheme.colorPrimary.withAlpha(80),
-              activeThumbColor: AppTheme.colorPrimary,
-              onChanged: (_) => ref.read(isDarkModeProvider.notifier).toggle(),
             ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            decoration: BoxDecoration(
-              color: theme.cardTheme.color ?? theme.colorScheme.surface,
-              borderRadius: AppTheme.r16,
-              border: Border.all(color: theme.dividerColor),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+              decoration: BoxDecoration(
+                color: theme.cardTheme.color ?? theme.colorScheme.surface,
+                borderRadius: AppTheme.r16,
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: const AccentPicker(),
             ),
-            child: const AccentPicker(),
-          ),
-          const SizedBox(height: 12),
-          const FeedbackSection(),
-
-          const SizedBox(height: 28),
+            const SizedBox(height: 12),
+            const FeedbackSection(),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 3. NOTIFICACIONES — recordatorio nocturno + avisar antes
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('NOTIFICACIONES'),
-          const SizedBox(height: 12),
-          const _ReminderTile(),
-
-          const SizedBox(height: 28),
+          if (_matches('Notificaciones', const [
+            'recordatorio', 'avisar', 'antes', 'noche', 'tareas'
+          ])) ...[
+            const _SectionLabel('NOTIFICACIONES'),
+            const SizedBox(height: 12),
+            const _ReminderTile(),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 4. BACKUP Y DATOS — Drive primero, archivo abajo como fallback
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('BACKUP Y DATOS'),
-          const SizedBox(height: 12),
-          const _Card(child: _DriveBackupSection()),
-          const SizedBox(height: 12),
-          // Backup local como fallback offline — colapsado bajo "Avanzado"
-          _Card(
-            child: ExpansionTile(
+          if (_matches('Backup y datos', const [
+            'backup', 'drive', 'archivo', 'exportar', 'restaurar',
+            'datos', 'json', 'descargar', 'subir', 'nube'
+          ])) ...[
+            const _SectionLabel('BACKUP Y DATOS'),
+            const SizedBox(height: 12),
+            const _Card(child: _DriveBackupSection()),
+            const SizedBox(height: 12),
+            _Card(
+              child: ExpansionTile(
               shape: const Border(),
               tilePadding: const EdgeInsets.symmetric(horizontal: 16),
               childrenPadding: EdgeInsets.zero,
@@ -167,16 +252,20 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
-
-          const SizedBox(height: 28),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 5. PERSONALIZACIÓN — defaults de tareas + enfoque + Hoy
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('PERSONALIZACIÓN'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
+          if (_matches('Personalización', const [
+            'prioridad', 'área', 'area', 'timer', 'enfoque', 'pomodoro',
+            'frases', 'hábitos', 'habitos', 'agrandar', 'tareas', 'defaults'
+          ])) ...[
+            const _SectionLabel('PERSONALIZACIÓN'),
+            const SizedBox(height: 12),
+            _Card(
+              child: Column(
               children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -269,16 +358,20 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
-
-          const SizedBox(height: 28),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 6. CONTENIDO — áreas + accesos a revisión
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('CONTENIDO'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
+          if (_matches('Contenido', const [
+            'áreas', 'areas', 'categorías', 'categorias',
+            'semanal', 'historial', 'revisión', 'revision', 'resumen'
+          ])) ...[
+            const _SectionLabel('CONTENIDO'),
+            const SizedBox(height: 12),
+            _Card(
+              child: Column(
               children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -321,16 +414,20 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
-
-          const SizedBox(height: 28),
+            const SizedBox(height: 28),
+          ],
 
           // ════════════════════════════════════════════════════════════
           // 7. ACERCA DE — versión + novedades + tour
           // ════════════════════════════════════════════════════════════
-          const _SectionLabel('ACERCA DE'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
+          if (_matches('Acerca de', const [
+            'versión', 'version', 'novedades', 'tour', 'cambios',
+            'apunto', 'changelog'
+          ])) ...[
+            const _SectionLabel('ACERCA DE'),
+            const SizedBox(height: 12),
+            _Card(
+              child: Column(
               children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -392,6 +489,29 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
+          ],
+
+          // Empty state cuando el query no matchea ninguna sección.
+          if (_query.isNotEmpty &&
+              ![
+                _matches('Cuenta', const ['nombre', 'perfil', 'google', 'login', 'sesión', 'logout']),
+                _matches('Apariencia', const ['modo oscuro', 'tema', 'color', 'acento', 'sonido', 'hápticos']),
+                _matches('Notificaciones', const ['recordatorio', 'avisar', 'antes', 'noche']),
+                _matches('Backup y datos', const ['backup', 'drive', 'archivo', 'exportar', 'restaurar', 'datos', 'json']),
+                _matches('Personalización', const ['prioridad', 'área', 'timer', 'enfoque', 'frases', 'hábitos', 'agrandar']),
+                _matches('Contenido', const ['áreas', 'categorías', 'semanal', 'historial', 'revisión']),
+                _matches('Acerca de', const ['versión', 'novedades', 'tour', 'cambios']),
+              ].any((m) => m))
+            Padding(
+              padding: const EdgeInsets.all(40),
+              child: Center(
+                child: Text(
+                  'Sin resultados para "$_query"',
+                  style: GoogleFonts.inter(
+                      fontSize: 13.5, color: context.textTertiary),
+                ),
+              ),
+            ),
 
           const SizedBox(height: 32),
         ],
@@ -810,7 +930,8 @@ class _ReminderTileState extends State<_ReminderTile> {
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: _time);
+    final picked =
+        await showAccentTimePicker(context: context, initialTime: _time);
     if (picked == null) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(NotificationService.prefHour, picked.hour);

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../../../../core/widgets/voice_input_button.dart';
 import '../../../hoy/presentation/widgets/add_task_bottom_sheet.dart';
 import '../../../proyectos/presentation/widgets/add_project_bottom_sheet.dart';
@@ -256,7 +257,13 @@ class _InboxPageState extends ConsumerState<InboxPage> {
     final notesAsync = ref.watch(unprocessedNotesProvider);
     final processedAsync = ref.watch(processedNotesProvider);
 
-    return Scaffold(
+    return FirstTimeTip(
+      tipKey: 'coach.inbox',
+      title: 'Capturá lo que se te ocurra',
+      body:
+          'Anotá ideas, tareas o proyectos sin pensar el dónde. Después decidís: convertir en tarea, archivar o tirar. Mantené apretada una nota para seleccionar varias.',
+      icon: Icons.inbox_rounded,
+      child: Scaffold(
       backgroundColor: context.surfaceBase,
       appBar: _buildAppBar(context),
       body: SafeArea(
@@ -419,7 +426,8 @@ class _InboxPageState extends ConsumerState<InboxPage> {
           ],
         ),
       ),
-    );
+    ), // Scaffold
+    ); // FirstTimeTip
   }
 
   void _onCardTap(QuickNote note) {
