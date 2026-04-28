@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_utils.dart';
 import '../../../../core/widgets/first_time_tip.dart';
+import '../../../mes/presentation/pages/monthly_review_page.dart';
 import '../../domain/models/task.dart';
 import '../providers/task_provider.dart';
 import '../../../habitos/domain/models/habit.dart';
@@ -73,6 +74,106 @@ class _HoyPageState extends ConsumerState<HoyPage> {
         ? 'Buen día'
         : (h < 19 ? 'Buenas tardes' : 'Buenas noches');
     return '$period, $name';
+  }
+
+  /// Bottom sheet "hub" con las 4 opciones de revisión: día (HOY),
+  /// semana, mes (dashboard) e historial. Antes estaban dispersas en
+  /// Configuración + el long-press del icono — ahora un solo tap.
+  void _showReviewHub(BuildContext ctx) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet<void>(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: BoxDecoration(
+          color: sheetCtx.surfaceSheet,
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: sheetCtx.dividerColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Text(
+              'Revisión',
+              style: GoogleFonts.fraunces(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: sheetCtx.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Cerrá el día, mirá la semana o repasá el mes.',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: sheetCtx.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 14),
+            _ReviewHubTile(
+              icon: Icons.task_alt_rounded,
+              color: AppTheme.colorPrimary,
+              title: 'Revisión del día',
+              subtitle: 'Tareas, hábitos, ánimo y cierre',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                ctx.push('/review');
+              },
+            ),
+            _ReviewHubTile(
+              icon: Icons.calendar_view_week_rounded,
+              color: AppTheme.colorSuccess,
+              title: 'Resumen semanal',
+              subtitle: 'Logros, hábitos y notas de los últimos 7 días',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                ctx.push('/weekly-review');
+              },
+            ),
+            _ReviewHubTile(
+              icon: Icons.calendar_month_rounded,
+              color: AppTheme.colorAccent,
+              title: 'Dashboard mensual',
+              subtitle: 'Visión general del mes en curso',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                Navigator.of(ctx).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        MonthlyReviewPage(month: DateTime.now()),
+                  ),
+                );
+              },
+            ),
+            _ReviewHubTile(
+              icon: Icons.history_rounded,
+              color: AppTheme.colorWarning,
+              title: 'Historial',
+              subtitle: 'Revisiones pasadas — ver y editar',
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                ctx.push('/review-history');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -196,15 +297,11 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            GestureDetector(
-                              onLongPress: () {
-                                HapticFeedback.mediumImpact();
-                                context.push('/review-history');
-                              },
-                              child: _HeaderIcon(
-                                icon: Icons.rate_review_rounded,
-                                onTap: () => context.push('/review'),
-                              ),
+                            _HeaderIcon(
+                              icon: Icons.rate_review_rounded,
+                              // Tap → hub con todas las opciones de
+                              // revisión (día, semana, mes, historial).
+                              onTap: () => _showReviewHub(context),
                             ),
                             _HeaderIcon(
                               icon: Icons.settings_rounded,
@@ -1934,6 +2031,79 @@ class _PrioritySubSection extends StatelessWidget {
                 onDelete: () => onDelete(t.id),
               )),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Review hub tile ──────────────────────────────────────────────────────────
+
+/// Tile de cada opción del bottom sheet de revisión. Icon + título +
+/// subtítulo + chevron, con tap target generoso y haptic.
+class _ReviewHubTile extends StatelessWidget {
+  const _ReviewHubTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: context.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: context.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: context.textTertiary),
+          ],
+        ),
       ),
     );
   }
