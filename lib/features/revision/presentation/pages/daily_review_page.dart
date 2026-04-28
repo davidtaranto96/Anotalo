@@ -163,6 +163,33 @@ class _DailyReviewPageState extends ConsumerState<DailyReviewPage> {
     final isCompleted = review?.isCompleted ?? false;
     final readOnly = isCompleted;
 
+    // Cuando la revisión ya está cerrada (read-only), mostramos un
+    // resumen unificado en una sola pantalla scrollable — antes había
+    // que apretar "Siguiente" 3 veces para ver toda la info.
+    if (readOnly && review != null) {
+      return Scaffold(
+        backgroundColor: context.surfaceBase,
+        appBar: _buildAppBar(context),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              _CompletedBanner(
+                completedAt: review.completedAt!,
+                onEdit: _reopen,
+              ),
+              Expanded(
+                child: _ReadOnlyReviewSummary(
+                  review: review,
+                  dayId: _effectiveDayId,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: context.surfaceBase,
       appBar: _buildAppBar(context),
@@ -1778,6 +1805,437 @@ class _StatTile extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// READ-ONLY SUMMARY VIEW (revisión cerrada)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Vista unificada en una sola pantalla scrollable. Muestra todo el
+/// detalle de una revisión cerrada — tareas, hábitos, ánimo y notas —
+/// sin necesidad de apretar "Siguiente". Se reserva para `readOnly`;
+/// cuando la revisión está abierta seguimos con el wizard de 4 pasos.
+class _ReadOnlyReviewSummary extends ConsumerWidget {
+  const _ReadOnlyReviewSummary({required this.review, required this.dayId});
+
+  final DailyReview review;
+  final String dayId;
+
+  static const _faces = ['😞', '😕', '😐', '🙂', '😄'];
+  static const _moodLabels = ['Muy mal', 'Mal', 'Neutral', 'Bien', 'Genial'];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      children: [
+        // ── Tareas ────────────────────────────────────────────────────
+        const _RoSectionTitle(label: 'TAREAS', color: AppTheme.colorSuccess),
+        const SizedBox(height: 8),
+        StreamBuilder<List<Task>>(
+          stream: ref.read(taskServiceProvider).watchTasksByDay(dayId),
+          builder: (_, snap) {
+            final tasks = snap.data ?? const <Task>[];
+            final own = tasks
+                .where((t) => t.parentProjectId == null ||
+                    t.parentProjectId!.isEmpty)
+                .toList();
+            final completed =
+                own.where((t) => t.status == TaskStatus.done).toList();
+            final pending =
+                own.where((t) => t.status != TaskStatus.done).toList();
+            return _RoCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _RoStat(
+                    label: 'Completadas',
+                    value: '${completed.length}',
+                    tone: AppTheme.colorSuccess,
+                  ),
+                  _RoStat(
+                    label: 'Pendientes',
+                    value: '${pending.length}',
+                    tone: pending.isEmpty ? null : AppTheme.colorWarning,
+                  ),
+                  if (completed.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Divider(height: 1, color: context.dividerColor),
+                    const SizedBox(height: 8),
+                    Text(
+                      'COMPLETASTE',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: context.textTertiary,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final t in completed)
+                      _RoTaskRow(task: t, isDone: true),
+                  ],
+                  if (pending.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Divider(height: 1, color: context.dividerColor),
+                    const SizedBox(height: 8),
+                    Text(
+                      'QUEDARON PENDIENTES',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: context.textTertiary,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final t in pending) _RoTaskRow(task: t, isDone: false),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(height: 20),
+
+        // ── Hábitos ───────────────────────────────────────────────────
+        const _RoSectionTitle(label: 'HÁBITOS', color: AppTheme.colorPrimary),
+        const SizedBox(height: 8),
+        _RoHabitsCard(dayId: dayId),
+
+        const SizedBox(height: 20),
+
+        // ── Diario ────────────────────────────────────────────────────
+        const _RoSectionTitle(
+            label: 'DIARIO DEL DÍA', color: AppTheme.colorAccent),
+        const SizedBox(height: 8),
+        _RoCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (review.mood != null)
+                _RoStat(
+                  label: 'Ánimo',
+                  value:
+                      '${_faces[review.mood! - 1]}  ${_moodLabels[review.mood! - 1]}',
+                )
+              else
+                const _RoStat(label: 'Ánimo', value: '—'),
+              _RoStat(
+                label: 'Fumaste',
+                value: review.smoked == null
+                    ? '—'
+                    : (review.smoked! ? 'Sí' : 'No'),
+                tone: review.smoked == true ? AppTheme.colorDanger : null,
+              ),
+              _RoStat(
+                label: 'Medicación',
+                value: review.tookMedication == null
+                    ? '—'
+                    : (review.tookMedication! ? 'Sí' : 'No'),
+                tone: review.tookMedication == true
+                    ? AppTheme.colorPrimary
+                    : null,
+              ),
+              if ((review.moodNote ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: context.dividerColor),
+                const SizedBox(height: 10),
+                Text(
+                  '¿CÓMO TE SENTISTE?',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: context.textTertiary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  review.moodNote!,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: context.textPrimary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+              if ((review.patterns ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: context.dividerColor),
+                const SizedBox(height: 10),
+                Text(
+                  'PATRONES / NOTAS',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: context.textTertiary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  review.patterns!,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: context.textPrimary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+              if ((review.highlights ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Divider(height: 1, color: context.dividerColor),
+                const SizedBox(height: 10),
+                Text(
+                  'HIGHLIGHTS',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: context.textTertiary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  review.highlights!,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: context.textPrimary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoSectionTitle extends StatelessWidget {
+  const _RoSectionTitle({required this.label, required this.color});
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RoCard extends StatelessWidget {
+  const _RoCard({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: context.surfaceCard,
+        borderRadius: AppTheme.r12,
+        border: Border.all(color: context.dividerColor),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _RoStat extends StatelessWidget {
+  const _RoStat({required this.label, required this.value, this.tone});
+  final String label;
+  final String value;
+  final Color? tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: context.textSecondary,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: tone ?? context.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoTaskRow extends StatelessWidget {
+  const _RoTaskRow({required this.task, required this.isDone});
+  final Task task;
+  final bool isDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            isDone
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: 16,
+            color: isDone ? AppTheme.colorSuccess : context.textTertiary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              task.title,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: isDone ? context.textTertiary : context.textPrimary,
+                decoration: isDone ? TextDecoration.lineThrough : null,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoHabitsCard extends ConsumerWidget {
+  const _RoHabitsCard({required this.dayId});
+  final String dayId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<List<Habit>>(
+      stream: ref.read(habitServiceProvider).watchActiveHabits(),
+      builder: (_, habitSnap) {
+        return StreamBuilder<List<HabitCompletion>>(
+          stream:
+              ref.read(habitServiceProvider).watchCompletionsForDay(dayId),
+          builder: (_, compSnap) {
+            final habits = habitSnap.data ?? const <Habit>[];
+            final doneIds =
+                (compSnap.data ?? const []).map((c) => c.habitId).toSet();
+            final done =
+                habits.where((h) => doneIds.contains(h.id)).toList();
+            final missed =
+                habits.where((h) => !doneIds.contains(h.id)).toList();
+
+            return _RoCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _RoStat(
+                    label: 'Cumplidos',
+                    value: '${done.length} / ${habits.length}',
+                    tone: done.length == habits.length && habits.isNotEmpty
+                        ? AppTheme.colorSuccess
+                        : null,
+                  ),
+                  if (done.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Divider(height: 1, color: context.dividerColor),
+                    const SizedBox(height: 8),
+                    for (final h in done)
+                      _RoHabitRow(habit: h, isDone: true),
+                  ],
+                  if (missed.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Divider(height: 1, color: context.dividerColor),
+                    const SizedBox(height: 8),
+                    Text(
+                      'NO CUMPLISTE',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: context.textTertiary,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final h in missed)
+                      _RoHabitRow(habit: h, isDone: false),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _RoHabitRow extends StatelessWidget {
+  const _RoHabitRow({required this.habit, required this.isDone});
+  final Habit habit;
+  final bool isDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            habit.icon != null && habit.icon!.isNotEmpty ? habit.icon! : '•',
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              habit.title,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: isDone ? context.textPrimary : context.textTertiary,
+              ),
+            ),
+          ),
+          Icon(
+            isDone
+                ? Icons.check_circle_rounded
+                : Icons.cancel_outlined,
+            size: 16,
+            color:
+                isDone ? AppTheme.colorSuccess : context.textTertiary,
+          ),
         ],
       ),
     );

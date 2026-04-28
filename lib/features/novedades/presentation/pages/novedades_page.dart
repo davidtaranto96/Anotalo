@@ -107,9 +107,20 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.17.0',
+    version: '1.18.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Revisiones viejas en una sola vista',
+    items: [
+      _ChangelogItem(_mj, Icons.read_more_rounded,
+          'Cuando abrís una revisión cerrada, ya no tenés que apretar "Siguiente" 3 veces — ves todo el detalle en una sola pantalla scrollable: tareas completadas, pendientes, hábitos cumplidos/no cumplidos, ánimo, fumar, medicación y notas del diario.'),
+      _ChangelogItem(_mj, Icons.lock_rounded,
+          'El wizard de pasos sigue intacto para la revisión del día actual — solo cambia el modo lectura.'),
+    ],
+  ),
+  _Release(
+    version: '1.17.0',
+    date: 'Abril 2026',
     title: 'Notifs reparadas, banners centrados y refresh al cambiar de día',
     items: [
       _ChangelogItem(_fx, Icons.notifications_active_rounded,
