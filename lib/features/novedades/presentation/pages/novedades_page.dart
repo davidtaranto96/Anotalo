@@ -107,9 +107,24 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.22.0',
+    version: '1.23.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Production hardening: Crashlytics, ProGuard, tests, schema check',
+    items: [
+      _ChangelogItem(_nf, Icons.bug_report_rounded,
+          'Firebase Crashlytics integrado: si la app crashea o tira un error no manejado, llega a la consola de Firebase con stack y device info. Antes los crashes eran invisibles.'),
+      _ChangelogItem(_fx, Icons.notifications_paused_rounded,
+          'Fix definitivo del boot receiver de notificaciones: ProGuard rules para mantener las clases de Gson + flutter_local_notifications. Las notifs programadas ahora sobreviven al reboot del cel.'),
+      _ChangelogItem(_mj, Icons.shield_rounded,
+          'Backups con schemaVersion + validación: si querés restaurar un backup creado con una versión más nueva de la app, te avisa en lugar de pisar datos silenciosamente.'),
+      _ChangelogItem(_mj, Icons.science_rounded,
+          '19 tests unitarios cubriendo TaskService y BackupService — cualquier refactor futuro tiene una red de seguridad.'),
+    ],
+  ),
+  _Release(
+    version: '1.22.0',
+    date: 'Abril 2026',
     title: 'Búsqueda en Configuración + acento en pickers + más detalles',
     items: [
       _ChangelogItem(_nf, Icons.search_rounded,

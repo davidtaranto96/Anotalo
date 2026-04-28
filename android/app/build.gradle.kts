@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     // Google Services — habilita Firebase a leer google-services.json en build.
     id("com.google.gms.google-services")
+    // Crashlytics — sube symbols al build time para que stacks queden
+    // legibles en la consola. Sin esto los crashes vienen ofuscados.
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -36,9 +39,18 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing con debug keys por ahora, hasta tener un keystore
+            // real para Play Store.
             signingConfig = signingConfigs.getByName("debug")
+            // R8 con minify ON + nuestras proguard rules para mantener
+            // las clases Gson de flutter_local_notifications (sino
+            // crashea el ScheduledNotificationBootReceiver).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

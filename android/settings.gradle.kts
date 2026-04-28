@@ -24,6 +24,9 @@ plugins {
     // Firebase / Google Services — necesario para que firebase_core
     // pueda leer google-services.json en build time.
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Crashlytics — recolecta crashes y los sube a Firebase. Apply en
+    // android/app/build.gradle.kts.
+    id("com.google.firebase.crashlytics") version "3.0.2" apply false
 }
 
 include(":app")

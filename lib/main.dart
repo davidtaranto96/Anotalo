@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +14,19 @@ import 'features/hoy/presentation/widgets/task_card.dart';
 import 'features/onboarding/domain/onboarding_prefs.dart';
 
 void main() async {
+  // runZonedGuarded captura errores asíncronos no-Flutter (ej. dentro de
+  // futures sin .catchError). Los Flutter errors se manejan abajo via
+  // FlutterError.onError. Ambos fluyen a Crashlytics.
+  await runZonedGuarded(_bootstrap, (error, stack) async {
+    try {
+      await FirebaseCrashlytics.instance
+          .recordError(error, stack, fatal: true);
+    } catch (_) {}
+    debugPrint('Uncaught zone error: $error\n$stack');
+  });
+}
+
+Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize intl date formatting for Spanish locale (fast, required for UI).
@@ -67,6 +83,11 @@ void main() async {
   // funcionando offline-first; sólo el login con Google quedaría caído.
   try {
     await Firebase.initializeApp().timeout(const Duration(seconds: 5));
+    // Una vez Firebase listo: routear todos los errores Flutter a
+    // Crashlytics. Esto incluye crashes del framework, builds que tiran
+    // exception, gestos que fallan, etc.
+    FlutterError.onError =
+        FirebaseCrashlytics.instance.recordFlutterFatalError;
   } catch (e) {
     debugPrint('Firebase init skipped: $e');
   }

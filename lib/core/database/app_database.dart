@@ -34,6 +34,10 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// Constructor para tests — recibe un executor (in-memory típicamente)
+  /// en vez de abrir el SQLite del device.
+  AppDatabase.forTesting(super.executor);
+
   @override
   int get schemaVersion => 5;
 

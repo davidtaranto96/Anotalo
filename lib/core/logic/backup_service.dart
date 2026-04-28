@@ -20,7 +20,21 @@ class BackupService {
   final AppDatabase _db;
   BackupService(this._db);
 
-  static const int _backupVersion = 2;
+  /// Versión del JSON. Bump cada vez que el formato cambia (nuevas
+  /// tablas, columnas requeridas, etc).
+  static const int _backupVersion = 3;
+
+  /// Schema de Drift al momento del export — el import lo compara con
+  /// `AppDatabase.schemaVersion` y se niega a importar uno más nuevo
+  /// que el que el dispositivo soporta (evita pisar columnas con
+  /// data inconsistente).
+  static const int _schemaVersion = 5;
+
+  /// Excepción tirada por importFromJson cuando el backup no es
+  /// compatible con la versión actual.
+  static const incompatibleBackupMessage =
+      'Este backup fue creado con una versión más nueva de la app. '
+      'Actualizá Apunto antes de restaurarlo.';
 
   /// Produce a JSON string that encodes every row in every table.
   Future<String> exportToJson() async {
@@ -40,6 +54,7 @@ class BackupService {
     final payload = <String, dynamic>{
       'app': 'Apunto',
       'version': _backupVersion,
+      'schemaVersion': _schemaVersion,
       'createdAt': DateTime.now().toIso8601String(),
       'counts': {
         'tasks': tasks.length,
@@ -190,10 +205,22 @@ class BackupService {
 
   /// Wipes every table, then inserts every row from the backup. Runs inside
   /// a transaction so a mid-restore crash leaves the DB untouched.
+  ///
+  /// Lanza:
+  /// - `FormatException` si el archivo no es de Apunto.
+  /// - `BackupVersionException` si el schema del backup es más nuevo
+  ///   que el que la app actual soporta. Hay que actualizar la app.
   Future<void> importFromJson(String jsonStr) async {
     final map = jsonDecode(jsonStr) as Map<String, dynamic>;
     if (map['app'] != 'Apunto') {
       throw const FormatException('No es un backup de Apunto');
+    }
+    // Schema version guard: si el backup viene con schemaVersion mayor
+    // al que conocemos, podríamos perder datos al importar (columnas
+    // nuevas que no existen acá). Bloqueamos.
+    final backupSchema = map['schemaVersion'] as int?;
+    if (backupSchema != null && backupSchema > _schemaVersion) {
+      throw const BackupVersionException(incompatibleBackupMessage);
     }
     final tables = (map['tables'] as Map).cast<String, dynamic>();
 
@@ -331,6 +358,16 @@ class BackupSummary {
 class _BackupPermissionException implements Exception {
   final String message;
   const _BackupPermissionException(this.message);
+  @override
+  String toString() => message;
+}
+
+/// Tirada por `importFromJson` cuando el archivo viene de una versión
+/// futura del schema. La app no puede importar safe porque podría haber
+/// columnas/tablas que no conoce.
+class BackupVersionException implements Exception {
+  final String message;
+  const BackupVersionException(this.message);
   @override
   String toString() => message;
 }
