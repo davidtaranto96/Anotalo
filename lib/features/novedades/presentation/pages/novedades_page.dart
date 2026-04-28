@@ -107,9 +107,26 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.20.0',
+    version: '1.21.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Configuración reorganizada — 7 grupos en lugar de 15',
+    items: [
+      _ChangelogItem(_mj, Icons.tune_rounded,
+          'Configuración reorganizada de 15 secciones dispersas a 7 grupos lógicos: Cuenta, Apariencia, Notificaciones, Backup y Datos, Personalización, Contenido, Acerca de. Bajada de scroll significativa.'),
+      _ChangelogItem(_mj, Icons.account_circle_rounded,
+          'Cuenta: nombre + sesión Google ahora en una sola tarjeta.'),
+      _ChangelogItem(_mj, Icons.cloud_sync_rounded,
+          'Backup: Drive primero (auto + manual). El backup en archivo queda colapsado bajo "Avanzado" para no abrumar.'),
+      _ChangelogItem(_mj, Icons.settings_suggest_rounded,
+          'Personalización: defaults de prioridad, área, modo de Enfoque + switches de Hoy todos juntos en una tarjeta — antes estaban repartidos en 3 secciones.'),
+      _ChangelogItem(_fx, Icons.spellcheck_rounded,
+          'Tildes corregidas: "Configuración", "Área", "Categorías", "Hábitos", "Últimas". Antes faltaban en varios labels.'),
+    ],
+  ),
+  _Release(
+    version: '1.20.0',
+    date: 'Abril 2026',
     title: 'Sonidos, iconos minimalistas y timer pulido',
     items: [
       _ChangelogItem(_mj, Icons.volume_up_rounded,

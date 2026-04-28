@@ -39,15 +39,19 @@ class SettingsPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final dividerWidget =
+        Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor);
+
     return Scaffold(
       backgroundColor: context.surfaceBase,
       appBar: AppBar(
         title: Text(
-          'Configuracion',
+          'Configuración',
           style: GoogleFonts.fraunces(
             fontSize: 22,
             fontWeight: FontWeight.w600,
             color: colorScheme.onSurface,
+            letterSpacing: -0.3,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -56,23 +60,28 @@ class SettingsPage extends ConsumerWidget {
         iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
-          // ── Perfil ──
-          const _SectionLabel('PERFIL'),
-          const SizedBox(height: 12),
-          const _Card(child: _NameTile()),
-
-          const SizedBox(height: 32),
-
-          // ── Cuenta ──
+          // ════════════════════════════════════════════════════════════
+          // 1. CUENTA — perfil + sesión Google
+          // ════════════════════════════════════════════════════════════
           const _SectionLabel('CUENTA'),
           const SizedBox(height: 12),
-          const _Card(child: _AccountTile()),
+          _Card(
+            child: Column(
+              children: [
+                const _NameTile(),
+                dividerWidget,
+                const _AccountTile(),
+              ],
+            ),
+          ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Apariencia ──
+          // ════════════════════════════════════════════════════════════
+          // 2. APARIENCIA — modo oscuro + acento + sonidos/hápticos
+          // ════════════════════════════════════════════════════════════
           const _SectionLabel('APARIENCIA'),
           const SizedBox(height: 12),
           _Card(
@@ -91,11 +100,6 @@ class SettingsPage extends ConsumerWidget {
               onChanged: (_) => ref.read(isDarkModeProvider.notifier).toggle(),
             ),
           ),
-
-          const SizedBox(height: 32),
-
-          // ── Color de acento (1.6) ──
-          const _SectionLabel('COLOR DE ACENTO'),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -106,201 +110,70 @@ class SettingsPage extends ConsumerWidget {
             ),
             child: const AccentPicker(),
           ),
-
-          const SizedBox(height: 32),
-
-          // ── Sonido & Hápticos (1.6) ──
-          const _SectionLabel('SONIDO & HÁPTICOS'),
           const SizedBox(height: 12),
           const FeedbackSection(),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Notificaciones ──
+          // ════════════════════════════════════════════════════════════
+          // 3. NOTIFICACIONES — recordatorio nocturno + avisar antes
+          // ════════════════════════════════════════════════════════════
           const _SectionLabel('NOTIFICACIONES'),
           const SizedBox(height: 12),
           const _ReminderTile(),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Backup en la nube (Drive) ──
-          const _SectionLabel('BACKUP EN LA NUBE'),
+          // ════════════════════════════════════════════════════════════
+          // 4. BACKUP Y DATOS — Drive primero, archivo abajo como fallback
+          // ════════════════════════════════════════════════════════════
+          const _SectionLabel('BACKUP Y DATOS'),
           const SizedBox(height: 12),
           const _Card(child: _DriveBackupSection()),
-
-          const SizedBox(height: 32),
-
-          // ── Datos (backup / restore local) ──
-          const _SectionLabel('BACKUP LOCAL'),
           const SizedBox(height: 12),
+          // Backup local como fallback offline — colapsado bajo "Avanzado"
           _Card(
-            child: Column(
+            child: ExpansionTile(
+              shape: const Border(),
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+              childrenPadding: EdgeInsets.zero,
+              leading: const _IconBadge(
+                icon: Icons.folder_zip_rounded,
+                color: AppTheme.neutral400,
+              ),
+              title: const _Title('Backup en archivo'),
+              subtitle: const _Subtitle('Para uso offline o compartir'),
               children: [
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  leading: const _IconBadge(
-                    icon: Icons.download_rounded,
-                    color: AppTheme.colorPrimary,
-                  ),
-                  title: const _Title('Exportar a archivo'),
-                  subtitle: const _Subtitle('Guarda un JSON en Descargas — útil offline'),
+                  leading: const Icon(Icons.download_rounded,
+                      size: 20, color: AppTheme.colorPrimary),
+                  title: const _Title('Exportar a Descargas'),
+                  subtitle: const _Subtitle('Guarda un JSON con todos tus datos'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () => _doBackup(context, ref),
                 ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                dividerWidget,
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  leading: const _IconBadge(
-                    icon: Icons.upload_rounded,
-                    color: AppTheme.colorDanger,
-                  ),
+                  leading: const Icon(Icons.upload_rounded,
+                      size: 20, color: AppTheme.colorDanger),
                   title: const _Title('Restaurar desde archivo'),
                   subtitle: const _Subtitle('Reemplaza los datos actuales con los del archivo'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () => _doRestore(context, ref),
                 ),
+                const SizedBox(height: 4),
               ],
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Hoy ──
-          const _SectionLabel('HOY'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
-              children: [
-                SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  secondary: const _IconBadge(
-                    icon: Icons.format_quote_rounded,
-                    color: AppTheme.colorAccent,
-                  ),
-                  title: const _Title('Mostrar frases'),
-                  subtitle: const _Subtitle('Citas inspiracionales en la cabecera'),
-                  value: prefs.showQuotes,
-                  activeTrackColor: AppTheme.colorAccent.withAlpha(80),
-                  activeThumbColor: AppTheme.colorAccent,
-                  onChanged: prefsNotifier.setShowQuotes,
-                ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
-                SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  secondary: const _IconBadge(
-                    icon: Icons.loop_rounded,
-                    color: AppTheme.colorSuccess,
-                  ),
-                  title: const _Title('Mostrar habitos en Hoy'),
-                  subtitle: const _Subtitle('Pills de habitos en la vista diaria'),
-                  value: prefs.showHabitsInHoy,
-                  activeTrackColor: AppTheme.colorSuccess.withAlpha(80),
-                  activeThumbColor: AppTheme.colorSuccess,
-                  onChanged: prefsNotifier.setShowHabitsInHoy,
-                ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
-                // Grow-old-tasks: escala el fontSize del título de tareas
-                // pendientes según días de rollover. Default on.
-                ListenableBuilder(
-                  listenable: TaskCardPrefs.instance,
-                  builder: (ctx, _) => SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                    secondary: const _IconBadge(
-                      icon: Icons.format_size_rounded,
-                      color: AppTheme.colorWarning,
-                    ),
-                    title: const _Title('Agrandar tareas viejas'),
-                    subtitle: const _Subtitle(
-                        'El título crece y se vuelve más negrita con el paso de los días'),
-                    value: TaskCardPrefs.growOldTasks,
-                    activeTrackColor: AppTheme.colorWarning.withAlpha(80),
-                    activeThumbColor: AppTheme.colorWarning,
-                    onChanged: TaskCardPrefs.instance.setGrowOldTasks,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // ── Areas (categorías) ──
-          const _SectionLabel('AREAS'),
-          const SizedBox(height: 12),
-          _Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-              leading: const _IconBadge(
-                icon: Icons.palette_rounded,
-                color: AppTheme.colorAccent,
-              ),
-              title: const _Title('Administrar areas'),
-              subtitle: const _Subtitle('Crear, editar, reordenar o borrar categorias'),
-              trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-              onTap: () => context.push('/manage-areas'),
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // ── Revision diaria ──
-          const _SectionLabel('REVISION'),
-          const SizedBox(height: 12),
-          _Card(
-            child: Column(
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  leading: const _IconBadge(
-                    icon: Icons.rate_review_rounded,
-                    color: AppTheme.colorPrimary,
-                  ),
-                  title: const _Title('Revision de hoy'),
-                  subtitle: const _Subtitle('Tareas, habitos, animo y cierre del dia'),
-                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-                  onTap: () => context.push('/review'),
-                ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  leading: const _IconBadge(
-                    icon: Icons.calendar_view_week_rounded,
-                    color: AppTheme.colorSuccess,
-                  ),
-                  title: const _Title('Resumen semanal'),
-                  subtitle: const _Subtitle('Logros, hábitos, ánimo y notas de la semana'),
-                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-                  onTap: () => context.push('/weekly-review'),
-                ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-                  leading: const _IconBadge(
-                    icon: Icons.history_rounded,
-                    color: AppTheme.colorAccent,
-                  ),
-                  title: const _Title('Historial de revisiones'),
-                  subtitle: const _Subtitle('Revisiones pasadas — ver, editar o borrar'),
-                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-                  onTap: () => context.push('/review-history'),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // ── Tareas ──
-          const _SectionLabel('TAREAS'),
+          // ════════════════════════════════════════════════════════════
+          // 5. PERSONALIZACIÓN — defaults de tareas + enfoque + Hoy
+          // ════════════════════════════════════════════════════════════
+          const _SectionLabel('PERSONALIZACIÓN'),
           const SizedBox(height: 12),
           _Card(
             child: Column(
@@ -316,93 +189,162 @@ class SettingsPage extends ConsumerWidget {
                   trailing: _PriorityChip(priority: prefs.defaultPriority),
                   onTap: () => _showPriorityPicker(context, prefs.defaultPriority, prefsNotifier),
                 ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                dividerWidget,
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: _IconBadge(
                     icon: Icons.category_rounded,
                     color: getTaskArea(prefs.defaultArea)?.color ?? AppTheme.colorPrimary,
                   ),
-                  title: const _Title('Area por defecto'),
+                  title: const _Title('Área por defecto'),
                   subtitle: _Subtitle(
                     prefs.defaultArea == null
-                        ? 'Sin area'
-                        : getTaskArea(prefs.defaultArea)?.label ?? 'Sin area',
+                        ? 'Sin área'
+                        : getTaskArea(prefs.defaultArea)?.label ?? 'Sin área',
                   ),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () => _showAreaPicker(context, prefs.defaultArea, prefsNotifier),
+                ),
+                dividerWidget,
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: const _IconBadge(
+                    icon: Icons.timer_rounded,
+                    color: AppTheme.colorDanger,
+                  ),
+                  title: const _Title('Modo de Enfoque por defecto'),
+                  subtitle: _Subtitle(prefs.defaultTimerMode.label),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => _showTimerModePicker(context, prefs.defaultTimerMode, prefsNotifier),
+                ),
+                dividerWidget,
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  secondary: const _IconBadge(
+                    icon: Icons.format_quote_rounded,
+                    color: AppTheme.colorAccent,
+                  ),
+                  title: const _Title('Mostrar frases en Hoy'),
+                  subtitle: const _Subtitle('Citas inspiracionales en la cabecera'),
+                  value: prefs.showQuotes,
+                  activeTrackColor: AppTheme.colorAccent.withAlpha(80),
+                  activeThumbColor: AppTheme.colorAccent,
+                  onChanged: prefsNotifier.setShowQuotes,
+                ),
+                dividerWidget,
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  secondary: const _IconBadge(
+                    icon: Icons.loop_rounded,
+                    color: AppTheme.colorSuccess,
+                  ),
+                  title: const _Title('Mostrar hábitos en Hoy'),
+                  subtitle: const _Subtitle('Pills de hábitos en la vista diaria'),
+                  value: prefs.showHabitsInHoy,
+                  activeTrackColor: AppTheme.colorSuccess.withAlpha(80),
+                  activeThumbColor: AppTheme.colorSuccess,
+                  onChanged: prefsNotifier.setShowHabitsInHoy,
+                ),
+                dividerWidget,
+                ListenableBuilder(
+                  listenable: TaskCardPrefs.instance,
+                  builder: (ctx, _) => SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                    secondary: const _IconBadge(
+                      icon: Icons.format_size_rounded,
+                      color: AppTheme.colorWarning,
+                    ),
+                    title: const _Title('Agrandar tareas viejas'),
+                    subtitle: const _Subtitle(
+                        'El título crece con el paso de los días sin completarse'),
+                    value: TaskCardPrefs.growOldTasks,
+                    activeTrackColor: AppTheme.colorWarning.withAlpha(80),
+                    activeThumbColor: AppTheme.colorWarning,
+                    onChanged: TaskCardPrefs.instance.setGrowOldTasks,
+                  ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Enfoque (timer) ──
-          const _SectionLabel('ENFOQUE'),
+          // ════════════════════════════════════════════════════════════
+          // 6. CONTENIDO — áreas + accesos a revisión
+          // ════════════════════════════════════════════════════════════
+          const _SectionLabel('CONTENIDO'),
           const SizedBox(height: 12),
           _Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-              leading: const _IconBadge(
-                icon: Icons.timer_rounded,
-                color: AppTheme.colorDanger,
-              ),
-              title: const _Title('Modo por defecto'),
-              subtitle: _Subtitle(prefs.defaultTimerMode.label),
-              trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-              onTap: () => _showTimerModePicker(context, prefs.defaultTimerMode, prefsNotifier),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  leading: const _IconBadge(
+                    icon: Icons.palette_rounded,
+                    color: AppTheme.colorAccent,
+                  ),
+                  title: const _Title('Administrar áreas'),
+                  subtitle: const _Subtitle('Crear, editar, reordenar o borrar categorías'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => context.push('/manage-areas'),
+                ),
+                dividerWidget,
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  leading: const _IconBadge(
+                    icon: Icons.calendar_view_week_rounded,
+                    color: AppTheme.colorSuccess,
+                  ),
+                  title: const _Title('Resumen semanal'),
+                  subtitle: const _Subtitle('Logros, hábitos, ánimo y notas de la semana'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => context.push('/weekly-review'),
+                ),
+                dividerWidget,
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  leading: const _IconBadge(
+                    icon: Icons.history_rounded,
+                    color: AppTheme.colorPrimary,
+                  ),
+                  title: const _Title('Historial de revisiones'),
+                  subtitle: const _Subtitle('Ver, editar o borrar revisiones pasadas'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => context.push('/review-history'),
+                ),
+              ],
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // ── Novedades ──
-          const _SectionLabel('NOVEDADES'),
-          const SizedBox(height: 12),
-          _Card(
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
-              leading: const _IconBadge(
-                icon: Icons.new_releases_rounded,
-                color: AppTheme.colorPrimary,
-              ),
-              title: const _Title('Novedades'),
-              subtitle: const _Subtitle('Ultimas actualizaciones de la app'),
-              trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
-              onTap: () => context.push('/novedades'),
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // ── Acerca de ──
+          // ════════════════════════════════════════════════════════════
+          // 7. ACERCA DE — versión + novedades + tour
+          // ════════════════════════════════════════════════════════════
           const _SectionLabel('ACERCA DE'),
           const SizedBox(height: 12),
           _Card(
             child: Column(
               children: [
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  leading: Icon(Icons.info_outline_rounded, color: theme.textTheme.bodyMedium?.color),
-                  title: const _Title('Versión'),
-                  // Versión dinámica desde pubspec.yaml — nunca más
-                  // queda desincronizada al subir un release.
-                  trailing: FutureBuilder<PackageInfo>(
-                    future: PackageInfo.fromPlatform(),
-                    builder: (_, snap) {
-                      final v = snap.data?.version ?? '...';
-                      return Text(
-                        v,
-                        style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: theme.textTheme.bodyMedium?.color),
-                      );
-                    },
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  leading: const _IconBadge(
+                    icon: Icons.new_releases_rounded,
+                    color: AppTheme.colorPrimary,
                   ),
+                  title: const _Title('Novedades'),
+                  subtitle: const _Subtitle('Últimas actualizaciones de la app'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => context.push('/novedades'),
                 ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                dividerWidget,
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: const _IconBadge(
@@ -410,18 +352,37 @@ class SettingsPage extends ConsumerWidget {
                     color: AppTheme.colorAccent,
                   ),
                   title: const _Title('Ver tour otra vez'),
-                  subtitle: const _Subtitle('Rehace la bienvenida y el setup inicial'),
+                  subtitle: const _Subtitle('Rehace la bienvenida y los consejos'),
                   trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
                   onTap: () async {
-                    // Reset también los coach-marks para que el user vuelva
-                    // a verlos al entrar a cada pantalla luego del tour.
                     await OnboardingPrefs.reset();
                     await FirstTimeTip.resetAll();
                     if (!context.mounted) return;
                     GoRouter.of(context).go('/login');
                   },
                 ),
-                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                dividerWidget,
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  leading: Icon(Icons.info_outline_rounded,
+                      color: theme.textTheme.bodyMedium?.color),
+                  title: const _Title('Versión'),
+                  trailing: FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (_, snap) {
+                      final v = snap.data?.version ?? '...';
+                      return Text(
+                        v,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.textTheme.bodyMedium?.color,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                dividerWidget,
                 const ListTile(
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: Icon(Icons.favorite_rounded, color: AppTheme.colorDanger),
@@ -431,6 +392,8 @@ class SettingsPage extends ConsumerWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
