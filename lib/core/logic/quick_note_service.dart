@@ -21,13 +21,20 @@ class QuickNoteService {
     processedToType: row.processedToType,
     processedToTargetId: row.processedToTargetId,
     tags: decodeStringList(row.tags),
+    isPinned: row.isPinned,
     createdAt: row.createdAt,
   );
 
+  /// Stream de notas no procesadas — fijadas primero, luego por createdAt
+  /// descendente. La UI confía en este orden para no recalcular cada
+  /// vez.
   Stream<List<QuickNote>> watchUnprocessed() {
     return (_db.select(_db.quickNotesTable)
       ..where((t) => t.isProcessed.equals(false))
-      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+      ..orderBy([
+        (t) => OrderingTerm.desc(t.isPinned),
+        (t) => OrderingTerm.desc(t.createdAt),
+      ]))
       .watch()
       .map((rows) => rows.map(_fromRow).toList());
   }
@@ -70,6 +77,31 @@ class QuickNoteService {
       isProcessed: const Value(true),
       processedToType: Value(processedToType),
       processedToTargetId: Value(processedToTargetId),
+    ));
+  }
+
+  /// Reabre una nota procesada — útil si el user la archivó por error.
+  Future<void> reopenNote(String id) async {
+    await (_db.update(_db.quickNotesTable)..where((t) => t.id.equals(id)))
+        .write(const QuickNotesTableCompanion(
+      isProcessed: Value(false),
+      processedToType: Value(null),
+      processedToTargetId: Value(null),
+    ));
+  }
+
+  /// Toggle pin / unpin de una nota.
+  Future<void> setPinned(String id, bool pinned) async {
+    await (_db.update(_db.quickNotesTable)..where((t) => t.id.equals(id)))
+        .write(QuickNotesTableCompanion(isPinned: Value(pinned)));
+  }
+
+  /// Edita el contenido y/o tipo de una nota existente.
+  Future<void> updateNote(String id, {String? content, QuickNoteType? type}) async {
+    await (_db.update(_db.quickNotesTable)..where((t) => t.id.equals(id)))
+        .write(QuickNotesTableCompanion(
+      content: content == null ? const Value.absent() : Value(content),
+      type: type == null ? const Value.absent() : Value(type.name),
     ));
   }
 }

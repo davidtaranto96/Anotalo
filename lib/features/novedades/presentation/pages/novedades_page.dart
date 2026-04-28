@@ -107,9 +107,32 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.18.0',
+    version: '1.19.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Inbox rediseñado al estilo Keep / Samsung Notes',
+    items: [
+      _ChangelogItem(_nf, Icons.grid_view_rounded,
+          'Grid de 2 columnas masonry: cards más altas con todo el contenido visible, fondo tintado por tipo de nota (idea / nota / tarea / proyecto) — al estilo Google Keep / Samsung Notes.'),
+      _ChangelogItem(_nf, Icons.task_alt_rounded,
+          'Procesar funcional: tap en una nota abre un sheet con acciones REALES — convertir en tarea (abre Nueva tarea con prefill), convertir en proyecto, archivar, editar, fijar, borrar. Antes el botón solo marcaba un boolean inútil.'),
+      _ChangelogItem(_nf, Icons.push_pin_rounded,
+          'Fijar notas estilo Keep: las pin\'d aparecen al tope de la lista, sección "FIJADAS" separada de "OTRAS".'),
+      _ChangelogItem(_nf, Icons.search_rounded,
+          'Buscador arriba de la lista — filtra por contenido al tipear.'),
+      _ChangelogItem(_nf, Icons.checklist_rounded,
+          'Multi-select: long-press en una nota entra en modo selección. La AppBar cambia a barra de acciones (fijar varias, archivar, borrar). Tocá la X para salir.'),
+      _ChangelogItem(_mj, Icons.edit_rounded,
+          'Editar texto y tipo de una nota directamente desde el sheet de acciones — antes había que borrar y volver a capturar.'),
+      _ChangelogItem(_fx, Icons.arrow_back_rounded,
+          'Fix: el botón de back en Inbox ya no deja la pantalla en negro al volver (usaba el rootNavigator equivocado).'),
+      _ChangelogItem(_mj, Icons.label_outline_rounded,
+          'Saqué el emoji 📥 del título "Inbox" — quedaba poco profesional.'),
+    ],
+  ),
+  _Release(
+    version: '1.18.0',
+    date: 'Abril 2026',
     title: 'Revisiones viejas en una sola vista',
     items: [
       _ChangelogItem(_mj, Icons.read_more_rounded,

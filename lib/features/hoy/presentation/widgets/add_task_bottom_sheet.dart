@@ -29,11 +29,16 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
   /// día puntual.
   final String? prefillDayId;
 
+  /// Título inicial del input — usado cuando convertís una nota del
+  /// inbox en tarea, para que arranque con el texto de la nota cargado.
+  final String? prefillTitle;
+
   const AddTaskBottomSheet({
     super.key,
     this.existing,
     this.prefillArea,
     this.prefillDayId,
+    this.prefillTitle,
   });
 
   static void show(
@@ -41,6 +46,7 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
     Task? existing,
     String? prefillArea,
     String? prefillDayId,
+    String? prefillTitle,
   }) {
     showModalBottomSheet(
       context: context,
@@ -50,6 +56,7 @@ class AddTaskBottomSheet extends ConsumerStatefulWidget {
         existing: existing,
         prefillArea: prefillArea,
         prefillDayId: prefillDayId,
+        prefillTitle: prefillTitle,
       ),
     );
   }
@@ -96,6 +103,9 @@ class _AddTaskBottomSheetState extends ConsumerState<AddTaskBottomSheet> {
           _priority = prefs.defaultPriority;
           // prefillArea (vista filtrada) gana sobre la default global.
           _area = widget.prefillArea ?? prefs.defaultArea;
+          if (widget.prefillTitle != null && widget.prefillTitle!.isNotEmpty) {
+            _controller.text = widget.prefillTitle!;
+          }
           _initialized = true;
         });
       }

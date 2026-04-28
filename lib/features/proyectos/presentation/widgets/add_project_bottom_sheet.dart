@@ -9,14 +9,17 @@ import '../../domain/models/project.dart';
 import '../providers/project_provider.dart';
 
 class AddProjectBottomSheet extends ConsumerStatefulWidget {
-  const AddProjectBottomSheet({super.key});
+  /// Título inicial del input — usado al convertir una nota del inbox.
+  final String? prefillTitle;
 
-  static void show(BuildContext context) {
+  const AddProjectBottomSheet({super.key, this.prefillTitle});
+
+  static void show(BuildContext context, {String? prefillTitle}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const AddProjectBottomSheet(),
+      builder: (_) => AddProjectBottomSheet(prefillTitle: prefillTitle),
     );
   }
 
@@ -27,6 +30,14 @@ class AddProjectBottomSheet extends ConsumerStatefulWidget {
 class _State extends ConsumerState<AddProjectBottomSheet> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefillTitle != null && widget.prefillTitle!.isNotEmpty) {
+      _titleController.text = widget.prefillTitle!;
+    }
+  }
   ProjectCategory _category = ProjectCategory.personal;
   String _color = '#C15F3C';
   DateTime? _targetDate;

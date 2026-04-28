@@ -2897,6 +2897,21 @@ class $QuickNotesTableTable extends QuickNotesTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2917,6 +2932,7 @@ class $QuickNotesTableTable extends QuickNotesTable
     processedToType,
     processedToTargetId,
     tags,
+    isPinned,
     createdAt,
   ];
   @override
@@ -2983,6 +2999,12 @@ class $QuickNotesTableTable extends QuickNotesTable
         tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta),
       );
     }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -3028,6 +3050,10 @@ class $QuickNotesTableTable extends QuickNotesTable
         DriftSqlType.string,
         data['${effectivePrefix}tags'],
       ),
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3050,6 +3076,10 @@ class QuickNotesTableData extends DataClass
   final String? processedToType;
   final String? processedToTargetId;
   final String? tags;
+
+  /// Notas fijadas aparecen al tope de la lista (estilo Keep). Default
+  /// false. Agregado en schema v5.
+  final bool isPinned;
   final DateTime createdAt;
   const QuickNotesTableData({
     required this.id,
@@ -3059,6 +3089,7 @@ class QuickNotesTableData extends DataClass
     this.processedToType,
     this.processedToTargetId,
     this.tags,
+    required this.isPinned,
     required this.createdAt,
   });
   @override
@@ -3077,6 +3108,7 @@ class QuickNotesTableData extends DataClass
     if (!nullToAbsent || tags != null) {
       map['tags'] = Variable<String>(tags);
     }
+    map['is_pinned'] = Variable<bool>(isPinned);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -3094,6 +3126,7 @@ class QuickNotesTableData extends DataClass
           ? const Value.absent()
           : Value(processedToTargetId),
       tags: tags == null && nullToAbsent ? const Value.absent() : Value(tags),
+      isPinned: Value(isPinned),
       createdAt: Value(createdAt),
     );
   }
@@ -3113,6 +3146,7 @@ class QuickNotesTableData extends DataClass
         json['processedToTargetId'],
       ),
       tags: serializer.fromJson<String?>(json['tags']),
+      isPinned: serializer.fromJson<bool>(json['isPinned']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -3127,6 +3161,7 @@ class QuickNotesTableData extends DataClass
       'processedToType': serializer.toJson<String?>(processedToType),
       'processedToTargetId': serializer.toJson<String?>(processedToTargetId),
       'tags': serializer.toJson<String?>(tags),
+      'isPinned': serializer.toJson<bool>(isPinned),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -3139,6 +3174,7 @@ class QuickNotesTableData extends DataClass
     Value<String?> processedToType = const Value.absent(),
     Value<String?> processedToTargetId = const Value.absent(),
     Value<String?> tags = const Value.absent(),
+    bool? isPinned,
     DateTime? createdAt,
   }) => QuickNotesTableData(
     id: id ?? this.id,
@@ -3152,6 +3188,7 @@ class QuickNotesTableData extends DataClass
         ? processedToTargetId.value
         : this.processedToTargetId,
     tags: tags.present ? tags.value : this.tags,
+    isPinned: isPinned ?? this.isPinned,
     createdAt: createdAt ?? this.createdAt,
   );
   QuickNotesTableData copyWithCompanion(QuickNotesTableCompanion data) {
@@ -3169,6 +3206,7 @@ class QuickNotesTableData extends DataClass
           ? data.processedToTargetId.value
           : this.processedToTargetId,
       tags: data.tags.present ? data.tags.value : this.tags,
+      isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -3183,6 +3221,7 @@ class QuickNotesTableData extends DataClass
           ..write('processedToType: $processedToType, ')
           ..write('processedToTargetId: $processedToTargetId, ')
           ..write('tags: $tags, ')
+          ..write('isPinned: $isPinned, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -3197,6 +3236,7 @@ class QuickNotesTableData extends DataClass
     processedToType,
     processedToTargetId,
     tags,
+    isPinned,
     createdAt,
   );
   @override
@@ -3210,6 +3250,7 @@ class QuickNotesTableData extends DataClass
           other.processedToType == this.processedToType &&
           other.processedToTargetId == this.processedToTargetId &&
           other.tags == this.tags &&
+          other.isPinned == this.isPinned &&
           other.createdAt == this.createdAt);
 }
 
@@ -3221,6 +3262,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
   final Value<String?> processedToType;
   final Value<String?> processedToTargetId;
   final Value<String?> tags;
+  final Value<bool> isPinned;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const QuickNotesTableCompanion({
@@ -3231,6 +3273,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
     this.processedToType = const Value.absent(),
     this.processedToTargetId = const Value.absent(),
     this.tags = const Value.absent(),
+    this.isPinned = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3242,6 +3285,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
     this.processedToType = const Value.absent(),
     this.processedToTargetId = const Value.absent(),
     this.tags = const Value.absent(),
+    this.isPinned = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -3255,6 +3299,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
     Expression<String>? processedToType,
     Expression<String>? processedToTargetId,
     Expression<String>? tags,
+    Expression<bool>? isPinned,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -3267,6 +3312,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
       if (processedToTargetId != null)
         'processed_to_target_id': processedToTargetId,
       if (tags != null) 'tags': tags,
+      if (isPinned != null) 'is_pinned': isPinned,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3280,6 +3326,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
     Value<String?>? processedToType,
     Value<String?>? processedToTargetId,
     Value<String?>? tags,
+    Value<bool>? isPinned,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -3291,6 +3338,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
       processedToType: processedToType ?? this.processedToType,
       processedToTargetId: processedToTargetId ?? this.processedToTargetId,
       tags: tags ?? this.tags,
+      isPinned: isPinned ?? this.isPinned,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3322,6 +3370,9 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
     }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3341,6 +3392,7 @@ class QuickNotesTableCompanion extends UpdateCompanion<QuickNotesTableData> {
           ..write('processedToType: $processedToType, ')
           ..write('processedToTargetId: $processedToTargetId, ')
           ..write('tags: $tags, ')
+          ..write('isPinned: $isPinned, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -7922,6 +7974,7 @@ typedef $$QuickNotesTableTableCreateCompanionBuilder =
       Value<String?> processedToType,
       Value<String?> processedToTargetId,
       Value<String?> tags,
+      Value<bool> isPinned,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -7934,6 +7987,7 @@ typedef $$QuickNotesTableTableUpdateCompanionBuilder =
       Value<String?> processedToType,
       Value<String?> processedToTargetId,
       Value<String?> tags,
+      Value<bool> isPinned,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -7979,6 +8033,11 @@ class $$QuickNotesTableTableFilterComposer
 
   ColumnFilters<String> get tags => $composableBuilder(
     column: $table.tags,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8032,6 +8091,11 @@ class $$QuickNotesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8073,6 +8137,9 @@ class $$QuickNotesTableTableAnnotationComposer
 
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -8122,6 +8189,7 @@ class $$QuickNotesTableTableTableManager
                 Value<String?> processedToType = const Value.absent(),
                 Value<String?> processedToTargetId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuickNotesTableCompanion(
@@ -8132,6 +8200,7 @@ class $$QuickNotesTableTableTableManager
                 processedToType: processedToType,
                 processedToTargetId: processedToTargetId,
                 tags: tags,
+                isPinned: isPinned,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -8144,6 +8213,7 @@ class $$QuickNotesTableTableTableManager
                 Value<String?> processedToType = const Value.absent(),
                 Value<String?> processedToTargetId = const Value.absent(),
                 Value<String?> tags = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => QuickNotesTableCompanion.insert(
@@ -8154,6 +8224,7 @@ class $$QuickNotesTableTableTableManager
                 processedToType: processedToType,
                 processedToTargetId: processedToTargetId,
                 tags: tags,
+                isPinned: isPinned,
                 createdAt: createdAt,
                 rowid: rowid,
               ),

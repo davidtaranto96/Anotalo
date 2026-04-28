@@ -35,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,6 +62,10 @@ class AppDatabase extends _$AppDatabase {
         // "sin programar". SQLite no permite cambiar nullability con
         // ALTER COLUMN, así que recreamos la tabla.
         await m.alterTable(TableMigration(tasksTable));
+      }
+      if (from < 5) {
+        // QuickNotes: agrego isPinned para fijar notas estilo Keep.
+        await m.addColumn(quickNotesTable, quickNotesTable.isPinned);
       }
     },
     beforeOpen: (details) async {
