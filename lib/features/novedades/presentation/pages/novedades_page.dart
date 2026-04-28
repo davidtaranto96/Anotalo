@@ -107,9 +107,26 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.19.0',
+    version: '1.20.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Sonidos y vibraciones en cada acción importante',
+    items: [
+      _ChangelogItem(_mj, Icons.volume_up_rounded,
+          'Cada interacción importante ahora dispara haptic + sonido (vía FeedbackService): completar tarea/hábito, fijar nota, archivar, borrar, capturar, agregar/sacar tiempo en Enfoque. Antes muchos taps quedaban "mudos".'),
+      _ChangelogItem(_mj, Icons.touch_app_rounded,
+          'Hábitos: tap o swipe para completar suena con un tono de éxito. Borrar pide confirmación con vibración fuerte y sonido danger.'),
+      _ChangelogItem(_mj, Icons.timer_rounded,
+          'Enfoque: play/pause/stop, completar tarea linkeada y extender tiempo todos suenan. Antes solo vibraban.'),
+      _ChangelogItem(_mj, Icons.inbox_rounded,
+          'Inbox: capturar, fijar, archivar y borrar (incluso multi-select) ahora con feedback completo.'),
+      _ChangelogItem(_mj, Icons.cleaning_services_rounded,
+          'Limpieza: saqué 2 imports innecesarios de flutter/services al consolidar el feedback.'),
+    ],
+  ),
+  _Release(
+    version: '1.19.0',
+    date: 'Abril 2026',
     title: 'Inbox rediseñado al estilo Keep / Samsung Notes',
     items: [
       _ChangelogItem(_nf, Icons.grid_view_rounded,

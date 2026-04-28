@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/utils/format_utils.dart';
 import '../../../../core/widgets/first_time_tip.dart';
 import '../../../mes/presentation/pages/monthly_review_page.dart';
@@ -411,7 +412,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                             ref.read(selectedAreaProvider.notifier).state = area.id;
                           },
                           onLongPress: () {
-                            HapticFeedback.mediumImpact();
+                            FeedbackService.instance.warn();
                             context.push('/manage-areas');
                           },
                         )),
@@ -553,7 +554,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                           isCompleted: isClosed(h),
                           weeklyDone: weekCount[h.id] ?? 0,
                           onToggle: () {
-                            HapticFeedback.lightImpact();
+                            FeedbackService.instance.success();
                             ref
                                 .read(habitServiceProvider)
                                 .toggleCompletion(h.id, todayId());
@@ -2058,7 +2059,7 @@ class _ReviewHubTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        HapticFeedback.selectionClick();
+        FeedbackService.instance.tick();
         onTap();
       },
       borderRadius: BorderRadius.circular(12),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../../core/feedback/feedback_service.dart';
 import '../../../../../core/theme/app_theme.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/utils/format_utils.dart';
@@ -63,7 +63,7 @@ class HabitCard extends ConsumerWidget {
     final inner = GestureDetector(
       onLongPress: onLongPress,
       onTap: () {
-        HapticFeedback.lightImpact();
+        FeedbackService.instance.success();
         ref.read(habitServiceProvider).toggleCompletion(habit.id, todayId());
       },
       child: AnimatedContainer(
@@ -223,7 +223,7 @@ class HabitCard extends ConsumerWidget {
             // ── Big checkbox ──────────────────────────────────────────
             GestureDetector(
               onTap: () {
-                HapticFeedback.mediumImpact();
+                FeedbackService.instance.success();
                 ref
                     .read(habitServiceProvider)
                     .toggleCompletion(habit.id, todayId());
@@ -277,7 +277,7 @@ class HabitCard extends ConsumerWidget {
           children: [
             SlidableAction(
               onPressed: (_) {
-                HapticFeedback.mediumImpact();
+                FeedbackService.instance.success();
                 ref
                     .read(habitServiceProvider)
                     .toggleCompletion(habit.id, todayId());
@@ -301,7 +301,7 @@ class HabitCard extends ConsumerWidget {
           children: [
             SlidableAction(
               onPressed: (ctx) {
-                HapticFeedback.lightImpact();
+                FeedbackService.instance.success();
                 AddHabitBottomSheet.showEdit(ctx, habit);
               },
               backgroundColor: AppTheme.colorWarning,
@@ -313,7 +313,7 @@ class HabitCard extends ConsumerWidget {
             ),
             SlidableAction(
               onPressed: (ctx) async {
-                HapticFeedback.heavyImpact();
+                FeedbackService.instance.danger();
                 final confirm = await showDialog<bool>(
                   context: ctx,
                   builder: (dctx) => AlertDialog(

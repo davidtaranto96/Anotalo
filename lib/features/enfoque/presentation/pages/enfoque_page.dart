@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/utils/format_utils.dart';
 import '../../../../core/logic/user_prefs.dart';
 import '../../../../core/widgets/first_time_tip.dart';
@@ -429,7 +429,7 @@ class EnfoquePage extends ConsumerWidget {
 /// Bottom sheet shown when a focus session ends. Offers to mark the linked
 /// task as done, extend the timer by N minutes, or close.
 void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask) {
-  HapticFeedback.mediumImpact();
+  FeedbackService.instance.warn();
   showModalBottomSheet<void>(
     context: context,
     isDismissible: true,
@@ -488,7 +488,7 @@ void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask)
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () async {
-                        HapticFeedback.lightImpact();
+                        FeedbackService.instance.success();
                         await ref
                             .read(taskServiceProvider)
                             .completeTask(linkedTask.id);
@@ -535,7 +535,7 @@ void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask)
                       padding: EdgeInsets.only(right: mins == 15 ? 0 : 6),
                       child: OutlinedButton(
                         onPressed: () {
-                          HapticFeedback.lightImpact();
+                          FeedbackService.instance.tick();
                           ref
                               .read(timerNotifierProvider.notifier)
                               .extendBy(mins * 60);
@@ -582,7 +582,7 @@ void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask)
 /// tiempo (no corta el timer), o cortar sin marcar como completada.
 void _showStopConfirmSheet(
     BuildContext context, WidgetRef ref, Task linkedTask) {
-  HapticFeedback.mediumImpact();
+  FeedbackService.instance.warn();
   showModalBottomSheet<void>(
     context: context,
     isDismissible: true,
@@ -631,7 +631,7 @@ void _showStopConfirmSheet(
             // Sí, completarla → marca done y resetea timer
             FilledButton.icon(
               onPressed: () async {
-                HapticFeedback.lightImpact();
+                FeedbackService.instance.success();
                 await ref
                     .read(taskServiceProvider)
                     .completeTask(linkedTask.id);
@@ -664,7 +664,7 @@ void _showStopConfirmSheet(
                       padding: EdgeInsets.only(right: mins == 15 ? 0 : 6),
                       child: OutlinedButton(
                         onPressed: () {
-                          HapticFeedback.lightImpact();
+                          FeedbackService.instance.tick();
                           // Sumar tiempo NO corta el timer — sigue corriendo.
                           ref
                               .read(timerNotifierProvider.notifier)
@@ -690,7 +690,7 @@ void _showStopConfirmSheet(
             // Cortar sin completar → solo stop, no toca la tarea
             TextButton.icon(
               onPressed: () {
-                HapticFeedback.lightImpact();
+                FeedbackService.instance.tick();
                 ref.read(timerNotifierProvider.notifier).stop();
                 if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
               },

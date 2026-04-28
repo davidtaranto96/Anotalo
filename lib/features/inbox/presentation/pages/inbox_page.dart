@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/feedback/feedback_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/voice_input_button.dart';
@@ -58,7 +58,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
   Future<void> _capture() async {
     final content = _captureCtrl.text.trim();
     if (content.isEmpty) return;
-    HapticFeedback.lightImpact();
+    FeedbackService.instance.success();
     await ref
         .read(quickNoteServiceProvider)
         .addNoteWithType(content, _selectedType);
@@ -66,7 +66,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
   }
 
   void _toggleSelection(String id) {
-    HapticFeedback.selectionClick();
+    FeedbackService.instance.toggle();
     setState(() {
       if (_selected.contains(id)) {
         _selected.remove(id);
@@ -81,6 +81,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
   }
 
   Future<void> _bulkPin() async {
+    FeedbackService.instance.success();
     final svc = ref.read(quickNoteServiceProvider);
     for (final id in _selected) {
       await svc.setPinned(id, true);
@@ -89,7 +90,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
   }
 
   Future<void> _bulkDelete() async {
-    HapticFeedback.heavyImpact();
+    FeedbackService.instance.danger();
     final svc = ref.read(quickNoteServiceProvider);
     for (final id in _selected) {
       await svc.deleteNote(id);
@@ -98,6 +99,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
   }
 
   Future<void> _bulkArchive() async {
+    FeedbackService.instance.success();
     final svc = ref.read(quickNoteServiceProvider);
     for (final id in _selected) {
       await svc.processNote(id, processedToType: 'archived');
@@ -124,7 +126,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
               processedToType: 'archived',
             ),
         onDelete: () {
-          HapticFeedback.heavyImpact();
+          FeedbackService.instance.danger();
           ref.read(quickNoteServiceProvider).deleteNote(note.id);
         },
       ),
@@ -413,7 +415,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
     if (_selectionMode) {
       _toggleSelection(note.id);
     } else {
-      HapticFeedback.lightImpact();
+      FeedbackService.instance.tick();
       _showNoteActions(note);
     }
   }
