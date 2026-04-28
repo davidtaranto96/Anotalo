@@ -402,13 +402,13 @@ class EnfoquePage extends ConsumerWidget {
   }
 
   String _modeLabel(TimerMode m) => switch (m) {
-    TimerMode.pomodoro25 => '\u{1F345} POMODORO 25 MIN',
-    TimerMode.pomodoro50 => '\u{1F525} POMODORO 50 MIN',
-    TimerMode.deepWork90 => '\u{1F9E0} TRABAJO PROFUNDO 90 MIN',
+    TimerMode.pomodoro25 => 'POMODORO 25 MIN',
+    TimerMode.pomodoro50 => 'POMODORO 50 MIN',
+    TimerMode.deepWork90 => 'TRABAJO PROFUNDO 90 MIN',
     TimerMode.quick5     => '\u26A1 R\u00c1PIDO 5 MIN',
-    TimerMode.break5     => '\u2615 DESCANSO 5 MIN',
-    TimerMode.break10    => '\u2615 DESCANSO 10 MIN',
-    TimerMode.break15    => '\u2615 DESCANSO 15 MIN',
+    TimerMode.break5     => 'DESCANSO 5 MIN',
+    TimerMode.break10    => 'DESCANSO 10 MIN',
+    TimerMode.break15    => 'DESCANSO 15 MIN',
   };
 
   Color _priorityColor(TaskPriority p) => switch (p) {

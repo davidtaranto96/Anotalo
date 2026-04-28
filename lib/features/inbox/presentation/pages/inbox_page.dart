@@ -177,8 +177,17 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                               : sCtx.dividerColor,
                         ),
                       ),
-                      child: Text(
-                        '${_typeEmoji(t)} ${_typeLabel(t)}',
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(_typeIcon(t),
+                              size: 13,
+                              color: sel
+                                  ? _typeColor(t)
+                                  : sCtx.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                        _typeLabel(t),
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: sel
@@ -188,6 +197,8 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                               ? _typeColor(t)
                               : sCtx.textSecondary,
                         ),
+                      ),
+                        ],
                       ),
                     ),
                   );
@@ -602,14 +613,26 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                           color: sel ? color : context.dividerColor,
                         ),
                       ),
-                      child: Text(
-                        '${_typeEmoji(t)} ${_typeLabel(t)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight:
-                              sel ? FontWeight.w600 : FontWeight.w400,
-                          color: sel ? color : context.textSecondary,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(_typeIcon(t),
+                              size: 13,
+                              color:
+                                  sel ? color : context.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            _typeLabel(t),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: sel
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color:
+                                  sel ? color : context.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -673,12 +696,15 @@ Color _typeColor(QuickNoteType t) => switch (t) {
       QuickNoteType.general => const Color(0xFFB1ADA1),
     };
 
-String _typeEmoji(QuickNoteType t) => switch (t) {
-      QuickNoteType.idea => '💡',
-      QuickNoteType.nota => '📋',
-      QuickNoteType.tarea => '✓',
-      QuickNoteType.proyecto => '🎯',
-      QuickNoteType.general => '📝',
+/// Icono Material minimalista por tipo. Cambiamos los emojis (💡 📋 ✓
+/// 🎯 📝) por outlines tintados — quedan más limpios y se mantienen
+/// consistentes en dark mode.
+IconData _typeIcon(QuickNoteType t) => switch (t) {
+      QuickNoteType.idea => Icons.lightbulb_outline_rounded,
+      QuickNoteType.nota => Icons.sticky_note_2_outlined,
+      QuickNoteType.tarea => Icons.task_alt_rounded,
+      QuickNoteType.proyecto => Icons.folder_outlined,
+      QuickNoteType.general => Icons.notes_rounded,
     };
 
 String _typeLabel(QuickNoteType t) => switch (t) {
@@ -844,7 +870,9 @@ class _NoteCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (note.isPinned)
+                      // Si está seleccionada, el check del Stack overlay
+                      // toma el rol — escondemos el pin para no chocar.
+                      if (note.isPinned && !isSelected)
                         Padding(
                           padding: const EdgeInsets.only(left: 6, top: 2),
                           child: Icon(Icons.push_pin_rounded,
@@ -864,13 +892,21 @@ class _NoteCard extends StatelessWidget {
                           border: Border.all(
                               color: color.withValues(alpha: 0.55)),
                         ),
-                        child: Text(
-                          '${_typeEmoji(note.type)} ${_typeLabel(note.type)}',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_typeIcon(note.type),
+                                size: 11, color: color),
+                            const SizedBox(width: 3),
+                            Text(
+                              _typeLabel(note.type),
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: color,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
@@ -888,21 +924,23 @@ class _NoteCard extends StatelessWidget {
             ),
           ),
         ),
-        // Selection check overlay
+        // Selection check overlay — top-right (donde está el pin), más
+        // chico para no tapar texto. Cuando está seleccionada el pin
+        // se oculta para no chocar.
         if (isSelected)
           Positioned(
             top: 6,
-            left: 6,
+            right: 6,
             child: Container(
-              width: 22,
-              height: 22,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: context.colorPrimary,
                 border: Border.all(color: context.surfaceCard, width: 2),
               ),
               child: const Icon(Icons.check_rounded,
-                  size: 14, color: Colors.white),
+                  size: 12, color: Colors.white),
             ),
           ),
       ],

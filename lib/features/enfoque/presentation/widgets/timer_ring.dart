@@ -100,11 +100,22 @@ class _TimerRingState extends State<TimerRing>
                   widget.timeDisplay,
                   key: ValueKey(widget.timeDisplay),
                   style: GoogleFonts.inter(
-                    fontSize: 48,
+                    fontSize: 56,
                     fontWeight: FontWeight.w700,
                     color: timeColor,
-                    letterSpacing: -1,
+                    letterSpacing: -2.5,
+                    height: 1.0,
                   ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'MM:SS',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: context.textTertiary,
+                  letterSpacing: 1.4,
                 ),
               ),
             ],
@@ -136,7 +147,7 @@ class _RingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
-    const strokeWidth = 8.0;
+    const strokeWidth = 10.0;
 
     // Background ring (theme-aware)
     canvas.drawCircle(
