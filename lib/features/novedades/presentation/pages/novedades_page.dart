@@ -107,9 +107,20 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.15.0',
+    version: '1.16.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Stop inteligente en Enfoque',
+    items: [
+      _ChangelogItem(_nf, Icons.task_alt_rounded,
+          'Cuando cortás el timer en Enfoque y tenés una tarea vinculada, ahora te pregunta "¿Terminaste la tarea?". Tres opciones: Sí (la marca como completa), Sumar tiempo (+5/10/15 min sin cortar), o Cortar sin completar.'),
+      _ChangelogItem(_mj, Icons.timer_off_rounded,
+          'Si no hay tarea vinculada, el botón Stop sigue siendo directo — no te molesta con preguntas innecesarias.'),
+    ],
+  ),
+  _Release(
+    version: '1.15.0',
+    date: 'Abril 2026',
     title: 'Resumen semanal, acento dinámico y tutoriales pulidos',
     items: [
       _ChangelogItem(_nf, Icons.calendar_view_week_rounded,

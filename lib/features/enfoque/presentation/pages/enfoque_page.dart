@@ -257,7 +257,16 @@ class EnfoquePage extends ConsumerWidget {
               children: [
                 if (state.status != TimerStatus.idle)
                   GestureDetector(
-                    onTap: notifier.stop,
+                    onTap: () {
+                      // Si hay una tarea linkeada, NO cortamos directo —
+                      // ofrecemos completarla, sumar tiempo o cortar.
+                      // Sin tarea, stop directo (no hay nada que preguntar).
+                      if (linkedTask != null) {
+                        _showStopConfirmSheet(context, ref, linkedTask);
+                      } else {
+                        notifier.stop();
+                      }
+                    },
                     child: Container(
                       width: 60,
                       height: 60,
@@ -559,6 +568,136 @@ void _showCompletionSheet(BuildContext context, WidgetRef ref, Task? linkedTask)
                   color: sheetCtx.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/// Sheet de confirmación cuando el user toca Stop con una tarea linkeada.
+/// Pregunta si terminó la tarea y ofrece 3 caminos: completarla, sumar
+/// tiempo (no corta el timer), o cortar sin marcar como completada.
+void _showStopConfirmSheet(
+    BuildContext context, WidgetRef ref, Task linkedTask) {
+  HapticFeedback.mediumImpact();
+  showModalBottomSheet<void>(
+    context: context,
+    isDismissible: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetCtx) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        decoration: BoxDecoration(
+          color: sheetCtx.surfaceSheet,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: AppTheme.shadowLg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: sheetCtx.dividerColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Text(
+              '¿Terminaste la tarea?',
+              style: GoogleFonts.fraunces(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: sheetCtx.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '"${linkedTask.title}"',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: sheetCtx.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Sí, completarla → marca done y resetea timer
+            FilledButton.icon(
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await ref
+                    .read(taskServiceProvider)
+                    .completeTask(linkedTask.id);
+                ref.read(timerNotifierProvider.notifier).resetToIdle();
+                if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+              },
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Sí, completarla'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.colorSuccess,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Necesito más tiempo',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: sheetCtx.textTertiary,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                for (final mins in const [5, 10, 15])
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: mins == 15 ? 0 : 6),
+                      child: OutlinedButton(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          // Sumar tiempo NO corta el timer — sigue corriendo.
+                          ref
+                              .read(timerNotifierProvider.notifier)
+                              .extendBy(mins * 60);
+                          if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: sheetCtx.dividerColor),
+                          foregroundColor: sheetCtx.colorPrimary,
+                        ),
+                        child: Text('+$mins min',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            )),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Cortar sin completar → solo stop, no toca la tarea
+            TextButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                ref.read(timerNotifierProvider.notifier).stop();
+                if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+              },
+              icon: const Icon(Icons.stop_rounded, size: 18),
+              label: const Text('Cortar sin completar'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.colorDanger,
               ),
             ),
           ],
