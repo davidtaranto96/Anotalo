@@ -107,9 +107,24 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.16.0',
+    version: '1.17.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Notifs reparadas, banners centrados y refresh al cambiar de día',
+    items: [
+      _ChangelogItem(_fx, Icons.notifications_active_rounded,
+          'Recordatorios funcionando: bumpeé flutter_local_notifications a v19. El error "Missing type parameter" que impedía programar el aviso nocturno y los recordatorios de tareas quedó resuelto.'),
+      _ChangelogItem(_nf, Icons.center_focus_strong_rounded,
+          'Banners centrados para acciones importantes: el toast "Backup restaurado" y similares aparecen al medio de la pantalla con animación, antes salían arriba del bottom-nav medio escondidos.'),
+      _ChangelogItem(_fx, Icons.today_rounded,
+          'Si la app queda abierta cruzando medianoche, al volver al primer plano se actualiza solo y muestra las tareas del nuevo día — antes seguías viendo las del día anterior.'),
+      _ChangelogItem(_fx, Icons.lightbulb_outline_rounded,
+          'Tutorial de Hábitos ahora se resetea correctamente al usar "Ver tour otra vez" en Configuración (faltaba en la lista).'),
+    ],
+  ),
+  _Release(
+    version: '1.16.0',
+    date: 'Abril 2026',
     title: 'Stop inteligente en Enfoque',
     items: [
       _ChangelogItem(_nf, Icons.task_alt_rounded,

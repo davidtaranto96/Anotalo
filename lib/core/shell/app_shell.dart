@@ -11,6 +11,8 @@ import 'package:arquitectura_enfoque/core/logic/drive_backup_service.dart';
 import 'package:arquitectura_enfoque/core/logic/user_prefs.dart';
 import 'package:arquitectura_enfoque/core/providers/backup_provider.dart';
 import 'package:arquitectura_enfoque/core/providers/shell_providers.dart';
+import 'package:arquitectura_enfoque/core/utils/format_utils.dart';
+import 'package:arquitectura_enfoque/features/hoy/presentation/providers/task_provider.dart';
 import 'package:arquitectura_enfoque/core/theme/anotalo_tokens.dart';
 import 'package:arquitectura_enfoque/core/theme/app_colors.dart';
 import 'package:arquitectura_enfoque/core/widgets/app_fab.dart';
@@ -37,6 +39,10 @@ class _AppShellState extends ConsumerState<AppShell>
     with WidgetsBindingObserver {
   late final PageController _pageController;
   int _currentPage = 0;
+  /// Recordamos qué día era la última vez que la app estuvo en foreground.
+  /// Si al volver el día cambió (o al pasar de medianoche con la app
+  /// abierta), invalidamos los providers que dependen de `todayId()`.
+  String _lastSeenDay = todayId();
 
   // Tabs del shell: Hoy / Calendario (mes+semana fusionados) /
   // Proyectos / Hábitos / Enfoque. La tab "Semana" fue absorbida por
@@ -64,12 +70,26 @@ class _AppShellState extends ConsumerState<AppShell>
     super.dispose();
   }
 
-  /// Auto-backup al pasar a background. Sólo dispara si el toggle
-  /// `autoBackupToDrive` está ON y hay sesión Google activa. Es
-  /// fire-and-forget para no bloquear el lifecycle.
+  /// Auto-backup al pasar a background + refresh de "hoy" al volver.
+  /// - paused: si autoBackupToDrive está ON y hay sesión, sube backup.
+  /// - resumed: si el día cambió desde la última vez que la app estuvo
+  ///   activa (típico cruzar medianoche con la app abierta o reabrir
+  ///   al día siguiente), invalidamos los providers que cachearon
+  ///   `todayId()` para que se rerunran con el nuevo día.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      final now = todayId();
+      if (now != _lastSeenDay) {
+        _lastSeenDay = now;
+        // Invalidar todos los providers que dependen de "hoy" para que
+        // arranquen un stream nuevo apuntando al nuevo dayId.
+        ref.invalidate(todayTasksProvider);
+        ref.invalidate(streakProvider);
+      }
+      return;
+    }
     if (state != AppLifecycleState.paused) return;
     final auto = ref.read(userPrefsProvider).autoBackupToDrive;
     if (!auto) return;

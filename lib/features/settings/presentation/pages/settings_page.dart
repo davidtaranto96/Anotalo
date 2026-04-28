@@ -1041,6 +1041,7 @@ class _DriveBackupSectionState extends ConsumerState<_DriveBackupSection> {
         context,
         'Backup subido a tu Drive',
         tone: ToastTone.success,
+        centered: true,
       );
       await _refreshLastBackupTime();
     } else {
@@ -1048,6 +1049,7 @@ class _DriveBackupSectionState extends ConsumerState<_DriveBackupSection> {
         context,
         'No se pudo subir el backup. Revisá la conexión.',
         tone: ToastTone.warn,
+        centered: true,
       );
     }
   }
@@ -1073,19 +1075,19 @@ class _DriveBackupSectionState extends ConsumerState<_DriveBackupSection> {
         if (!mounted) return;
         setState(() => _busy = false);
         showAnotaloToast(context, 'No hay backups en tu Drive todavía',
-            tone: ToastTone.warn);
+            tone: ToastTone.warn, centered: true);
         return;
       }
       await backup.importFromJson(json);
       if (!mounted) return;
       setState(() => _busy = false);
       showAnotaloToast(context, 'Datos restaurados desde tu Drive',
-          tone: ToastTone.success);
+          tone: ToastTone.success, centered: true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
       showAnotaloToast(context, 'Error al restaurar: $e',
-          tone: ToastTone.warn);
+          tone: ToastTone.warn, centered: true);
     }
   }
 

@@ -117,25 +117,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (shouldRestore != true) return false;
       if (!mounted) return false;
 
-      // Mostrar loader inline mientras descarga e importa.
+      // Banner centrado mientras descarga e importa — el toast inferior
+      // queda muy lejos de la atención durante una operación importante.
       showAnotaloToast(context, 'Restaurando tus datos...',
-          tone: ToastTone.info);
+          tone: ToastTone.info, centered: true);
       final json = await drive.downloadBackupJson();
       if (json == null) {
         if (!mounted) return false;
         showAnotaloToast(context, 'No se pudo bajar el backup',
-            tone: ToastTone.warn);
+            tone: ToastTone.warn, centered: true);
         return false;
       }
       await backup.importFromJson(json);
       if (!mounted) return false;
       showAnotaloToast(context, '¡Listo! Datos restaurados',
-          tone: ToastTone.success);
+          tone: ToastTone.success, centered: true);
       return true;
     } catch (e) {
       if (!mounted) return false;
       showAnotaloToast(context, 'No se pudo restaurar: $e',
-          tone: ToastTone.warn);
+          tone: ToastTone.warn, centered: true);
       return false;
     }
   }
