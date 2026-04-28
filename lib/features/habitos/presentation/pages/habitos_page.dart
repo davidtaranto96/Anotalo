@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/format_utils.dart';
+import '../../../../core/widgets/first_time_tip.dart';
 import '../../domain/models/habit.dart';
 import '../providers/habit_provider.dart';
 import '../widgets/habit_card.dart';
@@ -31,7 +32,13 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
     final completedIds =
         completionsAsync.valueOrNull?.map((c) => c.habitId).toSet() ?? {};
 
-    return Scaffold(
+    return FirstTimeTip(
+      tipKey: 'coach.habitos',
+      title: 'Sumá hábitos chicos',
+      body:
+          'Tocá el ✓ grande para marcar el día. Deslizá derecha = listo, izquierda = editar/borrar. Mantené apretado para reordenar.',
+      icon: Icons.loop_rounded,
+      child: Scaffold(
       backgroundColor: context.surfaceBase,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -291,7 +298,8 @@ class _HabitosPageState extends ConsumerState<HabitosPage> {
           ),
         ],
       ),
-    );
+    ), // Scaffold
+    ); // FirstTimeTip
   }
 }
 

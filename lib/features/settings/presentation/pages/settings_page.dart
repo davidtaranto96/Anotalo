@@ -272,6 +272,19 @@ class SettingsPage extends ConsumerWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
                   leading: const _IconBadge(
+                    icon: Icons.calendar_view_week_rounded,
+                    color: AppTheme.colorSuccess,
+                  ),
+                  title: const _Title('Resumen semanal'),
+                  subtitle: const _Subtitle('Logros, hábitos, ánimo y notas de la semana'),
+                  trailing: Icon(Icons.chevron_right_rounded, color: theme.textTheme.bodyMedium?.color),
+                  onTap: () => context.push('/weekly-review'),
+                ),
+                Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.r16),
+                  leading: const _IconBadge(
                     icon: Icons.history_rounded,
                     color: AppTheme.colorAccent,
                   ),

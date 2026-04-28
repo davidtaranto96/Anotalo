@@ -107,9 +107,24 @@ const _fx = _ChangeKind.fix;
 
 const List<_Release> _releases = [
   _Release(
-    version: '1.14.0',
+    version: '1.15.0',
     date: 'Abril 2026',
     isLatest: true,
+    title: 'Resumen semanal, acento dinámico y tutoriales pulidos',
+    items: [
+      _ChangelogItem(_nf, Icons.calendar_view_week_rounded,
+          'Resumen semanal: cierre de la semana en una pantalla — logros (tareas completadas, mejor día), hábitos (cumplimiento por hábito), ánimo promedio, días que fumaste, días con medicación y notas del journal. Configuración → Resumen semanal.'),
+      _ChangelogItem(_mj, Icons.palette_rounded,
+          'Acento dinámico: el color que elegís ahora pinta más cosas (badges, progress bar, botones, chips de tarea) en vez de quedar solo en algunos botones.'),
+      _ChangelogItem(_fx, Icons.center_focus_strong_rounded,
+          'Coach-mark del tutorial ahora queda al medio de la pantalla en vez de quedar tapado por el botón flotante.'),
+      _ChangelogItem(_nf, Icons.lightbulb_outline_rounded,
+          'Tutorial nuevo en Hábitos — antes era la única pantalla sin pista al primer ingreso.'),
+    ],
+  ),
+  _Release(
+    version: '1.14.0',
+    date: 'Abril 2026',
     title: 'Backup en tu Google Drive — privado y automático',
     items: [
       _ChangelogItem(_nf, Icons.cloud_sync_rounded,

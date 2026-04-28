@@ -261,7 +261,7 @@ class _HoyPageState extends ConsumerState<HoyPage> {
                         _StatChip(
                           label: 'Tareas',
                           value: '$completedCount/$totalTasks',
-                          color: AppTheme.colorPrimary,
+                          color: context.colorPrimary,
                         ),
                         const SizedBox(width: 8),
                         _StatChip(
@@ -882,12 +882,12 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: _reminderTime != null
-                    ? AppTheme.colorPrimary.withAlpha(20)
+                    ? context.colorPrimary.withAlpha(20)
                     : context.surfaceInput,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: _reminderTime != null
-                      ? AppTheme.colorPrimary
+                      ? context.colorPrimary
                       : context.dividerColor,
                 ),
               ),
@@ -897,7 +897,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                     Icons.alarm_rounded,
                     size: 18,
                     color: _reminderTime != null
-                        ? AppTheme.colorPrimary
+                        ? context.colorPrimary
                         : context.textTertiary,
                   ),
                   const SizedBox(width: 8),
@@ -909,7 +909,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: _reminderTime != null
-                            ? AppTheme.colorPrimary
+                            ? context.colorPrimary
                             : context.textTertiary,
                         fontWeight: _reminderTime != null
                             ? FontWeight.w600
@@ -937,7 +937,7 @@ class _AddTaskSheetState extends State<_AddTaskSheet> {
             child: FilledButton(
               onPressed: _submit,
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.colorPrimary,
+                backgroundColor: context.colorPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -1323,7 +1323,7 @@ class _StickyProgressDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final percent = (progress * 100).round();
     final isPinned = shrinkOffset > 0 || overlapsContent;
-    final barColor = areaColor ?? AppTheme.colorPrimary;
+    final barColor = areaColor ?? context.colorPrimary;
     return Container(
       height: 56,
       decoration: BoxDecoration(

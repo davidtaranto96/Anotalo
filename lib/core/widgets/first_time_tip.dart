@@ -105,14 +105,12 @@ class _FirstTimeTipState extends State<FirstTimeTip> {
             ),
           ),
         ),
-        // Card centrado abajo con la pista + botón "Entendido".
-        // bottom = 120 para que no quede tapado por la bottom-nav
-        // (~88pt) + el FAB (~56pt) que están en cada pantalla.
-        Positioned(
-          left: 20,
-          right: 20,
-          bottom: 120,
-          child: Material(
+        // Card centrado en la pantalla — antes estaba abajo y el FAB
+        // del shell le quedaba encima.
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(child: Material(
             color: Colors.transparent,
             child: TweenAnimationBuilder<double>(
               tween: Tween(begin: 0, end: 1),
@@ -203,6 +201,8 @@ class _FirstTimeTipState extends State<FirstTimeTip> {
                   ],
                 ),
               ),
+            ),
+            ),
             ),
           ),
         ),

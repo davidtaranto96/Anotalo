@@ -9,6 +9,7 @@ import 'package:arquitectura_enfoque/features/onboarding/presentation/pages/logi
 import 'package:arquitectura_enfoque/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:arquitectura_enfoque/features/revision/presentation/pages/daily_review_page.dart';
 import 'package:arquitectura_enfoque/features/revision/presentation/pages/review_history_page.dart';
+import 'package:arquitectura_enfoque/features/revision/presentation/pages/weekly_review_page.dart';
 import 'package:arquitectura_enfoque/features/settings/presentation/pages/settings_page.dart';
 import 'package:arquitectura_enfoque/features/settings/presentation/pages/manage_areas_page.dart';
 import 'package:arquitectura_enfoque/features/novedades/presentation/pages/novedades_page.dart';
@@ -58,6 +59,9 @@ final appRouter = GoRouter(
     _axisRoute(
         path: '/review-history',
         builder: (_, __) => const ReviewHistoryPage()),
+    _axisRoute(
+        path: '/weekly-review',
+        builder: (_, __) => const WeeklyReviewPage()),
     _axisRoute(
         path: '/manage-areas', builder: (_, __) => const ManageAreasPage()),
     _axisRoute(path: '/settings', builder: (_, __) => const SettingsPage()),

@@ -19,9 +19,12 @@ extension AppColors on BuildContext {
   Color get textSecondary => _isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
   Color get textTertiary => _isDark ? AppTheme.darkTextTertiary : AppTheme.textTertiary;
 
-  // Brand (slightly brighter in dark mode)
-  Color get colorPrimary => _isDark ? AppTheme.darkColorPrimary : AppTheme.colorPrimary;
-  Color get colorAccent => _isDark ? AppTheme.darkColorAccent : AppTheme.colorAccent;
+  // Brand — sigue al "color de acento" elegido por el user (ver
+  // AccentController). Esto pinta los lugares "primarios" de la app
+  // (badges, progress, chips de prioridad primary) en el color que
+  // el user eligió, no en la terracota fija de AppTheme.
+  Color get colorPrimary => Theme.of(this).colorScheme.primary;
+  Color get colorAccent => Theme.of(this).colorScheme.secondary;
 
   // Neutrals (inverted for dark mode)
   Color get neutral50 => _isDark ? const Color(0xFF2A2A2F) : AppTheme.neutral50;
